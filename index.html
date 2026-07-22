@@ -715,13 +715,38 @@ document.getElementById('copyBtn').onclick = async () => {
 
 const hostId = location.hash.slice(1);
 
-peer = new Peer();
+/* ============================================================
+   TURN SERVER — needed to connect across different networks.
+   Paste your credential from the Metered dashboard below.
+   (TURN Server page → the "credential" value in the code block)
+   ============================================================ */
+const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
+const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
+
+const iceServers = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+];
+if(TURN_CREDENTIAL !== 'WAse66kdxp3VMEA7'){
+  iceServers.push(
+    { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+  );
+}
+
+peer = new Peer({ config: { iceServers } });
 peer.on('error', err => setStatus('Lỗi: ' + err.type));
 
 if(hostId){
   // ---- GUEST ----
   myColor = 2;
   setStatus('Đang kết nối…');
+  // If the tunnel can't be established in 15s, tell the user instead of hanging
+  const connTimer = setTimeout(() => {
+    if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
+  }, 15000);
   peer.on('open', () => {
     const c = peer.connect(hostId, {reliable:true});
     c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
