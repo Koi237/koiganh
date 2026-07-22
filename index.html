@@ -100,46 +100,78 @@
     font-family: monospace;
   }
   .small { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 6px 0 0; }
-  #players { display: flex; gap: 8px; margin-bottom: 12px; }
+  #topSlot, #bottomSlot { width: min(92vw, 380px); }
+  #topSlot { margin-bottom: 8px; }
+  #bottomSlot { margin-top: 8px; }
   .pcard {
-    flex: 1;
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     background: #17130f;
     border: 2px solid #3a3128;
-    border-radius: 8px;
-    padding: 9px 8px;
-    text-align: center;
-    transition: border-color .25s, background .25s, transform .25s, box-shadow .25s;
+    border-radius: 10px;
+    padding: 8px 12px;
+    transition: border-color .25s, background .25s, box-shadow .25s;
   }
   .pcard.active {
     border-color: var(--accent);
     background: #2b1e11;
-    transform: translateY(-4px);
-    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgba(217,139,58,.35);
     animation: glow 1.6s ease-in-out infinite;
   }
   @keyframes glow {
-    0%,100% { box-shadow: 0 0 0 1px var(--accent), 0 4px 12px rgba(217,139,58,.25); }
-    50%     { box-shadow: 0 0 0 1px var(--accent), 0 6px 22px rgba(217,139,58,.6); }
+    0%,100% { box-shadow: 0 0 0 1px var(--accent), 0 0 10px rgba(217,139,58,.25); }
+    50%     { box-shadow: 0 0 0 1px var(--accent), 0 0 22px rgba(217,139,58,.6); }
   }
-  /* arrow that sits above whichever card is active */
-  .pcard.active::before {
-    content: '▼';
-    position: absolute;
-    top: -16px; left: 50%;
-    transform: translateX(-50%);
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    background: #262019;
+    border: 3px solid #3a3128;
+    transition: border-color .25s, transform .25s;
+  }
+  .av-w { border-color: var(--white); }
+  .av-b { border-color: #555; }
+  .pcard.active .avatar {
+    border-color: var(--accent);
+    transform: scale(1.08);
+    animation: avpulse 1.6s ease-in-out infinite;
+  }
+  @keyframes avpulse {
+    0%,100% { transform: scale(1.04); }
+    50%     { transform: scale(1.12); }
+  }
+  .info { flex: 1; min-width: 0; }
+  .who  { font-size: 14px; font-weight: 600; }
+  .meta { font-size: 12px; color: var(--muted); }
+  .cnt  { font-weight: 700; color: var(--text); }
+  .turnTag {
+    font-size: 11px;
+    font-weight: 700;
     color: var(--accent);
-    font-size: 13px;
-    animation: bob .9s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity .25s;
   }
-  @keyframes bob {
-    0%,100% { transform: translateX(-50%) translateY(0); }
-    50%     { transform: translateX(-50%) translateY(4px); }
+  .pcard.active .turnTag { opacity: 1; animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:.55} 50%{opacity:1} }
+  /* --- piece animation --- */
+  .pieceG {
+    transition: transform .28s cubic-bezier(.3,1.3,.5,1); /* slight overshoot */
   }
-  .pcard .who { font-size: 13px; font-weight: 600; }
-  .pcard .cnt { font-size: 20px; font-weight: 700; margin: 3px 0 1px; }
-  .pcard .st  { font-size: 11px; color: var(--muted); min-height: 14px; }
-  .pcard.active .st { color: var(--accent); font-weight: 600; }
+  .pieceG circle {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .flipping {
+    animation: flipAnim .44s ease-in-out;
+  }
+  @keyframes flipAnim {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(.05); }
+    100% { transform: scale(1); }
+  }
   .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
   #copyBtn { background: #3a3128; color: var(--text); }
   #copyBtn.ok { background: #4a7c3f; color: #fff; }
@@ -150,23 +182,35 @@
 <h1>CỜ GÁNH</h1>
 <div id="status">Đang khởi tạo…</div>
 
+<div id="topSlot"></div>
+
 <div id="boardWrap">
   <svg id="board" viewBox="0 0 100 100"></svg>
 </div>
 
-<div id="panel">
-  <div id="players">
-    <div class="pcard" id="pw">
-      <div class="who"><span class="dot" style="background:var(--white)"></span>Trắng</div>
-      <div class="cnt" id="cw">8</div>
-      <div class="st" id="sw">—</div>
+<div id="bottomSlot"></div>
+
+<!-- cards start here; JS moves them into topSlot/bottomSlot -->
+<div style="display:none" id="cardStore">
+  <div class="pcard" id="pw">
+    <div class="avatar av-w">🙂</div>
+    <div class="info">
+      <div class="who">Trắng · <span id="sw">—</span></div>
+      <div class="meta"><span class="cnt" id="cw">8</span> quân</div>
     </div>
-    <div class="pcard" id="pb">
-      <div class="who"><span class="dot" style="background:var(--black);border:1px solid #6a5c4d"></span>Đen</div>
-      <div class="cnt" id="cb">8</div>
-      <div class="st" id="sb">—</div>
-    </div>
+    <div class="turnTag">Đang đi…</div>
   </div>
+  <div class="pcard" id="pb">
+    <div class="avatar av-b">😎</div>
+    <div class="info">
+      <div class="who">Đen · <span id="sb">—</span></div>
+      <div class="meta"><span class="cnt" id="cb">8</span> quân</div>
+    </div>
+    <div class="turnTag">Đang đi…</div>
+  </div>
+</div>
+
+<div id="panel">
   <button id="createBtn">Tạo ván mới</button>
   <div id="linkBox">
     <input id="link" readonly onclick="this.select()">
@@ -299,42 +343,99 @@ const px = i => {
   return [M + c*STEP, M + r*STEP];
 };
 
-function draw(){
-  let s = '';
-  // lines
+const SVGNS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs) => {
+  const e = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+};
+
+let linesG, hintsG, piecesG, tapsG;
+let pieceAt = new Array(SIZE).fill(null); // DOM element of the piece at each index
+
+// Static layers: grid lines, point dots, and invisible tap targets. Built once.
+function buildStatic(){
+  svg.innerHTML = '';
+  linesG = el('g',{}); hintsG = el('g',{}); piecesG = el('g',{}); tapsG = el('g',{});
+  svg.append(linesG, hintsG, piecesG, tapsG);
   for(let i=0;i<SIZE;i++){
     const [x1,y1] = px(i);
     for(const n of ADJ[i]){
       if(n < i) continue;
       const [x2,y2] = px(n);
-      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)" stroke-width="0.8"/>`;
+      linesG.append(el('line',{x1,y1,x2,y2,stroke:'var(--line)','stroke-width':0.8}));
+    }
+    linesG.append(el('circle',{cx:x1,cy:y1,r:1.6,class:'empty'}));
+    const tap = el('circle',{cx:x1,cy:y1,r:9,fill:'transparent',class:'pt'});
+    tap.dataset.i = i;
+    tapsG.append(tap);
+  }
+}
+
+function makePiece(i, side){
+  const [x,y] = px(i);
+  const g = el('g',{class:'pieceG'});
+  g.style.transform = `translate(${x}px, ${y}px)`;
+  const c = el('circle',{cx:0,cy:0,r:6.5,class:side===1?'piece-w':'piece-b'});
+  c.style.pointerEvents = 'none';
+  g.style.pointerEvents = 'none';
+  g.append(c);
+  return g;
+}
+
+// Full rebuild of pieces from the board array (init, reset, or safety resync)
+function syncPieces(){
+  piecesG.innerHTML = '';
+  pieceAt = new Array(SIZE).fill(null);
+  for(let i=0;i<SIZE;i++){
+    if(board[i] !== 0){
+      const g = makePiece(i, board[i]);
+      pieceAt[i] = g;
+      piecesG.append(g);
     }
   }
-  // hint dots
+  refreshPlayers();
+}
+
+function renderHints(){
+  hintsG.innerHTML = '';
   for(const h of hints){
     const [x,y] = px(h);
-    s += `<circle cx="${x}" cy="${y}" r="3" class="hint"/>`;
+    hintsG.append(el('circle',{cx:x,cy:y,r:3,class:'hint'}));
   }
-  // pieces
   for(let i=0;i<SIZE;i++){
-    const [x,y] = px(i);
-    if(board[i] === 0){
-      s += `<circle cx="${x}" cy="${y}" r="2" class="empty pt" data-i="${i}"/>`;
-    } else {
-      const cls = board[i] === 1 ? 'piece-w' : 'piece-b';
-      const sel = selected === i ? ' sel' : '';
-      s += `<circle cx="${x}" cy="${y}" r="6.5" class="${cls}${sel} pt" data-i="${i}"/>`;
-    }
-    // larger invisible tap target
-    s += `<circle cx="${x}" cy="${y}" r="9" fill="transparent" class="pt" data-i="${i}"/>`;
+    if(!pieceAt[i]) continue;
+    pieceAt[i].firstChild.classList.toggle('sel', selected === i);
   }
-  svg.innerHTML = s;
-  refreshPlayers();
+}
+
+// Slide the moved piece, then shrink-swap-grow each captured piece.
+function animateMove(from, to, flips){
+  const g = pieceAt[from];
+  if(!g){ syncPieces(); return; }        // desync safety net
+  pieceAt[from] = null;
+  pieceAt[to] = g;
+  const [x,y] = px(to);
+  g.style.transform = `translate(${x}px, ${y}px)`;
+
+  const newSide = board[to];             // board is already updated
+  setTimeout(() => {
+    for(const f of flips){
+      const fg = pieceAt[f];
+      if(!fg) continue;
+      const c = fg.firstChild;
+      c.classList.add('flipping');
+      // swap color at the midpoint of the shrink, when the piece is invisible
+      setTimeout(() => { c.setAttribute('class', (newSide===1?'piece-w':'piece-b') + ' flipping'); }, 220);
+      setTimeout(() => { c.classList.remove('flipping'); }, 460);
+    }
+    refreshPlayers();
+  }, 240);
 }
 
 function setStatus(t){ document.getElementById('status').textContent = t; }
 
-// Updates both player cards: piece count, who is who, and whose turn it is.
+// Updates both player cards: piece count, whose turn, and card position.
 function refreshPlayers(){
   document.getElementById('cw').textContent = count(board,1);
   document.getElementById('cb').textContent = count(board,2);
@@ -342,14 +443,16 @@ function refreshPlayers(){
   const cards = {1: document.getElementById('pw'), 2: document.getElementById('pb')};
   const subs  = {1: document.getElementById('sw'), 2: document.getElementById('sb')};
 
-  // Keep "you" on the left, matching the flipped board orientation.
-  cards[1].style.order = (myColor === 2) ? 2 : 1;
-  cards[2].style.order = (myColor === 2) ? 1 : 2;
+  // My card below the board, opponent's above — matching the flipped view.
+  const me = myColor || 1, opp = me === 1 ? 2 : 1;
+  const top = document.getElementById('topSlot'), bot = document.getElementById('bottomSlot');
+  if(cards[opp].parentElement !== top) top.append(cards[opp]);
+  if(cards[me].parentElement !== bot) bot.append(cards[me]);
 
   for(const side of [1,2]){
     const isMe = (side === myColor);
     let label;
-    if(!conn && !isMe) label = 'Đang chờ…';
+    if(!conn && !isMe) label = 'đang chờ…';
     else if(isMe)      label = 'Bạn';
     else               label = 'Đối thủ';
     subs[side].textContent = label;
@@ -399,14 +502,20 @@ svg.addEventListener('click', e => {
   } else {
     selected = null; hints = [];
   }
-  draw();
+  renderHints();
 });
 
 function doMove(from, to, broadcast){
+  const prev = board;
   board = applyMove(board, from, to);
+  // Flips = points whose color changed, other than the vacated and landed points
+  const flips = [];
+  for(let i=0;i<SIZE;i++)
+    if(i!==from && i!==to && board[i]!==prev[i]) flips.push(i);
   turn = turn === 1 ? 2 : 1;
   selected = null; hints = [];
-  draw();
+  renderHints();
+  animateMove(from, to, flips);
   if(broadcast && conn && conn.open) conn.send({t:'move', from, to});
   if(!checkEnd()) updateStatus();
 }
@@ -441,7 +550,7 @@ function resetGame(){
   turn = 1; selected = null; hints = []; gameOver = false;
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
-  draw(); updateStatus();
+  syncPieces(); renderHints(); updateStatus();
 }
 
 let matchUrl = '';
@@ -526,7 +635,8 @@ document.getElementById('rematchBtn').onclick = () => {
   resetGame();
 };
 
-draw();
+buildStatic();
+syncPieces();
 </script>
 </body>
 </html>
