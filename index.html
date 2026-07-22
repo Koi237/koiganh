@@ -103,21 +103,43 @@
   #players { display: flex; gap: 8px; margin-bottom: 12px; }
   .pcard {
     flex: 1;
+    position: relative;
     background: #17130f;
     border: 2px solid #3a3128;
     border-radius: 8px;
     padding: 9px 8px;
     text-align: center;
-    transition: border-color .2s, background .2s;
+    transition: border-color .25s, background .25s, transform .25s, box-shadow .25s;
   }
   .pcard.active {
     border-color: var(--accent);
-    background: #241a10;
+    background: #2b1e11;
+    transform: translateY(-4px);
+    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgba(217,139,58,.35);
+    animation: glow 1.6s ease-in-out infinite;
+  }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 0 1px var(--accent), 0 4px 12px rgba(217,139,58,.25); }
+    50%     { box-shadow: 0 0 0 1px var(--accent), 0 6px 22px rgba(217,139,58,.6); }
+  }
+  /* arrow that sits above whichever card is active */
+  .pcard.active::before {
+    content: '▼';
+    position: absolute;
+    top: -16px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--accent);
+    font-size: 13px;
+    animation: bob .9s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50%     { transform: translateX(-50%) translateY(4px); }
   }
   .pcard .who { font-size: 13px; font-weight: 600; }
   .pcard .cnt { font-size: 20px; font-weight: 700; margin: 3px 0 1px; }
   .pcard .st  { font-size: 11px; color: var(--muted); min-height: 14px; }
-  .pcard.active .st { color: var(--accent); }
+  .pcard.active .st { color: var(--accent); font-weight: 600; }
   .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
   #copyBtn { background: #3a3128; color: var(--text); }
   #copyBtn.ok { background: #4a7c3f; color: #fff; }
@@ -269,7 +291,13 @@ let conn = null, peer = null;
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
 const M = 12, STEP = (100 - 2*M) / 4;
-const px = i => { const [r,c] = rc(i); return [M + c*STEP, M + r*STEP]; };
+// Display-only flip: Black (player 2) sees the board rotated 180° so their
+// own pieces sit at the bottom. Indices and game logic are unchanged.
+const px = i => {
+  let [r,c] = rc(i);
+  if(myColor === 2){ r = 4 - r; c = 4 - c; }
+  return [M + c*STEP, M + r*STEP];
+};
 
 function draw(){
   let s = '';
@@ -314,12 +342,16 @@ function refreshPlayers(){
   const cards = {1: document.getElementById('pw'), 2: document.getElementById('pb')};
   const subs  = {1: document.getElementById('sw'), 2: document.getElementById('sb')};
 
+  // Keep "you" on the left, matching the flipped board orientation.
+  cards[1].style.order = (myColor === 2) ? 2 : 1;
+  cards[2].style.order = (myColor === 2) ? 1 : 2;
+
   for(const side of [1,2]){
     const isMe = (side === myColor);
     let label;
-    if(gameOver)      label = isMe ? 'Bạn' : 'Đối thủ';
-    else if(!conn)    label = isMe ? 'Bạn' : 'Đang chờ…';
-    else              label = isMe ? 'Bạn' : 'Đối thủ';
+    if(!conn && !isMe) label = 'Đang chờ…';
+    else if(isMe)      label = 'Bạn';
+    else               label = 'Đối thủ';
     subs[side].textContent = label;
     cards[side].classList.toggle('active', !gameOver && !!conn && turn === side);
   }
