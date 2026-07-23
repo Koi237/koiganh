@@ -599,7 +599,7 @@
     </button>
     <button class="aiOpt" data-lv="hard">
       <span class="lvName">KHÓ</span>
-      <span class="lvDesc">Biết gánh, biết giữ quân</span>
+      <span class="lvDesc">Biết gánh, biết giữ quân — nhưng đôi lúc sơ hở</span>
     </button>
     <button class="aiOpt" data-lv="chal">
       <span class="lvName">THÁCH ĐẤU</span>
@@ -745,13 +745,18 @@ function hasAnyMove(b, side){
 
 /* ---------- AI ENGINE (Đấu với máy) ----------
    Ba mức:  easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
-            hard = minimax 2 nước (đi + đòn đáp hay nhất của bạn);
+            hard = minimax 2 nước, nhưng 22% số nước chỉ nhìn 1 nước —
+                   thấy miếng ăn mà không thấy đòn đáp, nên sập bẫy được;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
+   Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
+   quay về thế cờ đã xuất hiện, nặng dần theo số lần lặp (AI_REP × count).
    Pure functions only — no DOM in this block (the test harness slices
    everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
-const AI_DEPTH = { hard: 2, chal: 5 };
-const AI_NOISE = { hard: 4, chal: 0.6 };   // hard is deliberately fallible
-const AI_UNDO  = 7;   // anti-shuffle: cost of exactly undoing your last move
+const AI_DEPTH   = { hard: 2, chal: 5 };
+const AI_NOISE   = { hard: 4, chal: 0.6 };  // hard is deliberately fallible
+const AI_BLUNDER = { hard: 0.22 };  // chance to look only 1 ply (falls for traps)
+const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
+const AI_REP  = 12;   // per prior occurrence of the position a move returns to
 
 function allMoves(b, side){
   const out = [];
@@ -820,7 +825,7 @@ function search(b, side, me, depth, alpha, beta, ply){
   }
 }
 
-function aiChooseMove(b, side, level, lastMove){
+function aiChooseMove(b, side, level, lastMove, seen){
   const moves = allMoves(b, side);
   if(moves.length === 0) return null;
   const foe = side === 1 ? 2 : 1;
@@ -834,8 +839,11 @@ function aiChooseMove(b, side, level, lastMove){
     return moves[(Math.random() * moves.length) | 0];
   }
 
-  const depth = AI_DEPTH[level] || 2;
+  let depth = AI_DEPTH[level] || 2;
   const noise = AI_NOISE[level] || 0;
+  // The human-like lapse: occasionally search only 1 ply — the machine
+  // sees the stone it can take, not the recapture waiting behind it.
+  if(Math.random() < (AI_BLUNDER[level] || 0)) depth = 1;
   // capture-first ordering at the root too
   const scored = moves.map(m => {
     const nb = applyMove(b, m[0], m[1]);
@@ -849,6 +857,15 @@ function aiChooseMove(b, side, level, lastMove){
     // from is discouraged. The penalty sits above the noise but far below
     // one stone (100), so a genuinely necessary retreat still wins.
     if(lastMove && m[0] === lastMove[1] && m[1] === lastMove[0]) s -= AI_UNDO;
+    // Anti-repetition: returning the BOARD to a state it has already been
+    // in gets costlier every time (12, 24, 36, ...). This catches the long
+    // cycles the undo penalty can't see — multi-square tours, multi-piece
+    // rotations — while eight repeats still cost less than one stone, so
+    // a genuinely forced defence is never sacrificed to avoid the loop.
+    if(seen){
+      const rep = seen[nb.join('')] || 0;
+      if(rep) s -= AI_REP * rep;
+    }
     if(s > bestScore){ bestScore = s; best = m; }
     if(s > alpha) alpha = s;
   }
@@ -869,6 +886,7 @@ let vsAI = false;         // playing against the machine?
 let aiLevel = null;       // 'easy' | 'hard' | 'chal'
 let aiTimer = null;       // pending machine "thinking" timeout
 let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
+let aiSeen = {};          // position -> occurrence count (anti-repetition)
 
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
@@ -1126,6 +1144,10 @@ function doMove(from, to, broadcast){
   selected = null; hints = [];
   renderHints();
   animateMove(from, to, flips);
+  if(vsAI){                               // anti-repetition history
+    const k = board.join('');
+    aiSeen[k] = (aiSeen[k] || 0) + 1;
+  }
   if(broadcast && conn && conn.open) conn.send({t:'move', from, to});
   if(!checkEnd()) updateStatus();
   maybeAIMove();                          // no-op unless it's the machine's turn
@@ -1166,7 +1188,7 @@ function maybeAIMove(){
   aiTimer = setTimeout(() => {
     aiTimer = null;
     if(!vsAI || gameOver || turn === myColor) return;
-    const mv = aiChooseMove(board, turn, aiLevel, aiLastMove);
+    const mv = aiChooseMove(board, turn, aiLevel, aiLastMove, aiSeen);
     if(mv){ aiLastMove = mv; doMove(mv[0], mv[1], false); }
   }, lo + Math.random() * (hi - lo));
 }
@@ -1203,6 +1225,7 @@ function resetGame(){
   turn = 1; selected = null; hints = []; gameOver = false;
   if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
   aiLastMove = null;
+  aiSeen = {};
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
   hideOverlay();
