@@ -751,6 +751,7 @@ function hasAnyMove(b, side){
    everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
 const AI_DEPTH = { hard: 2, chal: 5 };
 const AI_NOISE = { hard: 4, chal: 0.6 };   // hard is deliberately fallible
+const AI_UNDO  = 7;   // anti-shuffle: cost of exactly undoing your last move
 
 function allMoves(b, side){
   const out = [];
@@ -819,7 +820,7 @@ function search(b, side, me, depth, alpha, beta, ply){
   }
 }
 
-function aiChooseMove(b, side, level){
+function aiChooseMove(b, side, level, lastMove){
   const moves = allMoves(b, side);
   if(moves.length === 0) return null;
   const foe = side === 1 ? 2 : 1;
@@ -844,6 +845,10 @@ function aiChooseMove(b, side, level){
   for(const [, m, nb] of scored){
     let s = search(nb, foe, side, depth - 1, alpha, Infinity, 1);
     s += (Math.random() - 0.5) * noise;    // fallibility / variety
+    // Anti-shuffle: rocking a stone straight back to where it just came
+    // from is discouraged. The penalty sits above the noise but far below
+    // one stone (100), so a genuinely necessary retreat still wins.
+    if(lastMove && m[0] === lastMove[1] && m[1] === lastMove[0]) s -= AI_UNDO;
     if(s > bestScore){ bestScore = s; best = m; }
     if(s > alpha) alpha = s;
   }
@@ -863,6 +868,7 @@ let gameActive = false;   // true while a match is live (nav guard)
 let vsAI = false;         // playing against the machine?
 let aiLevel = null;       // 'easy' | 'hard' | 'chal'
 let aiTimer = null;       // pending machine "thinking" timeout
+let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
 
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
@@ -1160,8 +1166,8 @@ function maybeAIMove(){
   aiTimer = setTimeout(() => {
     aiTimer = null;
     if(!vsAI || gameOver || turn === myColor) return;
-    const mv = aiChooseMove(board, turn, aiLevel);
-    if(mv) doMove(mv[0], mv[1], false);
+    const mv = aiChooseMove(board, turn, aiLevel, aiLastMove);
+    if(mv){ aiLastMove = mv; doMove(mv[0], mv[1], false); }
   }, lo + Math.random() * (hi - lo));
 }
 
@@ -1196,6 +1202,7 @@ function resetGame(){
   board = initialBoard();
   turn = 1; selected = null; hints = []; gameOver = false;
   if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
+  aiLastMove = null;
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
   hideOverlay();
