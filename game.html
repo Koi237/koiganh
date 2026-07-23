@@ -3,194 +3,335 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Cờ Gánh</title>
+<title>Cờ Gánh — Koi is love</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #1b1714;
-    --panel: #262019;
-    --line: #8a7355;
-    --board: #d9bb8a;
-    --board2: #c9a877;
-    --white: #f5efe3;
-    --black: #2c2622;
-    --accent: #d98b3a;
-    --text: #e8ddcb;
-    --muted: #a2957f;
+    /* Retuned to the KOI palette: near-black slate, cool light text,
+       spectral blue→violet→warm as the accent ramp. */
+    --bg:      #050609;
+    --panel:   rgba(18,21,31,.72);
+    --line:    rgba(150,170,225,.30);
+    --board:   #0d1018;
+    --board2:  #11141d;
+    --white:   #eef1fa;
+    --black:   #171b26;
+    --accent:  #8fb4ff;
+    --accent2: #d9a2ff;
+    --accent3: #ffb0a0;
+    --text:    #e8eaf2;
+    --muted:   rgba(220,226,244,.42);
+    --hair:    rgba(150,180,255,.16);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100vh; min-height: 100dvh; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: "Space Grotesk", -apple-system, "Segoe UI", Roboto, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
-    padding: 12px;
+    padding: 12px 12px 40px;
+    padding-top: 74px;
+    opacity: 0;
+    transition: opacity .8s ease;
   }
+  body.ready { opacity: 1; }
+
+  /* Ambient field so the page shares the home page's depth without WebGL. */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 18%, rgba(70,95,175,.20), transparent 62%),
+      radial-gradient(ellipse 70% 55% at 82% 74%, rgba(150,90,185,.15), transparent 62%),
+      radial-gradient(ellipse 120% 90% at 50% 45%, transparent 52%, rgba(2,3,6,.62) 100%);
+  }
+  .grain {
+    position: fixed; inset: -50%;
+    width: 200%; height: 200%;
+    pointer-events: none; z-index: 1;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grainShift 9s steps(6) infinite;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0,0); }
+    20%  { transform: translate(-2%,1%); }
+    40%  { transform: translate(1%,-2%); }
+    60%  { transform: translate(-1%,2%); }
+    80%  { transform: translate(2%,1%); }
+    100% { transform: translate(0,0); }
+  }
+
+  /* ---------- shared nav ---------- */
+  .koi-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px clamp(20px, 3.4vw, 44px);
+    background: linear-gradient(to bottom, rgba(5,6,9,.92), rgba(5,6,9,0));
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    pointer-events: none;
+  }
+  .koi-nav > * { pointer-events: auto; }
+  .koi-nav .brand {
+    font-size: 12.5px;
+    letter-spacing: .42em;
+    font-weight: 700;
+    color: #e6eaf6;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .koi-nav nav { display: flex; gap: clamp(18px, 2.4vw, 34px); }
+  .koi-nav nav a {
+    position: relative;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .28em;
+    text-decoration: none;
+    color: rgba(220,226,244,.55);
+    padding: 4px 0;
+    transition: color .45s ease;
+    white-space: nowrap;
+  }
+  .koi-nav nav a:hover { color: #eef1fa; }
+  .koi-nav nav a::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, rgba(150,180,255,.9), rgba(220,160,255,.5));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .koi-nav nav a:hover::after { transform: scaleX(1); }
+  .koi-nav nav a[aria-current="page"] { color: #eef1fa; }
+  .koi-nav nav a[aria-current="page"]::after { transform: scaleX(1); opacity: .6; }
+
+  /* ---------- page content ---------- */
   h1 {
-    font-size: 22px;
-    margin: 4px 0 10px;
-    letter-spacing: 1px;
-    font-weight: 600;
+    position: relative; z-index: 2;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .42em;
+    text-indent: .42em;
+    margin: 8px 0 14px;
+    color: rgba(232,234,242,.92);
   }
   #status {
-    font-size: 15px;
+    position: relative; z-index: 2;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .18em;
     min-height: 22px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
     text-align: center;
     color: var(--accent);
   }
+
   #boardWrap {
     position: relative;
+    z-index: 2;
     width: min(92vw, 380px);
     height: min(92vw, 380px);
-    background: var(--board);
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0,0,0,.45);
+    background:
+      radial-gradient(ellipse 90% 90% at 50% 40%, #141826 0%, #0b0e15 72%, #080a10 100%);
+    border-radius: 10px;
+    border: 1px solid var(--hair);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.5),
+      0 18px 50px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(190,205,255,.07);
     touch-action: manipulation;
   }
   svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .pt {
-    cursor: pointer;
+  .pt { cursor: pointer; }
+
+  /* Pieces: light ones glow cool, dark ones read as smoked glass. */
+  .piece-w {
+    fill: url(#gradW);
+    stroke: rgba(200,220,255,.75);
+    stroke-width: 1.1;
   }
-  .piece-w { fill: var(--white); stroke: #b9ac96; stroke-width: 1.5; }
-  .piece-b { fill: var(--black); stroke: #6a5c4d; stroke-width: 1.5; }
-  .empty   { fill: rgba(0,0,0,.18); }
-  .sel     { stroke: var(--accent); stroke-width: 3.5; }
-  .hint    { fill: var(--accent); opacity: .55; }
+  .piece-b {
+    fill: url(#gradB);
+    stroke: rgba(150,175,235,.42);
+    stroke-width: 1.1;
+  }
+  .empty { fill: rgba(150,180,255,.16); }
+  .sel   { stroke: var(--accent2); stroke-width: 2.4; }
+  .hint  { fill: var(--accent); opacity: .42; }
+
   #panel {
-    margin-top: 14px;
+    position: relative; z-index: 2;
+    margin-top: 18px;
     width: min(92vw, 380px);
     background: var(--panel);
-    border-radius: 8px;
-    padding: 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--hair);
+    border-radius: 10px;
+    padding: 16px;
   }
   button {
-    background: var(--accent);
-    color: #1b1714;
-    border: 0;
+    font-family: inherit;
+    background: transparent;
+    color: #eef1fa;
+    border: 1px solid rgba(160,180,240,.30);
     border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 15px;
-    font-weight: 600;
+    padding: 12px 14px;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .24em;
     cursor: pointer;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 9px;
+    transition: border-color .4s ease, background .4s ease, letter-spacing .4s ease;
   }
-  button:disabled { opacity: .4; cursor: default; }
-  button.ghost {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
+  button:hover:not(:disabled) {
+    border-color: rgba(180,200,255,.65);
+    background: rgba(120,150,240,.09);
+    letter-spacing: .28em;
   }
-  #linkBox {
-    display: none;
-    margin-top: 6px;
-  }
+  button:disabled { opacity: .35; cursor: default; }
+  button.ghost { color: var(--accent); border-color: rgba(143,180,255,.28); }
+
+  #linkBox { display: none; margin-top: 8px; }
   #link {
     width: 100%;
-    background: #17130f;
+    background: rgba(6,8,13,.85);
     color: var(--text);
-    border: 1px solid #3a3128;
+    border: 1px solid var(--hair);
     border-radius: 6px;
-    padding: 8px;
-    font-size: 12px;
-    font-family: monospace;
+    padding: 10px;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
-  .small { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 6px 0 0; }
-  #topSlot, #bottomSlot { width: min(92vw, 380px); }
-  #topSlot { margin-bottom: 8px; }
-  #bottomSlot { margin-top: 8px; }
+  .small {
+    font-size: 11.5px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 10px 0 0;
+  }
+  .small b {
+    font-weight: 500;
+    color: rgba(220,226,244,.62);
+  }
+
+  #topSlot, #bottomSlot { position: relative; z-index: 2; width: min(92vw, 380px); }
+  #topSlot { margin-bottom: 10px; }
+  #bottomSlot { margin-top: 10px; }
+
   .pcard {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #17130f;
-    border: 2px solid #3a3128;
+    gap: 12px;
+    background: rgba(12,15,23,.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--hair);
     border-radius: 10px;
-    padding: 8px 12px;
-    transition: border-color .25s, background .25s, box-shadow .25s;
+    padding: 10px 14px;
+    transition: border-color .35s, background .35s, box-shadow .35s;
   }
   .pcard.active {
-    border-color: var(--accent);
-    background: #2b1e11;
-    animation: glow 1.6s ease-in-out infinite;
+    border-color: rgba(143,180,255,.55);
+    background: rgba(24,30,52,.8);
+    animation: glow 2.4s ease-in-out infinite;
   }
   @keyframes glow {
-    0%,100% { box-shadow: 0 0 0 1px var(--accent), 0 0 10px rgba(217,139,58,.25); }
-    50%     { box-shadow: 0 0 0 1px var(--accent), 0 0 22px rgba(217,139,58,.6); }
+    0%,100% { box-shadow: 0 0 14px rgba(143,180,255,.10); }
+    50%     { box-shadow: 0 0 26px rgba(143,180,255,.28); }
   }
   .avatar {
-    width: 42px; height: 42px;
+    width: 40px; height: 40px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
+    font-size: 19px;
     flex-shrink: 0;
-    background: #262019;
-    border: 3px solid #3a3128;
-    transition: border-color .25s, transform .25s;
+    background: rgba(8,10,16,.9);
+    border: 2px solid var(--hair);
+    transition: border-color .35s, transform .35s;
   }
-  .av-w { border-color: var(--white); }
-  .av-b { border-color: #555; }
+  .av-w { border-color: rgba(220,232,255,.55); }
+  .av-b { border-color: rgba(120,140,190,.38); }
   .pcard.active .avatar {
     border-color: var(--accent);
-    transform: scale(1.08);
-    animation: avpulse 1.6s ease-in-out infinite;
+    transform: scale(1.07);
+    animation: avpulse 2.4s ease-in-out infinite;
   }
   @keyframes avpulse {
-    0%,100% { transform: scale(1.04); }
-    50%     { transform: scale(1.12); }
+    0%,100% { transform: scale(1.03); }
+    50%     { transform: scale(1.10); }
   }
   .info { flex: 1; min-width: 0; }
-  .who  { font-size: 14px; font-weight: 600; }
-  .meta { font-size: 12px; color: var(--muted); }
-  .cnt  { font-weight: 700; color: var(--text); }
+  .who {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .16em;
+    color: rgba(232,234,242,.9);
+  }
+  .meta {
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: .12em;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .cnt { font-weight: 700; color: var(--text); }
   .turnTag {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .2em;
     color: var(--accent);
     opacity: 0;
-    transition: opacity .25s;
+    transition: opacity .3s;
   }
-  .pcard.active .turnTag { opacity: 1; animation: blink 1.6s ease-in-out infinite; }
-  @keyframes blink { 0%,100%{opacity:.55} 50%{opacity:1} }
-  /* --- piece animation --- */
-  .pieceG {
-    transition: transform .28s cubic-bezier(.3,1.3,.5,1); /* slight overshoot */
-  }
-  .pieceG circle {
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-  .flipping {
-    animation: flipAnim .44s ease-in-out;
-  }
+  .pcard.active .turnTag { opacity: 1; animation: blink 2.4s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  /* --- piece animation (timings unchanged; the JS depends on them) --- */
+  .pieceG { transition: transform .28s cubic-bezier(.3,1.3,.5,1); }
+  .pieceG circle { transform-box: fill-box; transform-origin: center; }
+  .flipping { animation: flipAnim .44s ease-in-out; }
   @keyframes flipAnim {
     0%   { transform: scale(1); }
     50%  { transform: scale(.05); }
     100% { transform: scale(1); }
   }
-  /* --- end-of-game --- */
+
+  /* --- end of game --- */
   .winPulse { animation: winPulse .55s cubic-bezier(.3,1.4,.5,1); }
   @keyframes winPulse {
     0%,100% { transform: scale(1); }
     50%     { transform: scale(1.35); }
   }
   .losePiece {
-    opacity: .28;
+    opacity: .2;
     filter: grayscale(.9);
     transition: opacity .9s ease, filter .9s ease;
   }
   #winOverlay {
     position: fixed; inset: 0;
-    background: rgba(14,11,8,.86);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgba(5,6,9,.9);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 18px;
+    gap: 20px;
     opacity: 0; pointer-events: none;
     transition: opacity .45s ease;
     z-index: 50;
@@ -198,60 +339,88 @@
   }
   #winOverlay.show { opacity: 1; pointer-events: auto; }
   .wLine {
-    width: 64px; height: 2px;
-    background: var(--wc);
+    width: 72px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--wc), transparent);
     transform: scaleX(0);
-    border-radius: 1px;
   }
   #winOverlay.show .wLine { animation: lineGrow .55s .15s cubic-bezier(.2,.9,.2,1) forwards; }
   @keyframes lineGrow { to { transform: scaleX(1); } }
   .wTitle {
-    font-size: clamp(34px, 9vw, 52px);
-    font-weight: 700;
+    font-size: clamp(26px, 6.5vw, 40px);
+    font-weight: 300;
     color: var(--wc);
     letter-spacing: .45em;
-    text-indent: .45em;   /* re-center: letter-spacing pads the right side only */
+    text-indent: .45em;
     opacity: 0;
     transform: translateY(14px);
   }
   #winOverlay.show .wTitle { animation: titleIn .8s .3s cubic-bezier(.16,1,.3,1) forwards; }
   @keyframes titleIn {
-    to { opacity: 1; transform: translateY(0); letter-spacing: .14em; text-indent: .14em; }
+    to { opacity: 1; transform: translateY(0); letter-spacing: .22em; text-indent: .22em; }
   }
   .wSub {
-    font-size: 14px;
+    font-size: 11.5px;
+    font-weight: 300;
+    letter-spacing: .14em;
     color: var(--muted);
     opacity: 0;
   }
   #winOverlay.show .wSub { animation: fadeUp .6s .8s ease forwards; }
   .wBtn {
     width: auto;
-    padding: 10px 34px;
+    padding: 12px 34px;
     background: transparent;
     color: var(--wc);
     border: 1px solid var(--wc);
-    border-radius: 20px;
+    border-radius: 22px;
     opacity: 0;
     margin: 4px 0 0;
   }
   #winOverlay.show .wBtn { animation: fadeUp .6s 1s ease forwards; }
   .wHint {
-    font-size: 11px;
+    font-size: 9.5px;
+    font-weight: 300;
     color: var(--muted);
     opacity: 0;
-    letter-spacing: .1em;
+    letter-spacing: .28em;
   }
   #winOverlay.show .wHint { animation: fadeUp .6s 1.6s ease forwards; }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
   .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
-  #copyBtn { background: #3a3128; color: var(--text); }
-  #copyBtn.ok { background: #4a7c3f; color: #fff; }
+  #copyBtn { color: var(--muted); }
+  #copyBtn.ok {
+    color: #b8f0c0;
+    border-color: rgba(140,220,160,.5);
+    background: rgba(70,160,90,.12);
+  }
+
+  @media (max-width: 640px) {
+    .koi-nav { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .koi-nav nav { gap: 20px; }
+    .koi-nav nav a { font-size: 9.5px; letter-spacing: .22em; }
+    body { padding-top: 100px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .grain { animation: none; }
+  }
 </style>
 </head>
 <body>
+
+<div class="grain"></div>
+
+<div class="koi-nav">
+  <a class="brand" href="../">KOI</a>
+  <nav>
+    <a href="../">HOME</a>
+    <a href="./" aria-current="page">CHESS</a>
+    <a href="../about/">ABOUT</a>
+  </nav>
+</div>
 
 <h1>CỜ GÁNH</h1>
 <div id="status">Đang khởi tạo…</div>
@@ -259,7 +428,20 @@
 <div id="topSlot"></div>
 
 <div id="boardWrap">
-  <svg id="board" viewBox="0 0 100 100"></svg>
+  <svg id="board" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="gradW" cx="35%" cy="30%" r="75%">
+        <stop offset="0%"   stop-color="#ffffff"/>
+        <stop offset="55%"  stop-color="#e4eaf8"/>
+        <stop offset="100%" stop-color="#b9c6e4"/>
+      </radialGradient>
+      <radialGradient id="gradB" cx="35%" cy="30%" r="75%">
+        <stop offset="0%"   stop-color="#2b3446"/>
+        <stop offset="55%"  stop-color="#1a2030"/>
+        <stop offset="100%" stop-color="#0d111a"/>
+      </radialGradient>
+    </defs>
+  </svg>
 </div>
 
 <div id="bottomSlot"></div>
@@ -277,30 +459,30 @@
   <div class="pcard" id="pw">
     <div class="avatar av-w">🙂</div>
     <div class="info">
-      <div class="who">Trắng · <span id="sw">—</span></div>
-      <div class="meta"><span class="cnt" id="cw">8</span> quân</div>
+      <div class="who">TRẮNG · <span id="sw">—</span></div>
+      <div class="meta"><span class="cnt" id="cw">8</span> QUÂN</div>
     </div>
-    <div class="turnTag">Đang đi…</div>
+    <div class="turnTag">ĐANG ĐI</div>
   </div>
   <div class="pcard" id="pb">
     <div class="avatar av-b">😎</div>
     <div class="info">
-      <div class="who">Đen · <span id="sb">—</span></div>
-      <div class="meta"><span class="cnt" id="cb">8</span> quân</div>
+      <div class="who">ĐEN · <span id="sb">—</span></div>
+      <div class="meta"><span class="cnt" id="cb">8</span> QUÂN</div>
     </div>
-    <div class="turnTag">Đang đi…</div>
+    <div class="turnTag">ĐANG ĐI</div>
   </div>
 </div>
 
 <div id="panel">
-  <button id="createBtn">Tạo ván mới</button>
+  <button id="createBtn">TẠO VÁN MỚI</button>
   <div id="linkBox">
     <input id="link" readonly onclick="this.select()">
-    <button id="copyBtn" style="margin-top:8px">📋 Sao chép link</button>
+    <button id="copyBtn" style="margin-top:8px">SAO CHÉP LINK</button>
     <p class="small">Gửi link này cho bạn của bạn. Cả hai phải mở cùng lúc.</p>
   </div>
-  <button id="drawBtn" class="ghost" style="display:none">Xin hòa</button>
-  <button id="rematchBtn" class="ghost" style="display:none">Chơi lại</button>
+  <button id="drawBtn" class="ghost" style="display:none">XIN HÒA</button>
+  <button id="rematchBtn" class="ghost" style="display:none">CHƠI LẠI</button>
   <p class="small">
     <b>Luật:</b> Đi 1 bước theo đường kẻ. <b>Gánh:</b> quân địch bị kẹp hai đầu sẽ đổi màu.
     <b>Vây:</b> nhóm quân địch không còn nước đi sẽ đổi màu. Hết quân là thua.
@@ -413,6 +595,7 @@ let selected = null;
 let hints = [];
 let gameOver = false;
 let conn = null, peer = null;
+let gameActive = false;   // true while a match is live (nav guard)
 
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
@@ -437,7 +620,10 @@ let pieceAt = new Array(SIZE).fill(null); // DOM element of the piece at each in
 
 // Static layers: grid lines, point dots, and invisible tap targets. Built once.
 function buildStatic(){
+  // Keep <defs> (piece gradients); clear only the drawn layers.
+  const defs = svg.querySelector('defs');
   svg.innerHTML = '';
+  if(defs) svg.append(defs);
   linesG = el('g',{}); hintsG = el('g',{}); piecesG = el('g',{}); tapsG = el('g',{});
   svg.append(linesG, hintsG, piecesG, tapsG);
   for(let i=0;i<SIZE;i++){
@@ -445,9 +631,9 @@ function buildStatic(){
     for(const n of ADJ[i]){
       if(n < i) continue;
       const [x2,y2] = px(n);
-      linesG.append(el('line',{x1,y1,x2,y2,stroke:'var(--line)','stroke-width':0.8}));
+      linesG.append(el('line',{x1,y1,x2,y2,stroke:'var(--line)','stroke-width':0.55}));
     }
-    linesG.append(el('circle',{cx:x1,cy:y1,r:1.6,class:'empty'}));
+    linesG.append(el('circle',{cx:x1,cy:y1,r:1.4,class:'empty'}));
     const tap = el('circle',{cx:x1,cy:y1,r:9,fill:'transparent',class:'pt'});
     tap.dataset.i = i;
     tapsG.append(tap);
@@ -483,7 +669,7 @@ function renderHints(){
   hintsG.innerHTML = '';
   for(const h of hints){
     const [x,y] = px(h);
-    hintsG.append(el('circle',{cx:x,cy:y,r:3,class:'hint'}));
+    hintsG.append(el('circle',{cx:x,cy:y,r:2.6,class:'hint'}));
   }
   for(let i=0;i<SIZE;i++){
     if(!pieceAt[i]) continue;
@@ -598,11 +784,11 @@ function showOverlay(kind){
     title.textContent = 'CHIẾN THẮNG';
     sub.textContent = 'Bạn đã gánh sạch bàn cờ';
   } else if(kind === 'lose'){
-    overlay.style.setProperty('--wc', '#8d8478');
+    overlay.style.setProperty('--wc', '#8d94a8');
     title.textContent = 'THẤT BẠI';
     sub.textContent = 'Ván sau gỡ lại nhé';
   } else {
-    overlay.style.setProperty('--wc', '#a2957f');
+    overlay.style.setProperty('--wc', '#d9a2ff');
     title.textContent = 'HÒA CỜ';
     sub.textContent = 'Kẻ tám lạng, người nửa cân';
   }
@@ -653,6 +839,7 @@ function doMove(from, to, broadcast){
 /* ---------- NETWORK ---------- */
 function wire(c){
   conn = c;
+  gameActive = true;
   conn.on('data', m => {
     if(m.t === 'move'){ doMove(m.from, m.to, false); }
     if(m.t === 'rematch'){ resetGame(); setStatus('Ván mới bắt đầu.'); }
@@ -667,7 +854,7 @@ function wire(c){
     if(m.t === 'draw-accept'){ endDraw(); }
     if(m.t === 'draw-decline'){ setStatus('Đối thủ từ chối hòa.'); setTimeout(updateStatus, 1800); }
   });
-  conn.on('close', () => { setStatus('Mất kết nối.'); conn = null; refreshPlayers(); });
+  conn.on('close', () => { setStatus('Mất kết nối.'); conn = null; gameActive = false; refreshPlayers(); });
   conn.on('error', () => setStatus('Lỗi kết nối.'));
   document.getElementById('createBtn').style.display = 'none';
   document.getElementById('linkBox').style.display = 'none';
@@ -693,95 +880,95 @@ document.getElementById('copyBtn').onclick = async () => {
   let ok = false;
   try {
     if(navigator.clipboard && window.isSecureContext){
-      await navigator.clipboard.writeText(matchUrl);
-      ok = true;
-    } else {
-      input.select();
-      input.setSelectionRange(0, 99999);
-      ok = document.execCommand('copy');
-    }
-  } catch(e){ ok = false; }
+	  await navigator.clipboard.writeText(matchUrl);
+	  ok = true;
+	  } else {
+	  input.select();
+	  input.setSelectionRange(0, 99999);
+	  ok = document.execCommand('copy');
+	  }
+	  } catch(e){ ok = false; }
 
-  if(ok){
-    btn.textContent = '✓ Đã sao chép!';
-    btn.classList.add('ok');
-    setTimeout(() => { btn.textContent = '📋 Sao chép link'; btn.classList.remove('ok'); }, 1800);
-  } else {
-    btn.textContent = 'Hãy chọn và sao chép thủ công';
-    input.select();
-    setTimeout(() => { btn.textContent = '📋 Sao chép link'; }, 2500);
-  }
-};
+	  if(ok){
+	  btn.textContent = '✓ ĐÃ SAO CHÉP';
+	  btn.classList.add('ok');
+	  setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; btn.classList.remove('ok'); }, 1800);
+	  } else {
+	  btn.textContent = 'HÃY SAO CHÉP THỦ CÔNG';
+	  input.select();
+	  setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; }, 2500);
+	  }
+	  };
 
-const hostId = location.hash.slice(1);
+	  const hostId = location.hash.slice(1);
 
-/* ============================================================
-   TURN SERVER — needed to connect across different networks.
-   Paste your credential from the Metered dashboard below.
-   (TURN Server page → the "credential" value in the code block)
-   ============================================================ */
-const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
-const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
+	  /* ============================================================
+	  TURN SERVER — needed to connect across different networks.
+	  Paste your credential from the Metered dashboard below.
+	  (TURN Server page → the "credential" value in the code block)
+	  ============================================================ */
+	  const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
+	  const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
 
-const iceServers = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun.relay.metered.ca:80' },
-];
-if(TURN_CREDENTIAL !== 'PASTE_YOUR_CREDENTIAL_HERE'){
-  iceServers.push(
-    { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-    { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-    { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-    { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-  );
-}
+	  const iceServers = [
+	  { urls: 'stun:stun.l.google.com:19302' },
+	  { urls: 'stun:stun.relay.metered.ca:80' },
+	  ];
+	  if(TURN_CREDENTIAL !== 'PASTE_YOUR_CREDENTIAL_HERE'){
+	  iceServers.push(
+	  { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+	  { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+	  { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+	  { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+	  );
+	  }
 
-peer = new Peer({ config: { iceServers } });
-peer.on('error', err => setStatus('Lỗi: ' + err.type));
+	  peer = new Peer({ config: { iceServers } });
+	  peer.on('error', err => setStatus('Lỗi: ' + err.type));
 
-if(hostId){
-  // ---- GUEST ----
-  myColor = 2;
-  setStatus('Đang kết nối…');
-  // If the tunnel can't be established in 15s, tell the user instead of hanging
-  const connTimer = setTimeout(() => {
-    if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
-  }, 15000);
-  peer.on('open', () => {
-    const c = peer.connect(hostId, {reliable:true});
-    c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
-    c.on('error', () => setStatus('Không kết nối được. Kiểm tra lại link.'));
-  });
-  document.getElementById('createBtn').style.display = 'none';
-} else {
-  // ---- HOST ----
-  myColor = 1;
-  peer.on('open', id => {
-    setStatus('Bấm "Tạo ván mới" để lấy link.');
-    document.getElementById('createBtn').onclick = () => {
-      matchUrl = location.origin + location.pathname + '#' + id;
-      document.getElementById('link').value = matchUrl;
-      document.getElementById('linkBox').style.display = 'block';
-      document.getElementById('createBtn').style.display = 'none';
-      setStatus('Đang chờ đối thủ vào…');
-    };
-  });
-  peer.on('connection', c => {
-    c.on('open', () => { wire(c); setStatus('Đối thủ đã vào! Bạn cầm quân Trắng, đi trước.'); updateStatus(); });
-  });
-}
+	  if(hostId){
+	  // ---- GUEST ----
+	  myColor = 2;
+	  setStatus('Đang kết nối…');
+	  // If the tunnel can't be established in 15s, tell the user instead of hanging
+	  const connTimer = setTimeout(() => {
+	  if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
+	  }, 15000);
+	  peer.on('open', () => {
+	  const c = peer.connect(hostId, {reliable:true});
+	  c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
+	  c.on('error', () => setStatus('Không kết nối được. Kiểm tra lại link.'));
+	  });
+	  document.getElementById('createBtn').style.display = 'none';
+	  } else {
+	  // ---- HOST ----
+	  myColor = 1;
+	  peer.on('open', id => {
+	  setStatus('Bấm "Tạo ván mới" để lấy link.');
+	  document.getElementById('createBtn').onclick = () => {
+	  matchUrl = location.origin + location.pathname + '#' + id;
+	  document.getElementById('link').value = matchUrl;
+	  document.getElementById('linkBox').style.display = 'block';
+	  document.getElementById('createBtn').style.display = 'none';
+	  setStatus('Đang chờ đối thủ vào…');
+	  };
+	  });
+	  peer.on('connection', c => {
+	  c.on('open', () => { wire(c); setStatus('Đối thủ đã vào! Bạn cầm quân Trắng, đi trước.'); updateStatus(); });
+	  });
+	  }
 
-function endDraw(){
-  gameOver = true;
-  setStatus('🤝 Ván hòa.');
-  document.getElementById('drawBtn').style.display = 'none';
-  document.getElementById('rematchBtn').style.display = 'block';
-  refreshPlayers();
-  setTimeout(() => showOverlay('draw'), 300);
-}
+	  function endDraw(){
+	  gameOver = true;
+	  setStatus('🤝 Ván hòa.');
+	  document.getElementById('drawBtn').style.display = 'none';
+	  document.getElementById('rematchBtn').style.display = 'block';
+	  refreshPlayers();
+	  setTimeout(() => showOverlay('draw'), 300);
+	  }
 
-document.getElementById('drawBtn').onclick = () => {
-  if(conn && conn.open){
+	  document.getElementById('drawBtn').onclick = () => {
+	  if(conn && conn.open){
     conn.send({t:'draw-offer'});
     setStatus('Đã gửi lời xin hòa…');
   }
@@ -792,8 +979,16 @@ document.getElementById('rematchBtn').onclick = () => {
   resetGame();
 };
 
+/* ---------- NAV GUARD ----------
+   Warn before leaving while a match is live, since navigating away
+   tears down the WebRTC connection. */
+window.addEventListener('beforeunload', e => {
+  if(gameActive && !gameOver){ e.preventDefault(); e.returnValue = ''; }
+});
+
 buildStatic();
 syncPieces();
+requestAnimationFrame(() => document.body.classList.add('ready'));
 </script>
 </body>
 </html>
