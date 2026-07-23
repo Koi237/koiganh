@@ -745,16 +745,18 @@ function hasAnyMove(b, side){
 
 /* ---------- AI ENGINE (Đấu với máy) ----------
    Ba mức:  easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
-            hard = minimax 2 nước, nhưng 22% số nước chỉ nhìn 1 nước —
+            hard = minimax 2 nước, nhưng hay sơ hở: 15% số nước đi đại một
+                   nước bất kỳ (có thể dâng quân), 22% chỉ nhìn 1 nước —
                    thấy miếng ăn mà không thấy đòn đáp, nên sập bẫy được;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
    Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
    quay về thế cờ đã xuất hiện, nặng dần theo số lần lặp (AI_REP × count).
    Pure functions only — no DOM in this block (the test harness slices
    everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
-const AI_DEPTH   = { hard: 2, chal: 5 };
-const AI_NOISE   = { hard: 4, chal: 0.6 };  // hard is deliberately fallible
-const AI_BLUNDER = { hard: 0.22 };  // chance to look only 1 ply (falls for traps)
+const AI_DEPTH    = { hard: 2, chal: 5 };
+const AI_NOISE    = { hard: 10, chal: 0.6 };  // hard is deliberately sloppy
+const AI_BLUNDER  = { hard: 0.22 };  // chance to look only 1 ply (falls for traps)
+const AI_CARELESS = { hard: 0.15 };  // chance to just play any legal move (hangs stones)
 const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
 const AI_REP  = 12;   // per prior occurrence of the position a move returns to
 
@@ -838,6 +840,13 @@ function aiChooseMove(b, side, level, lastMove, seen){
       return caps[(Math.random() * caps.length) | 0];
     return moves[(Math.random() * moves.length) | 0];
   }
+
+  // The careless lapse: sometimes it just moves — any legal move at all,
+  // no reading, no eval. This is where it hands you stones: a random step
+  // can land a piece right where you can gánh it. It is what makes the
+  // middle level punishable rather than merely trap-able.
+  if(Math.random() < (AI_CARELESS[level] || 0))
+    return moves[(Math.random() * moves.length) | 0];
 
   let depth = AI_DEPTH[level] || 2;
   const noise = AI_NOISE[level] || 0;
