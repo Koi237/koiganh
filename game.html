@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Cờ Gánh</title>
+<style>
+  :root {
+    --bg: #1b1714;
+    --panel: #262019;
+    --line: #8a7355;
+    --board: #d9bb8a;
+    --board2: #c9a877;
+    --white: #f5efe3;
+    --black: #2c2622;
+    --accent: #d98b3a;
+    --text: #e8ddcb;
+    --muted: #a2957f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 12px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 4px 0 10px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  #status {
+    font-size: 15px;
+    min-height: 22px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: var(--accent);
+  }
+  #boardWrap {
+    position: relative;
+    width: min(92vw, 380px);
+    height: min(92vw, 380px);
+    background: var(--board);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.45);
+    touch-action: manipulation;
+  }
+  svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pt {
+    cursor: pointer;
+  }
+  .piece-w { fill: var(--white); stroke: #b9ac96; stroke-width: 1.5; }
+  .piece-b { fill: var(--black); stroke: #6a5c4d; stroke-width: 1.5; }
+  .empty   { fill: rgba(0,0,0,.18); }
+  .sel     { stroke: var(--accent); stroke-width: 3.5; }
+  .hint    { fill: var(--accent); opacity: .55; }
+  #panel {
+    margin-top: 14px;
+    width: min(92vw, 380px);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  button {
+    background: var(--accent);
+    color: #1b1714;
+    border: 0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  button.ghost {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  #linkBox {
+    display: none;
+    margin-top: 6px;
+  }
+  #link {
+    width: 100%;
+    background: #17130f;
+    color: var(--text);
+    border: 1px solid #3a3128;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: monospace;
+  }
+  .small { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 6px 0 0; }
+  #topSlot, #bottomSlot { width: min(92vw, 380px); }
+  #topSlot { margin-bottom: 8px; }
+  #bottomSlot { margin-top: 8px; }
+  .pcard {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #17130f;
+    border: 2px solid #3a3128;
+    border-radius: 10px;
+    padding: 8px 12px;
+    transition: border-color .25s, background .25s, box-shadow .25s;
+  }
+  .pcard.active {
+    border-color: var(--accent);
+    background: #2b1e11;
+    animation: glow 1.6s ease-in-out infinite;
+  }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 0 1px var(--accent), 0 0 10px rgba(217,139,58,.25); }
+    50%     { box-shadow: 0 0 0 1px var(--accent), 0 0 22px rgba(217,139,58,.6); }
+  }
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    background: #262019;
+    border: 3px solid #3a3128;
+    transition: border-color .25s, transform .25s;
+  }
+  .av-w { border-color: var(--white); }
+  .av-b { border-color: #555; }
+  .pcard.active .avatar {
+    border-color: var(--accent);
+    transform: scale(1.08);
+    animation: avpulse 1.6s ease-in-out infinite;
+  }
+  @keyframes avpulse {
+    0%,100% { transform: scale(1.04); }
+    50%     { transform: scale(1.12); }
+  }
+  .info { flex: 1; min-width: 0; }
+  .who  { font-size: 14px; font-weight: 600; }
+  .meta { font-size: 12px; color: var(--muted); }
+  .cnt  { font-weight: 700; color: var(--text); }
+  .turnTag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .pcard.active .turnTag { opacity: 1; animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:.55} 50%{opacity:1} }
+  /* --- piece animation --- */
+  .pieceG {
+    transition: transform .28s cubic-bezier(.3,1.3,.5,1); /* slight overshoot */
+  }
+  .pieceG circle {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .flipping {
+    animation: flipAnim .44s ease-in-out;
+  }
+  @keyframes flipAnim {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(.05); }
+    100% { transform: scale(1); }
+  }
+  /* --- end-of-game --- */
+  .winPulse { animation: winPulse .55s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes winPulse {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.35); }
+  }
+  .losePiece {
+    opacity: .28;
+    filter: grayscale(.9);
+    transition: opacity .9s ease, filter .9s ease;
+  }
+  #winOverlay {
+    position: fixed; inset: 0;
+    background: rgba(14,11,8,.86);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .45s ease;
+    z-index: 50;
+    --wc: var(--accent);
+  }
+  #winOverlay.show { opacity: 1; pointer-events: auto; }
+  .wLine {
+    width: 64px; height: 2px;
+    background: var(--wc);
+    transform: scaleX(0);
+    border-radius: 1px;
+  }
+  #winOverlay.show .wLine { animation: lineGrow .55s .15s cubic-bezier(.2,.9,.2,1) forwards; }
+  @keyframes lineGrow { to { transform: scaleX(1); } }
+  .wTitle {
+    font-size: clamp(34px, 9vw, 52px);
+    font-weight: 700;
+    color: var(--wc);
+    letter-spacing: .45em;
+    text-indent: .45em;   /* re-center: letter-spacing pads the right side only */
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  #winOverlay.show .wTitle { animation: titleIn .8s .3s cubic-bezier(.16,1,.3,1) forwards; }
+  @keyframes titleIn {
+    to { opacity: 1; transform: translateY(0); letter-spacing: .14em; text-indent: .14em; }
+  }
+  .wSub {
+    font-size: 14px;
+    color: var(--muted);
+    opacity: 0;
+  }
+  #winOverlay.show .wSub { animation: fadeUp .6s .8s ease forwards; }
+  .wBtn {
+    width: auto;
+    padding: 10px 34px;
+    background: transparent;
+    color: var(--wc);
+    border: 1px solid var(--wc);
+    border-radius: 20px;
+    opacity: 0;
+    margin: 4px 0 0;
+  }
+  #winOverlay.show .wBtn { animation: fadeUp .6s 1s ease forwards; }
+  .wHint {
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0;
+    letter-spacing: .1em;
+  }
+  #winOverlay.show .wHint { animation: fadeUp .6s 1.6s ease forwards; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
+  #copyBtn { background: #3a3128; color: var(--text); }
+  #copyBtn.ok { background: #4a7c3f; color: #fff; }
+</style>
+</head>
+<body>
+
+<h1>CỜ GÁNH</h1>
+<div id="status">Đang khởi tạo…</div>
+
+<div id="topSlot"></div>
+
+<div id="boardWrap">
+  <svg id="board" viewBox="0 0 100 100"></svg>
+</div>
+
+<div id="bottomSlot"></div>
+
+<div id="winOverlay">
+  <div class="wLine"></div>
+  <div class="wTitle" id="wTitle">CHIẾN THẮNG</div>
+  <div class="wSub" id="wSub"></div>
+  <button class="wBtn" id="wRematch">Chơi lại</button>
+  <div class="wHint">chạm để đóng</div>
+</div>
+
+<!-- cards start here; JS moves them into topSlot/bottomSlot -->
+<div style="display:none" id="cardStore">
+  <div class="pcard" id="pw">
+    <div class="avatar av-w">🙂</div>
+    <div class="info">
+      <div class="who">Trắng · <span id="sw">—</span></div>
+      <div class="meta"><span class="cnt" id="cw">8</span> quân</div>
+    </div>
+    <div class="turnTag">Đang đi…</div>
+  </div>
+  <div class="pcard" id="pb">
+    <div class="avatar av-b">😎</div>
+    <div class="info">
+      <div class="who">Đen · <span id="sb">—</span></div>
+      <div class="meta"><span class="cnt" id="cb">8</span> quân</div>
+    </div>
+    <div class="turnTag">Đang đi…</div>
+  </div>
+</div>
+
+<div id="panel">
+  <button id="createBtn">Tạo ván mới</button>
+  <div id="linkBox">
+    <input id="link" readonly onclick="this.select()">
+    <button id="copyBtn" style="margin-top:8px">📋 Sao chép link</button>
+    <p class="small">Gửi link này cho bạn của bạn. Cả hai phải mở cùng lúc.</p>
+  </div>
+  <button id="drawBtn" class="ghost" style="display:none">Xin hòa</button>
+  <button id="rematchBtn" class="ghost" style="display:none">Chơi lại</button>
+  <p class="small">
+    <b>Luật:</b> Đi 1 bước theo đường kẻ. <b>Gánh:</b> quân địch bị kẹp hai đầu sẽ đổi màu.
+    <b>Vây:</b> nhóm quân địch không còn nước đi sẽ đổi màu. Hết quân là thua.
+  </p>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+/* ---------- BOARD MODEL ---------- */
+// 25 points, index = row*5 + col
+const N = 5, SIZE = N*N;
+const idx = (r,c) => r*5+c;
+const rc  = i => [Math.floor(i/5), i%5];
+
+// Adjacency: orthogonal everywhere; diagonals only where lines are drawn.
+// Diagonal lines exist on points where (r+c) is even.
+function neighbors(i){
+  const [r,c] = rc(i), out = [];
+  const push = (rr,cc) => { if(rr>=0&&rr<5&&cc>=0&&cc<5) out.push(idx(rr,cc)); };
+  push(r-1,c); push(r+1,c); push(r,c-1); push(r,c+1);
+  if((r+c)%2===0){ push(r-1,c-1); push(r-1,c+1); push(r+1,c-1); push(r+1,c+1); }
+  return out;
+}
+const ADJ = Array.from({length:SIZE}, (_,i)=>neighbors(i));
+
+// Pairs of opposite neighbours through each point (for gánh detection)
+function oppositePairs(i){
+  const [r,c] = rc(i), pairs = [];
+  const dirs = [[-1,0],[0,-1],[-1,-1],[-1,1]];
+  for(const [dr,dc] of dirs){
+    if(Math.abs(dr)===1 && Math.abs(dc)===1 && (r+c)%2!==0) continue;
+    const a=[r+dr,c+dc], b=[r-dr,c-dc];
+    if(a[0]>=0&&a[0]<5&&a[1]>=0&&a[1]<5&&b[0]>=0&&b[0]<5&&b[1]>=0&&b[1]<5)
+      pairs.push([idx(a[0],a[1]), idx(b[0],b[1])]);
+  }
+  return pairs;
+}
+const PAIRS = Array.from({length:SIZE}, (_,i)=>oppositePairs(i));
+
+// 0 = empty, 1 = white (bottom), 2 = black (top)
+// Traditional layout, 8 per side:
+//   5 on your back row, 2 on the outer edges of your 2nd row,
+//   1 on the middle row at your left. Rotationally symmetric.
+function initialBoard(){
+  const b = new Array(SIZE).fill(0);
+  for(let c=0;c<5;c++){ b[idx(0,c)] = 2; b[idx(4,c)] = 1; }
+  b[idx(1,0)] = 2; b[idx(1,4)] = 2;   // black 2nd row edges
+  b[idx(3,0)] = 1; b[idx(3,4)] = 1;   // white 2nd row edges (from white's side)
+  b[idx(2,4)] = 2;                    // black's 8th piece, middle row
+  b[idx(2,0)] = 1;                    // white's 8th piece, middle row
+  return b;
+}
+
+/* ---------- RULES ---------- */
+function legalMoves(board, from){
+  return ADJ[from].filter(t => board[t] === 0);
+}
+
+function applyMove(board, from, to){
+  const b = board.slice();
+  const me = b[from];
+  b[to] = me; b[from] = 0;
+  applyGanh(b, to, me);
+  applyVay(b, me);
+  return b;
+}
+
+// Gánh: enemy sandwiched on both sides of the moved piece flips
+function applyGanh(b, at, me){
+  const foe = me === 1 ? 2 : 1;
+  for(const [a,c] of PAIRS[at]){
+    if(b[a] === foe && b[c] === foe){ b[a] = me; b[c] = me; }
+  }
+}
+
+// Vây: any enemy group with no adjacent empty point flips
+function applyVay(b, me){
+  const foe = me === 1 ? 2 : 1;
+  const seen = new Array(SIZE).fill(false);
+  for(let i=0;i<SIZE;i++){
+    if(b[i] !== foe || seen[i]) continue;
+    const group = [], stack = [i];
+    seen[i] = true;
+    let free = false;
+    while(stack.length){
+      const cur = stack.pop();
+      group.push(cur);
+      for(const n of ADJ[cur]){
+        if(b[n] === 0) free = true;
+        else if(b[n] === foe && !seen[n]){ seen[n] = true; stack.push(n); }
+      }
+    }
+    if(!free) for(const g of group) b[g] = me;
+  }
+}
+
+function count(b, side){ return b.reduce((s,v)=>s+(v===side?1:0),0); }
+
+function hasAnyMove(b, side){
+  for(let i=0;i<SIZE;i++)
+    if(b[i]===side && ADJ[i].some(n=>b[n]===0)) return true;
+  return false;
+}
+
+/* ---------- STATE ---------- */
+let board = initialBoard();
+let turn = 1;            // 1 = white moves first
+let myColor = null;      // 1 or 2, set on connect
+let selected = null;
+let hints = [];
+let gameOver = false;
+let conn = null, peer = null;
+
+/* ---------- RENDER ---------- */
+const svg = document.getElementById('board');
+const M = 12, STEP = (100 - 2*M) / 4;
+// Display-only flip: Black (player 2) sees the board rotated 180° so their
+// own pieces sit at the bottom. Indices and game logic are unchanged.
+const px = i => {
+  let [r,c] = rc(i);
+  if(myColor === 2){ r = 4 - r; c = 4 - c; }
+  return [M + c*STEP, M + r*STEP];
+};
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs) => {
+  const e = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+};
+
+let linesG, hintsG, piecesG, tapsG;
+let pieceAt = new Array(SIZE).fill(null); // DOM element of the piece at each index
+
+// Static layers: grid lines, point dots, and invisible tap targets. Built once.
+function buildStatic(){
+  svg.innerHTML = '';
+  linesG = el('g',{}); hintsG = el('g',{}); piecesG = el('g',{}); tapsG = el('g',{});
+  svg.append(linesG, hintsG, piecesG, tapsG);
+  for(let i=0;i<SIZE;i++){
+    const [x1,y1] = px(i);
+    for(const n of ADJ[i]){
+      if(n < i) continue;
+      const [x2,y2] = px(n);
+      linesG.append(el('line',{x1,y1,x2,y2,stroke:'var(--line)','stroke-width':0.8}));
+    }
+    linesG.append(el('circle',{cx:x1,cy:y1,r:1.6,class:'empty'}));
+    const tap = el('circle',{cx:x1,cy:y1,r:9,fill:'transparent',class:'pt'});
+    tap.dataset.i = i;
+    tapsG.append(tap);
+  }
+}
+
+function makePiece(i, side){
+  const [x,y] = px(i);
+  const g = el('g',{class:'pieceG'});
+  g.style.transform = `translate(${x}px, ${y}px)`;
+  const c = el('circle',{cx:0,cy:0,r:6.5,class:side===1?'piece-w':'piece-b'});
+  c.style.pointerEvents = 'none';
+  g.style.pointerEvents = 'none';
+  g.append(c);
+  return g;
+}
+
+// Full rebuild of pieces from the board array (init, reset, or safety resync)
+function syncPieces(){
+  piecesG.innerHTML = '';
+  pieceAt = new Array(SIZE).fill(null);
+  for(let i=0;i<SIZE;i++){
+    if(board[i] !== 0){
+      const g = makePiece(i, board[i]);
+      pieceAt[i] = g;
+      piecesG.append(g);
+    }
+  }
+  refreshPlayers();
+}
+
+function renderHints(){
+  hintsG.innerHTML = '';
+  for(const h of hints){
+    const [x,y] = px(h);
+    hintsG.append(el('circle',{cx:x,cy:y,r:3,class:'hint'}));
+  }
+  for(let i=0;i<SIZE;i++){
+    if(!pieceAt[i]) continue;
+    pieceAt[i].firstChild.classList.toggle('sel', selected === i);
+  }
+}
+
+// Slide the moved piece, then shrink-swap-grow each captured piece.
+function animateMove(from, to, flips){
+  const g = pieceAt[from];
+  if(!g){ syncPieces(); return; }        // desync safety net
+  pieceAt[from] = null;
+  pieceAt[to] = g;
+  const [x,y] = px(to);
+  g.style.transform = `translate(${x}px, ${y}px)`;
+
+  const newSide = board[to];             // board is already updated
+  setTimeout(() => {
+    for(const f of flips){
+      const fg = pieceAt[f];
+      if(!fg) continue;
+      const c = fg.firstChild;
+      c.classList.add('flipping');
+      // swap color at the midpoint of the shrink, when the piece is invisible
+      setTimeout(() => { c.setAttribute('class', (newSide===1?'piece-w':'piece-b') + ' flipping'); }, 220);
+      setTimeout(() => { c.classList.remove('flipping'); }, 460);
+    }
+    refreshPlayers();
+  }, 240);
+}
+
+function setStatus(t){ document.getElementById('status').textContent = t; }
+
+// Updates both player cards: piece count, whose turn, and card position.
+function refreshPlayers(){
+  document.getElementById('cw').textContent = count(board,1);
+  document.getElementById('cb').textContent = count(board,2);
+
+  const cards = {1: document.getElementById('pw'), 2: document.getElementById('pb')};
+  const subs  = {1: document.getElementById('sw'), 2: document.getElementById('sb')};
+
+  // My card below the board, opponent's above — matching the flipped view.
+  const me = myColor || 1, opp = me === 1 ? 2 : 1;
+  const top = document.getElementById('topSlot'), bot = document.getElementById('bottomSlot');
+  if(cards[opp].parentElement !== top) top.append(cards[opp]);
+  if(cards[me].parentElement !== bot) bot.append(cards[me]);
+
+  for(const side of [1,2]){
+    const isMe = (side === myColor);
+    let label;
+    if(!conn && !isMe) label = 'đang chờ…';
+    else if(isMe)      label = 'Bạn';
+    else               label = 'Đối thủ';
+    subs[side].textContent = label;
+    cards[side].classList.toggle('active', !gameOver && !!conn && turn === side);
+  }
+}
+
+function updateStatus(){
+  refreshPlayers();
+  if(gameOver) return;
+  if(!conn) return;
+  const name = c => c === 1 ? 'Trắng' : 'Đen';
+  if(turn === myColor) setStatus(`▶ Lượt bạn (${name(myColor)})`);
+  else setStatus(`Đợi đối thủ (${name(turn)})…`);
+}
+
+function checkEnd(){
+  const w = count(board,1), b = count(board,2);
+  if(w === 0 || !hasAnyMove(board,1)){ finish(2); return true; }
+  if(b === 0 || !hasAnyMove(board,2)){ finish(1); return true; }
+  return false;
+}
+
+function finish(winner){
+  gameOver = true;
+  const won = winner === myColor;
+  setStatus(won ? '🎉 Bạn thắng!' : 'Bạn thua.');
+  document.getElementById('drawBtn').style.display = 'none';
+  document.getElementById('rematchBtn').style.display = 'block';
+  refreshPlayers();
+  celebrate(winner, won);
+}
+
+// Winner's pieces ripple in a stagger; loser's fade out. Then the overlay.
+function celebrate(winner, won){
+  let delay = 0;
+  for(let i=0;i<SIZE;i++){
+    const g = pieceAt[i];
+    if(!g) continue;
+    const c = g.firstChild;
+    if(board[i] === winner){
+      setTimeout(() => {
+        c.classList.remove('flipping');
+        c.classList.add('winPulse');
+        setTimeout(() => c.classList.remove('winPulse'), 600);
+      }, 500 + delay);
+      delay += 55;
+    } else {
+      setTimeout(() => c.classList.add('losePiece'), 500);
+    }
+  }
+  setTimeout(() => showOverlay(won ? 'win' : 'lose'), 900 + delay);
+}
+
+const overlay = document.getElementById('winOverlay');
+function showOverlay(kind){
+  const title = document.getElementById('wTitle');
+  const sub = document.getElementById('wSub');
+  if(kind === 'win'){
+    overlay.style.setProperty('--wc', 'var(--accent)');
+    title.textContent = 'CHIẾN THẮNG';
+    sub.textContent = 'Bạn đã gánh sạch bàn cờ';
+  } else if(kind === 'lose'){
+    overlay.style.setProperty('--wc', '#8d8478');
+    title.textContent = 'THẤT BẠI';
+    sub.textContent = 'Ván sau gỡ lại nhé';
+  } else {
+    overlay.style.setProperty('--wc', '#a2957f');
+    title.textContent = 'HÒA CỜ';
+    sub.textContent = 'Kẻ tám lạng, người nửa cân';
+  }
+  overlay.classList.add('show');
+}
+function hideOverlay(){ overlay.classList.remove('show'); }
+overlay.addEventListener('click', e => { if(e.target === overlay) hideOverlay(); });
+document.getElementById('wRematch').addEventListener('click', () => {
+  hideOverlay();
+  document.getElementById('rematchBtn').click();
+});
+
+/* ---------- INPUT ---------- */
+svg.addEventListener('click', e => {
+  const t = e.target.closest('.pt');
+  if(!t) return;
+  const i = +t.dataset.i;
+  if(gameOver || !conn || turn !== myColor) return;
+
+  if(selected !== null && hints.includes(i)){
+    doMove(selected, i, true);
+    return;
+  }
+  if(board[i] === myColor){
+    selected = i;
+    hints = legalMoves(board, i);
+  } else {
+    selected = null; hints = [];
+  }
+  renderHints();
+});
+
+function doMove(from, to, broadcast){
+  const prev = board;
+  board = applyMove(board, from, to);
+  // Flips = points whose color changed, other than the vacated and landed points
+  const flips = [];
+  for(let i=0;i<SIZE;i++)
+    if(i!==from && i!==to && board[i]!==prev[i]) flips.push(i);
+  turn = turn === 1 ? 2 : 1;
+  selected = null; hints = [];
+  renderHints();
+  animateMove(from, to, flips);
+  if(broadcast && conn && conn.open) conn.send({t:'move', from, to});
+  if(!checkEnd()) updateStatus();
+}
+
+/* ---------- NETWORK ---------- */
+function wire(c){
+  conn = c;
+  conn.on('data', m => {
+    if(m.t === 'move'){ doMove(m.from, m.to, false); }
+    if(m.t === 'rematch'){ resetGame(); setStatus('Ván mới bắt đầu.'); }
+    if(m.t === 'draw-offer'){
+      if(confirm('Đối thủ xin hòa. Bạn đồng ý?')){
+        conn.send({t:'draw-accept'});
+        endDraw();
+      } else {
+        conn.send({t:'draw-decline'});
+      }
+    }
+    if(m.t === 'draw-accept'){ endDraw(); }
+    if(m.t === 'draw-decline'){ setStatus('Đối thủ từ chối hòa.'); setTimeout(updateStatus, 1800); }
+  });
+  conn.on('close', () => { setStatus('Mất kết nối.'); conn = null; refreshPlayers(); });
+  conn.on('error', () => setStatus('Lỗi kết nối.'));
+  document.getElementById('createBtn').style.display = 'none';
+  document.getElementById('linkBox').style.display = 'none';
+  document.getElementById('drawBtn').style.display = 'block';
+  updateStatus();
+}
+
+function resetGame(){
+  board = initialBoard();
+  turn = 1; selected = null; hints = []; gameOver = false;
+  document.getElementById('rematchBtn').style.display = 'none';
+  if(conn) document.getElementById('drawBtn').style.display = 'block';
+  hideOverlay();
+  syncPieces(); renderHints(); updateStatus();
+}
+
+let matchUrl = '';
+
+// Copy link. navigator.clipboard needs HTTPS or localhost, so fall back to execCommand.
+document.getElementById('copyBtn').onclick = async () => {
+  const btn = document.getElementById('copyBtn');
+  const input = document.getElementById('link');
+  let ok = false;
+  try {
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(matchUrl);
+      ok = true;
+    } else {
+      input.select();
+      input.setSelectionRange(0, 99999);
+      ok = document.execCommand('copy');
+    }
+  } catch(e){ ok = false; }
+
+  if(ok){
+    btn.textContent = '✓ Đã sao chép!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = '📋 Sao chép link'; btn.classList.remove('ok'); }, 1800);
+  } else {
+    btn.textContent = 'Hãy chọn và sao chép thủ công';
+    input.select();
+    setTimeout(() => { btn.textContent = '📋 Sao chép link'; }, 2500);
+  }
+};
+
+const hostId = location.hash.slice(1);
+
+/* ============================================================
+   TURN SERVER — needed to connect across different networks.
+   Paste your credential from the Metered dashboard below.
+   (TURN Server page → the "credential" value in the code block)
+   ============================================================ */
+const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
+const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
+
+const iceServers = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+];
+if(TURN_CREDENTIAL !== 'PASTE_YOUR_CREDENTIAL_HERE'){
+  iceServers.push(
+    { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+  );
+}
+
+peer = new Peer({ config: { iceServers } });
+peer.on('error', err => setStatus('Lỗi: ' + err.type));
+
+if(hostId){
+  // ---- GUEST ----
+  myColor = 2;
+  setStatus('Đang kết nối…');
+  // If the tunnel can't be established in 15s, tell the user instead of hanging
+  const connTimer = setTimeout(() => {
+    if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
+  }, 15000);
+  peer.on('open', () => {
+    const c = peer.connect(hostId, {reliable:true});
+    c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
+    c.on('error', () => setStatus('Không kết nối được. Kiểm tra lại link.'));
+  });
+  document.getElementById('createBtn').style.display = 'none';
+} else {
+  // ---- HOST ----
+  myColor = 1;
+  peer.on('open', id => {
+    setStatus('Bấm "Tạo ván mới" để lấy link.');
+    document.getElementById('createBtn').onclick = () => {
+      matchUrl = location.origin + location.pathname + '#' + id;
+      document.getElementById('link').value = matchUrl;
+      document.getElementById('linkBox').style.display = 'block';
+      document.getElementById('createBtn').style.display = 'none';
+      setStatus('Đang chờ đối thủ vào…');
+    };
+  });
+  peer.on('connection', c => {
+    c.on('open', () => { wire(c); setStatus('Đối thủ đã vào! Bạn cầm quân Trắng, đi trước.'); updateStatus(); });
+  });
+}
+
+function endDraw(){
+  gameOver = true;
+  setStatus('🤝 Ván hòa.');
+  document.getElementById('drawBtn').style.display = 'none';
+  document.getElementById('rematchBtn').style.display = 'block';
+  refreshPlayers();
+  setTimeout(() => showOverlay('draw'), 300);
+}
+
+document.getElementById('drawBtn').onclick = () => {
+  if(conn && conn.open){
+    conn.send({t:'draw-offer'});
+    setStatus('Đã gửi lời xin hòa…');
+  }
+};
+
+document.getElementById('rematchBtn').onclick = () => {
+  if(conn && conn.open) conn.send({t:'rematch'});
+  resetGame();
+};
+
+buildStatic();
+syncPieces();
+</script>
+</body>
+</html>
