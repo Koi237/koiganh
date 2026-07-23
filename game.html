@@ -582,7 +582,7 @@
   <div class="wLine"></div>
   <div class="wTitle" id="wTitle">CHIẾN THẮNG</div>
   <div class="wSub" id="wSub"></div>
-  <button class="wBtn" id="wRematch">Tôi quá yếu</button>
+  <button class="wBtn" id="wRematch">CHƠI LẠI</button>
   <div class="wHint">chạm để đóng</div>
 </div>
 
@@ -638,7 +638,7 @@
     <p class="small">Gửi link này cho bạn của bạn. Cả hai phải mở cùng lúc.</p>
   </div>
   <button id="drawBtn" class="ghost" style="display:none">XIN HÒA</button>
-  <button id="rematchBtn" class="ghost" style="display:none">Tôi quá yếu</button>
+  <button id="rematchBtn" class="ghost" style="display:none">CHƠI LẠI</button>
   <p class="small">
     <b>Luật:</b> Đi 1 bước theo đường kẻ. <b>Gánh:</b> quân địch bị kẹp hai đầu sẽ đổi màu.
     <b>Vây:</b> nhóm quân địch không còn nước đi sẽ đổi màu. Hết quân là thua.
@@ -745,8 +745,8 @@ function hasAnyMove(b, side){
 
 /* ---------- AI ENGINE (Đấu với máy) ----------
    Ba mức:  easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
-            hard = minimax 2 nước, nhưng hay sơ hở: 8% số nước đi đại một
-                   nước bất kỳ (có thể dâng quân), 40% chỉ nhìn 1 nước —
+            hard = minimax 2 nước, nhưng hay sơ hở: 5% số nước đi đại một
+                   nước bất kỳ (có thể dâng quân), 28% chỉ nhìn 1 nước —
                    thấy miếng ăn mà không thấy đòn đáp, nên sập bẫy được;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
    Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
@@ -755,8 +755,8 @@ function hasAnyMove(b, side){
    everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
 const AI_DEPTH    = { hard: 2, chal: 5 };
 const AI_NOISE    = { hard: 10, chal: 0.6 };  // hard is deliberately sloppy
-const AI_BLUNDER  = { hard: 0.4 };  // chance to look only 1 ply (falls for traps)
-const AI_CARELESS = { hard: 0.8 };  // chance to just play any legal move (hangs stones)
+const AI_BLUNDER  = { hard: 0.28 };  // chance to look only 1 ply (falls for traps)
+const AI_CARELESS = { hard: 0.4 };  // chance to just play any legal move (hangs stones)
 const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
 const AI_REP  = 12;   // per prior occurrence of the position a move returns to
 
@@ -1204,6 +1204,8 @@ function startAIGame(level){
   document.getElementById('linkBox').style.display = 'none';
   document.querySelector('#pb .avatar').textContent = '🤖';
   resetGame();
+  document.getElementById('rematchBtn').textContent = 'Tôi quá yếu';
+  document.getElementById('wRematch').textContent = 'CHƠI LẠI';
   // Keep replay accessible throughout machine mode, not only after game over.
   document.getElementById('rematchBtn').style.display = 'block';
   setStatus(`▶ Lượt bạn (Trắng) — máy mức ${AI_NAMES[level]}`);
