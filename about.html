@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — Koi is love</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  body {
+    background: #050609;
+    color: #e8eaf2;
+    font-family: "Space Grotesk", -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* ---- shared scene layer (identical to the home page) ---- */
+  #scene {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    width: 100dvw; height: 100dvh;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity 1.4s ease .1s;
+    z-index: 0;
+  }
+  body.ready #scene { opacity: 1; }
+  body.grabbing #scene { cursor: grabbing; }
+
+  .vignette {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 1;
+    background:
+      radial-gradient(ellipse 120% 90% at 50% 42%, transparent 55%, rgba(2,3,6,.55) 100%),
+      linear-gradient(to bottom, rgba(3,4,8,.45), transparent 18%),
+      linear-gradient(to top, rgba(3,4,8,.5), transparent 22%);
+  }
+  /* Extra scrim on the left so body copy stays legible over the beam. */
+  .scrim {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 1;
+    background: linear-gradient(100deg,
+      rgba(5,6,9,.94) 0%,
+      rgba(5,6,9,.86) 26%,
+      rgba(5,6,9,.42) 48%,
+      transparent 68%);
+  }
+  .grain {
+    position: fixed; inset: -50%;
+    width: 200%; height: 200%;
+    pointer-events: none; z-index: 2;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grainShift 9s steps(6) infinite;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0,0); }
+    20%  { transform: translate(-2%,1%); }
+    40%  { transform: translate(1%,-2%); }
+    60%  { transform: translate(-1%,2%); }
+    80%  { transform: translate(2%,1%); }
+    100% { transform: translate(0,0); }
+  }
+
+  /* ---- UI shell, same rhythm as the home page ---- */
+  .ui {
+    position: relative; z-index: 3;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(22px, 3.4vw, 44px) clamp(24px, 3.8vw, 52px);
+    pointer-events: none;
+  }
+  .ui header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .brand {
+    font-size: 12.5px;
+    letter-spacing: .42em;
+    font-weight: 700;
+    color: #e6eaf6;
+    text-decoration: none;
+    white-space: nowrap;
+    pointer-events: auto;
+    opacity: 0;
+  }
+  body.ready .brand { opacity: 1; transition: opacity 1.1s ease .9s; }
+
+  nav {
+    display: flex;
+    gap: clamp(18px, 2.4vw, 34px);
+    pointer-events: auto;
+    opacity: 0;
+  }
+  body.ready nav { opacity: 1; transition: opacity 1.1s ease 1.1s; }
+  nav a {
+    position: relative;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .28em;
+    text-decoration: none;
+    color: rgba(220,226,244,.55);
+    padding: 4px 0;
+    transition: color .45s ease;
+    white-space: nowrap;
+  }
+  nav a:hover { color: #eef1fa; }
+  nav a::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, rgba(150,180,255,.9), rgba(220,160,255,.5));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  nav a:hover::after { transform: scaleX(1); }
+  nav a[aria-current="page"] { color: #eef1fa; }
+  nav a[aria-current="page"]::after { transform: scaleX(1); opacity: .6; }
+
+  /* ---- content ---- */
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 48px 0;
+  }
+  .content {
+    max-width: 46ch;
+    pointer-events: auto;
+  }
+  .content > * {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  body.ready .content > * {
+    opacity: 1;
+    transform: none;
+    transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1);
+  }
+  body.ready .content > *:nth-child(1) { transition-delay: 1.25s; }
+  body.ready .content > *:nth-child(2) { transition-delay: 1.40s; }
+  body.ready .content > *:nth-child(3) { transition-delay: 1.52s; }
+  body.ready .content > *:nth-child(4) { transition-delay: 1.64s; }
+  body.ready .content > *:nth-child(5) { transition-delay: 1.76s; }
+  body.ready .content > *:nth-child(6) { transition-delay: 1.88s; }
+  body.ready .content > *:nth-child(7) { transition-delay: 2.00s; }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .34em;
+    color: rgba(220,226,244,.34);
+    margin: 0 0 22px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.4vw, 46px);
+    font-weight: 300;
+    letter-spacing: -.015em;
+    line-height: 1.14;
+    margin: 0 0 26px;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, #8fb4ff 0%, #d9a2ff 52%, #ffb0a0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p {
+    font-size: 14.5px;
+    font-weight: 300;
+    line-height: 1.78;
+    color: rgba(220,226,244,.62);
+    margin: 0 0 16px;
+  }
+  .rule {
+    width: 100%; height: 1px;
+    border: 0;
+    margin: 30px 0 22px;
+    background: linear-gradient(90deg, rgba(150,180,255,.34), rgba(150,180,255,0));
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+    margin: 0 0 30px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .22em;
+    color: rgba(220,226,244,.38);
+  }
+  .cta {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: .28em;
+    font-weight: 500;
+    text-decoration: none;
+    color: #eef1fa;
+    border: 1px solid rgba(160,180,240,.26);
+    padding: 13px 26px;
+    transition: border-color .45s ease, background .45s ease, letter-spacing .45s ease;
+  }
+  .cta:hover {
+    border-color: rgba(180,200,255,.62);
+    background: rgba(120,150,240,.08);
+    letter-spacing: .32em;
+  }
+
+  .hint {
+    align-self: center;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: .34em;
+    color: rgba(220,226,244,.42);
+    white-space: nowrap;
+    opacity: 0;
+  }
+  body.ready .hint { opacity: 1; transition: opacity 1.2s ease 2.6s; }
+  body.touched .hint { opacity: 0; transition: opacity .9s ease; }
+  .hint::before, .hint::after {
+    content: "";
+    display: inline-block;
+    width: 26px; height: 1px;
+    vertical-align: middle;
+    margin: 0 14px 2px;
+    background: linear-gradient(90deg, transparent, rgba(200,210,235,.32));
+  }
+  .hint::after { background: linear-gradient(90deg, rgba(200,210,235,.32), transparent); }
+
+  @media (max-width: 900px) {
+    .scrim {
+      background: linear-gradient(to bottom,
+        rgba(5,6,9,.92) 0%,
+        rgba(5,6,9,.80) 45%,
+        rgba(5,6,9,.62) 100%);
+    }
+    .content { max-width: 100%; }
+  }
+  @media (max-width: 640px) {
+    .ui header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    nav { gap: 20px; }
+    nav a { font-size: 9.5px; letter-spacing: .22em; }
+    .hint { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grain { animation: none; }
+    #scene { transition: opacity .6s ease; }
+    body.ready .content > * { transition-duration: .5s; transition-delay: .2s; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+<div class="scrim"></div>
+<div class="grain"></div>
+
+<div class="ui">
+  <header>
+    <a class="brand" href="../">KOI</a>
+    <nav>
+  <a href="./index.html">HOME</a>
+  <a href="./game.html">CHESS</a>
+  <a href="./about.html" aria-current="page">ABOUT</a>
+</nav>
+  </header>
+
+  <main>
+    <div class="content">
+      <div class="eyebrow">ABOUT</div>
+      <h1>White light, split into <em>something worth keeping</em>.</h1>
+      <p>This is a small personal site. The front page is a prism you can spin — real refraction, traced per wavelength, dispersing a beam into its spectrum.</p>
+      <p>Behind it sits a chess board that connects two browsers directly. Moves travel peer to peer over WebRTC, with no game server in the middle. A relay stands by only for networks that block direct connections.</p>
+      <hr class="rule">
+      <div class="meta">
+        <span>THREE.JS</span>
+        <span>WEBRTC</span>
+        <span>GITHUB PAGES</span>
+      </div>
+      <a class="cta" href="../chess/">PLAY CHESS →</a>
+    </div>
+  </main>
+
+  <div class="hint">THE PRISM STILL TURNS — DRAG IT</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+(() => {
+if (!window.THREE) return;
+
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// About page: push the prism to the right, leaving the left half for copy.
+let SCENE_SHIFT_X = 2.6;
+let CALM = 0.62;   // global damping so the scene sits behind text quietly
+const MOT = REDUCED ? 0.35 : 1;
+const TAU = Math.PI * 2;
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const clamp01 = v => clamp(v, 0, 1);
+const smooth = x => { x = clamp01(x); return x * x * (3 - 2 * x); };
+const wrapPI = a => { while (a >  Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+
+/* ================= renderer / scene / camera ================= */
+
+const canvas = document.getElementById("scene");
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+} catch (e) { return; }
+renderer.setClearColor(0x050609, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+let camZ = 9.6;
+const viewX = { left: -9, right: 9 };
+
+function onResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  const narrow = w < 900;
+  SCENE_SHIFT_X = narrow ? 0 : 2.6;
+  CALM = narrow ? 0.40 : 0.62;
+  renderer.setSize(w, h, false);
+  const aspect = w / h;
+  camera.aspect = aspect;
+  camZ = Math.min(9.6 / Math.min(1, aspect / 1.15), 15.5);
+  camera.updateProjectionMatrix();
+  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camZ;
+  viewX.right = halfH * aspect + 1.4;
+  viewX.left  = -viewX.right;
+}
+window.addEventListener("resize", onResize);
+document.addEventListener("fullscreenchange", onResize);
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", onResize);
+}
+
+onResize();
+
+/* ================= shared textures ================= */
+
+function glowTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0,   "rgba(255,255,255,1)");
+  grd.addColorStop(.22, "rgba(255,255,255,.85)");
+  grd.addColorStop(.55, "rgba(255,255,255,.18)");
+  grd.addColorStop(1,   "rgba(255,255,255,0)");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.minFilter = THREE.LinearFilter;
+  return t;
+}
+const glowTex = glowTexture();
+
+// "KOI IS LOVE" rendered to a texture; sampled by the glass shader and shown
+// faintly on a backdrop plane behind the prism.
+const WORD = "KOI IS LOVE";
+function buildWordTexture() {
+  const W = 2048, H = 400;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#ffffff";
+  g.textBaseline = "middle";
+  const font = px => `700 ${px}px "Space Grotesk", -apple-system, "Segoe UI", Roboto, sans-serif`;
+  const widthAt = (px, sp) => {
+    g.font = font(px);
+    let total = -sp;
+    for (const ch of WORD) total += g.measureText(ch).width + sp;
+    return total;
+  };
+  let px = 200, sp = 20;
+  const fit = Math.min(1, (W - 140) / widthAt(px, sp));
+  px *= fit; sp *= fit;
+  let x = (W - widthAt(px, sp)) / 2;
+  g.font = font(px);
+  for (const ch of WORD) {
+    g.fillText(ch, x, H / 2 + 8 * fit);
+    x += g.measureText(ch).width + sp;
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.minFilter = THREE.LinearFilter;
+  return { texture: t, aspect: H / W };
+}
+let word = buildWordTexture();
+
+/* ================= backdrop: grid, word plane, dust ================= */
+
+const gridMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, depthTest: false,
+  blending: THREE.AdditiveBlending,
+  vertexShader: `
+    varying vec2 vP;
+    void main(){
+      vP = position.xy;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `
+    varying vec2 vP;
+    void main(){
+      vec2 g = abs(fract(vP / 2.2) - 0.5);
+      float line = max(smoothstep(0.487, 0.5, g.x), smoothstep(0.487, 0.5, g.y));
+      float r = length(vP * vec2(1.0, 1.6));
+      float vig  = 1.0 - smoothstep(5.0, 20.0, r);
+      float glow = exp(-r * r * 0.02) * 0.15;
+      vec3 col = vec3(0.30, 0.36, 0.52) * line * 0.09 * vig
+               + vec3(0.10, 0.12, 0.20) * glow;
+      gl_FragColor = vec4(col, 1.0);
+    }`
+});
+const grid = new THREE.Mesh(new THREE.PlaneGeometry(60, 32), gridMat);
+grid.position.set(SCENE_SHIFT_X, 0.2, -8);
+grid.renderOrder = 0;
+scene.add(grid);
+
+// The word plane the prism refracts. cx, cy, halfW, halfH at z = PLANE_Z.
+const WP = { z: -5, cx: SCENE_SHIFT_X, cy: 0.15, hw: 8.4, hh: 8.4 * word.aspect };
+const wordMat = new THREE.MeshBasicMaterial({
+  map: word.texture, transparent: true, opacity: 0.055,
+  depthWrite: false, depthTest: false
+});
+const wordPlane = new THREE.Mesh(new THREE.PlaneGeometry(WP.hw * 2, WP.hh * 2), wordMat);
+wordPlane.position.set(WP.cx, WP.cy, WP.z);
+wordPlane.renderOrder = 1;
+scene.add(wordPlane);
+
+// Floating dust motes.
+const DUST_N = 150;
+const dustGeo = new THREE.BufferGeometry();
+{
+  const pos  = new Float32Array(DUST_N * 3);
+  const seed = new Float32Array(DUST_N);
+  for (let i = 0; i < DUST_N; i++) {
+    pos[i * 3]     = (Math.random() * 2 - 1) * 11;
+    pos[i * 3 + 1] = (Math.random() * 2 - 1) * 6;
+    pos[i * 3 + 2] = -6 + Math.random() * 8;
+    seed[i] = Math.random();
+  }
+  dustGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  dustGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+}
+const dustMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, depthTest: false,
+  blending: THREE.AdditiveBlending,
+  uniforms: { uTime: { value: 0 }, uDpr: { value: Math.min(window.devicePixelRatio || 1, 2) } },
+  vertexShader: `
+    attribute float aSeed;
+    uniform float uTime; uniform float uDpr;
+    varying float vA;
+    void main(){
+      vec3 p = position;
+      p.x += sin(uTime * 0.12 + aSeed * 7.0)  * 0.6;
+      p.y += cos(uTime * 0.10 + aSeed * 13.0) * 0.4;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_PointSize = (1.5 + aSeed * 2.5) * (14.0 / -mv.z) * uDpr;
+      vA = 0.5 + 0.5 * sin(uTime * (0.4 + aSeed * 0.7) + aSeed * 20.0);
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    varying float vA;
+    void main(){
+      float d = length(gl_PointCoord - 0.5);
+      gl_FragColor = vec4(0.75, 0.80, 0.95, smoothstep(0.5, 0.1, d) * vA * 0.32);
+    }`
+});
+const dust = new THREE.Points(dustGeo, dustMat);
+dust.frustumCulled = false;
+dust.renderOrder = 2;
+scene.add(dust);
+
+/* ================= spectral model ================= */
+
+// Wavelength (nm) -> approximate linear RGB.
+function wavelengthRGB(l) {
+  let r, g, b;
+  if      (l < 440) { r = -(l - 440) / 60; g = 0; b = 1; }
+  else if (l < 490) { r = 0; g = (l - 440) / 50; b = 1; }
+  else if (l < 510) { r = 0; g = 1; b = -(l - 510) / 20; }
+  else if (l < 580) { r = (l - 510) / 70; g = 1; b = 0; }
+  else if (l < 645) { r = 1; g = -(l - 645) / 65; b = 0; }
+  else              { r = 1; g = 0; b = 0; }
+  const f = l < 420 ? 0.45 + 0.55 * (l - 395) / 25
+          : l > 645 ? 0.50 + 0.50 * (700 - l) / 55
+          : 1;
+  return [r * f, g * f, b * f];
+}
+
+// Cauchy-style dispersion, tuned soft so the prism transmits at most angles.
+const L_RED = 650, L_VIOLET = 410;
+const N_RED = 1.118, N_VIOLET = 1.235;
+const CAU_B = (N_VIOLET - N_RED) / (1 / (L_VIOLET * L_VIOLET) - 1 / (L_RED * L_RED));
+const CAU_A = N_RED - CAU_B / (L_RED * L_RED);
+const lambdaOf = w => L_RED + (L_VIOLET - L_RED) * w;   // w in [0,1] red -> violet
+const indexOf  = w => { const l = lambdaOf(w); return CAU_A + CAU_B / (l * l); };
+const specRGB  = w => wavelengthRGB(lambdaOf(w));
+
+/* ================= prism geometry ================= */
+
+const R = 1.85, DEPTH = 2.1;
+const LOCAL_V = [0, 1, 2].map(i => {
+  const a = Math.PI / 2 + i * (TAU / 3);
+  return { x: R * Math.cos(a), y: R * Math.sin(a) };
+});
+const shape = new THREE.Shape();
+shape.moveTo(LOCAL_V[0].x, LOCAL_V[0].y);
+shape.lineTo(LOCAL_V[1].x, LOCAL_V[1].y);
+shape.lineTo(LOCAL_V[2].x, LOCAL_V[2].y);
+shape.closePath();
+const prismGeo = new THREE.ExtrudeGeometry(shape, { depth: DEPTH, bevelEnabled: false });
+prismGeo.translate(0, 0, -DEPTH / 2);
+
+const prism = new THREE.Group();
+scene.add(prism);
+
+// Dark body seen through the front faces.
+const backMesh = new THREE.Mesh(prismGeo, new THREE.MeshBasicMaterial({
+  color: 0x0a0d14, transparent: true, opacity: 0.5,
+  side: THREE.BackSide, depthWrite: false
+}));
+backMesh.renderOrder = 4;
+prism.add(backMesh);
+
+// Glass: bends the view ray, samples the word texture where the bent ray
+// lands on the backdrop plane, with an RGB split for chromatic aberration.
+const glassMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.FrontSide,
+  uniforms: {
+    uCam:    { value: new THREE.Vector3() },
+    uTex:    { value: word.texture },
+    uTime:   { value: 0 },
+    uPlane:  { value: new THREE.Vector4(WP.cx, WP.cy, WP.hw, WP.hh) },
+    uPlaneZ: { value: WP.z }
+  },
+  vertexShader: `
+    varying vec3 vN; varying vec3 vW;
+    void main(){
+      vN = normalize(mat3(modelMatrix) * normal);
+      vec4 w = modelMatrix * vec4(position, 1.0);
+      vW = w.xyz;
+      gl_Position = projectionMatrix * viewMatrix * w;
+    }`,
+  fragmentShader: `
+    uniform vec3 uCam; uniform sampler2D uTex; uniform float uTime;
+    uniform vec4 uPlane; uniform float uPlaneZ;
+    varying vec3 vN; varying vec3 vW;
+
+    vec3 room(vec3 d){
+      float h = clamp(d.y * 0.6 + 0.5, 0.0, 1.0);
+      return mix(vec3(0.010, 0.012, 0.020), vec3(0.070, 0.090, 0.145), h);
+    }
+
+    void main(){
+      vec3 N = normalize(vN);
+      vec3 V = normalize(vW - uCam);
+      float ndv  = abs(dot(N, -V));
+      float fres = pow(1.0 - ndv, 2.6);
+      vec3 col = vec3(0.016, 0.020, 0.034);
+
+      vec3 bent = refract(V, N, 1.0 / 1.45);
+      col += room(bent) * 0.5;
+      if (bent.z < -0.001){
+        float tt = (uPlaneZ - vW.z) / bent.z;
+        vec2 hit = vW.xy + bent.xy * tt;
+        vec2 uv = vec2((hit.x - uPlane.x) / (2.0 * uPlane.z) + 0.5,
+                       (hit.y - uPlane.y) / (2.0 * uPlane.w) + 0.5);
+        if (uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0){
+          vec2 ca = bent.xy * 0.05;
+          float tr = texture2D(uTex, uv + ca).r;
+          float tg = texture2D(uTex, uv).g;
+          float tb = texture2D(uTex, uv - ca).b;
+          col += vec3(tr, tg, tb) * 0.52;
+        }
+      }
+
+      col += room(reflect(V, N)) * fres * 1.7;
+      col += vec3(0.60, 0.66, 0.80) * pow(1.0 - ndv, 6.0) * 0.36;
+      float sheen = 0.5 + 0.5 * sin(vW.x * 1.7 + vW.y * 2.3 + uTime * 0.6);
+      col += vec3(0.020, 0.025, 0.035) * sheen;
+      col += vec3(0.50, 0.56, 0.68) * fres * 0.33;
+      gl_FragColor = vec4(col, 0.74 + fres * 0.20);
+    }`
+});
+const glassMesh = new THREE.Mesh(prismGeo, glassMat);
+glassMesh.renderOrder = 5;
+prism.add(glassMesh);
+
+const edgeMat = new THREE.LineBasicMaterial({
+  color: 0xffffff, transparent: true, opacity: 0.5,
+  blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false
+});
+const edges = new THREE.LineSegments(new THREE.EdgesGeometry(prismGeo), edgeMat);
+edges.renderOrder = 8;
+prism.add(edges);
+
+/* ================= 2D optics in the z=0 plane ================= */
+
+const TILT = -0.085;                       // incoming beam slope (down-right)
+const RAY  = { px: 0, py: 0.35, dx: Math.cos(TILT), dy: Math.sin(TILT) };
+const SLOPE = RAY.dy / RAY.dx;
+
+const TRI = [{x:0,y:0},{x:0,y:0},{x:0,y:0}];
+const TRI_C = { x: 0, y: 0 };
+function updateTri(rotZ, bob) {
+  const c = Math.cos(rotZ), s = Math.sin(rotZ);
+  for (let i = 0; i < 3; i++) {
+    const v = LOCAL_V[i];
+    TRI[i].x = v.x * c - v.y * s + SCENE_SHIFT_X;
+    TRI[i].y = v.x * s + v.y * c + bob;
+  }
+  TRI_C.x = (TRI[0].x + TRI[1].x + TRI[2].x) / 3;
+  TRI_C.y = (TRI[0].y + TRI[1].y + TRI[2].y) / 3;
+}
+
+const cross2 = (ax, ay, bx, by) => ax * by - ay * bx;
+
+// Closest hit of a ray against the triangle's edges; outward normal.
+function castRay(px, py, dx, dy, skipEdge, out) {
+  let best = Infinity, bEdge = -1, bx = 0, by = 0, bnx = 0, bny = 0;
+  for (let i = 0; i < 3; i++) {
+    if (i === skipEdge) continue;
+    const a = TRI[i], b = TRI[(i + 1) % 3];
+    const ex = b.x - a.x, ey = b.y - a.y;
+    const den = cross2(dx, dy, ex, ey);
+    if (Math.abs(den) < 1e-9) continue;
+    const wx = a.x - px, wy = a.y - py;
+    const t = cross2(wx, wy, ex, ey) / den;
+    const s = cross2(wx, wy, dx, dy) / den;
+    if (t > 1e-4 && s >= -1e-4 && s <= 1.0001 && t < best) {
+      best = t; bEdge = i;
+      bx = px + dx * t; by = py + dy * t;
+      let nx = ey, ny = -ex;
+      const L = Math.hypot(nx, ny) || 1;
+      nx /= L; ny /= L;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      if (nx * (mx - TRI_C.x) + ny * (my - TRI_C.y) < 0) { nx = -nx; ny = -ny; }
+      bnx = nx; bny = ny;
+    }
+  }
+  if (bEdge < 0) return false;
+  out.t = best; out.x = bx; out.y = by;
+  out.nx = bnx; out.ny = bny; out.edge = bEdge;
+  return true;
+}
+
+// Snell's law in 2D. Returns false on total internal reflection.
+function refract2(ix, iy, nx, ny, eta, out) {
+  let d = ix * nx + iy * ny;
+  if (d > 0) { nx = -nx; ny = -ny; d = -d; }
+  const cosi = -d;
+  const k = 1 - eta * eta * (1 - cosi * cosi);
+  if (k < 0) return false;
+  const f = eta * cosi - Math.sqrt(k);
+  out.x = eta * ix + f * nx;
+  out.y = eta * iy + f * ny;
+  return true;
+}
+function reflect2(ix, iy, nx, ny, out) {
+  const d = ix * nx + iy * ny;
+  out.x = ix - 2 * d * nx;
+  out.y = iy - 2 * d * ny;
+}
+
+const NC = 20;                              // spectral columns
+const N_COL = Array.from({ length: NC }, (_, c) => indexOf(c / (NC - 1)));
+const SPREAD = 3.0;                         // exaggerate angular dispersion
+const EXIT_LEN = 14;
+const CV = 4.5 / MOT;                       // light travel speed for the intro
+const T0 = 0.25;
+
+const MAX_PTS = 5;
+const newTrace = () => ({
+  pts: Array.from({ length: MAX_PTS }, () => ({ x: 0, y: 0 })),
+  count: 0, ex: 0, ey: 0, dx: 0, dy: 0, len: 0, valid: false
+});
+const TRACES = Array.from({ length: NC }, newTrace);
+const ENTRY = { valid: false, x: 0, y: 0, nx: 0, ny: 0, edge: -1 };
+const HIT = { t: 0, x: 0, y: 0, nx: 0, ny: 0, edge: -1 };
+const TD  = { x: 0, y: 0 };
+
+function castEntry() {
+  const sx = viewX.left - 2;
+  const sy = RAY.py + (sx - RAY.px) * SLOPE;
+  const ok = castRay(sx, sy, RAY.dx, RAY.dy, -1, HIT) &&
+             HIT.nx * RAY.dx + HIT.ny * RAY.dy < -0.001;
+  ENTRY.valid = ok;
+  if (ok) {
+    ENTRY.x = HIT.x; ENTRY.y = HIT.y;
+    ENTRY.nx = HIT.nx; ENTRY.ny = HIT.ny;
+    ENTRY.edge = HIT.edge;
+  }
+  return ok;
+}
+
+// Trace one wavelength through the glass: refract in, bounce on TIR, refract out.
+function trace(n, rec) {
+  rec.count = 0; rec.valid = false;
+  if (!ENTRY.valid) return;
+  if (!refract2(RAY.dx, RAY.dy, ENTRY.nx, ENTRY.ny, 1 / n, TD)) return;
+  rec.pts[0].x = ENTRY.x; rec.pts[0].y = ENTRY.y; rec.count = 1;
+  let cx = ENTRY.x, cy = ENTRY.y, dx = TD.x, dy = TD.y, skip = ENTRY.edge, len = 0;
+  for (let b = 0; b < 3; b++) {
+    if (!castRay(cx, cy, dx, dy, skip, HIT)) return;
+    len += HIT.t;
+    rec.pts[rec.count].x = HIT.x; rec.pts[rec.count].y = HIT.y; rec.count++;
+    if (refract2(dx, dy, HIT.nx, HIT.ny, n, TD)) {
+      rec.ex = HIT.x; rec.ey = HIT.y;
+      rec.dx = TD.x;  rec.dy = TD.y;
+      rec.len = len;  rec.valid = true;
+      return;
+    }
+    reflect2(dx, dy, HIT.nx, HIT.ny, TD);
+    dx = TD.x; dy = TD.y; cx = HIT.x; cy = HIT.y; skip = HIT.edge;
+  }
+}
+
+/* ================= beam ribbon (incoming white light) ================= */
+
+function makeRibbon(n, { width, opacity, color = 0xffffff, order = 6 }) {
+  const geo = new THREE.BufferGeometry();
+  const pos  = new Float32Array(n * 2 * 3);
+  const side = new Float32Array(n * 2);
+  const tArr = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) {
+    side[2 * i] = 1; side[2 * i + 1] = -1;
+    tArr[2 * i] = tArr[2 * i + 1] = i / (n - 1);
+  }
+  const idx = new Uint16Array((n - 1) * 6);
+  for (let i = 0; i < n - 1; i++) {
+    const o = i * 6, v = i * 2;
+    idx[o] = v;     idx[o + 1] = v + 1; idx[o + 2] = v + 2;
+    idx[o + 3] = v + 1; idx[o + 4] = v + 3; idx[o + 5] = v + 2;
+  }
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const posAttr = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute("position", posAttr);
+  geo.setAttribute("aSide", new THREE.BufferAttribute(side, 1));
+  geo.setAttribute("aT",   new THREE.BufferAttribute(tArr, 1));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, depthTest: false,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: {
+      uColor:   { value: new THREE.Color(color) },
+      uOpacity: { value: opacity },
+      uTime:    { value: 0 },
+      uReveal:  { value: 0 }
+    },
+    vertexShader: `
+      attribute float aSide; attribute float aT;
+      varying float vS; varying float vT;
+      void main(){
+        vS = aSide; vT = aT;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uOpacity; uniform float uTime; uniform float uReveal;
+      varying float vS; varying float vT;
+      void main(){
+        float core = exp(-vS * vS * 18.0);
+        float halo = exp(-vS * vS * 4.2) * 0.45;
+        float rev  = clamp((uReveal - vT) / 0.12, 0.0, 1.0);
+        float shim = 0.92 + 0.08 * sin(vT * 26.0 - uTime * 4.2);
+        gl_FragColor = vec4(uColor * (0.72 + 0.85 * core),
+                            (core + halo) * rev * shim * uOpacity);
+      }`
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = order;
+  scene.add(mesh);
+
+  // pts: array of {x, y}; expanded in-plane by a perpendicular offset.
+  const update = (pts, width2) => {
+    const w = width2 !== undefined ? width2 : width;
+    for (let k = 0; k < n; k++) {
+      const p = pts[k];
+      const a = pts[k > 0 ? k - 1 : 0];
+      const b = pts[k < n - 1 ? k + 1 : n - 1];
+      let tx = b.x - a.x, ty = b.y - a.y;
+      const L = Math.hypot(tx, ty) || 1;
+      tx /= L; ty /= L;
+      const px = -ty * w, py = tx * w;
+      const o = k * 6;
+      pos[o]     = p.x + px; pos[o + 1] = p.y + py; pos[o + 2] = 0.01;
+      pos[o + 3] = p.x - px; pos[o + 4] = p.y - py; pos[o + 5] = 0.01;
+    }
+    posAttr.needsUpdate = true;
+  };
+  return { mat, update };
+}
+
+const INC_N = 56;
+const INC_PTS = Array.from({ length: INC_N }, () => ({ x: 0, y: 0 }));
+const incoming = makeRibbon(INC_N, { width: 0.075, opacity: 0.95 * CALM });
+
+function buildIncoming(tA, hasEntry) {
+  const x0 = viewX.left - 0.5;
+  const y0 = RAY.py + (x0 - RAY.px) * SLOPE;
+  let x1, y1;
+  if (hasEntry) { x1 = ENTRY.x; y1 = ENTRY.y; }
+  else { x1 = viewX.right + 1; y1 = RAY.py + (x1 - RAY.px) * SLOPE; }
+  for (let k = 0; k < INC_N; k++) {
+    const u = k / (INC_N - 1);
+    const x = x0 + (x1 - x0) * u;
+    let y = y0 + (y1 - y0) * u;
+    const envL = smooth((u - 0.02) / 0.16);
+    const envR = hasEntry ? smooth((x1 - x) / 3) : smooth((0.98 - u) / 0.16);
+    y += Math.sin((x - CV * tA) * 0.65) * 0.045 * envL * envR;
+    INC_PTS[k].x = x; INC_PTS[k].y = y;
+  }
+  if (hasEntry) { INC_PTS[INC_N - 1].x = ENTRY.x; INC_PTS[INC_N - 1].y = ENTRY.y; }
+}
+
+/* ================= spectral sheets (fan + inner path) ================= */
+
+function makeSheet(cols, rows, { opacity, headWhite, headK, alongBase, alongK, order = 6 }) {
+  const count = cols * rows;
+  const geo = new THREE.BufferGeometry();
+  const pos  = new Float32Array(count * 3);
+  const aW   = new Float32Array(count);
+  const aT   = new Float32Array(count);
+  const aA   = new Float32Array(count);
+  const aRev = new Float32Array(count);
+  const aCol = new Float32Array(count * 3);
+  for (let k = 0; k < rows; k++) {
+    for (let c = 0; c < cols; c++) {
+      const i = k * cols + c, w = c / (cols - 1);
+      aW[i] = w; aT[i] = k / (rows - 1);
+      const rgb = specRGB(w);
+      aCol[i * 3] = rgb[0]; aCol[i * 3 + 1] = rgb[1]; aCol[i * 3 + 2] = rgb[2];
+    }
+  }
+  const idx = new Uint16Array((cols - 1) * (rows - 1) * 6);
+  let o = 0;
+  for (let k = 0; k < rows - 1; k++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const v = k * cols + c;
+      idx[o++] = v; idx[o++] = v + 1; idx[o++] = v + cols;
+      idx[o++] = v + 1; idx[o++] = v + cols + 1; idx[o++] = v + cols;
+    }
+  }
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const posAttr = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage);
+  const aAttr   = new THREE.BufferAttribute(aA, 1).setUsage(THREE.DynamicDrawUsage);
+  const revAttr = new THREE.BufferAttribute(aRev, 1).setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute("position", posAttr);
+  geo.setAttribute("aAlpha", aAttr);
+  geo.setAttribute("aRev", revAttr);
+  geo.setAttribute("aW", new THREE.BufferAttribute(aW, 1));
+  geo.setAttribute("aT", new THREE.BufferAttribute(aT, 1));
+  geo.setAttribute("aColor", new THREE.BufferAttribute(aCol, 3));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, depthTest: false,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: {
+      uTime: { value: 0 }, uOpacity: { value: opacity },
+      uHeadWhite: { value: headWhite }, uHeadK: { value: headK },
+      uAlongBase: { value: alongBase }, uAlongK: { value: alongK }
+    },
+    vertexShader: `
+      attribute float aW; attribute float aT; attribute float aAlpha;
+      attribute float aRev; attribute vec3 aColor;
+      varying float vW; varying float vT; varying float vA; varying float vRev;
+      varying vec3 vCol;
+      void main(){
+        vW = aW; vT = aT; vA = aAlpha; vRev = aRev; vCol = aColor;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform float uTime; uniform float uOpacity;
+      uniform float uHeadWhite; uniform float uHeadK;
+      uniform float uAlongBase; uniform float uAlongK;
+      varying float vW; varying float vT; varying float vA; varying float vRev;
+      varying vec3 vCol;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main(){
+        float edge  = smoothstep(0.0, 0.05, vW) * smoothstep(1.0, 0.95, vW);
+        float along = uAlongBase + (1.0 - uAlongBase) * exp(-vT * uAlongK);
+        along *= 1.0 - smoothstep(0.90, 1.0, vT);
+        float rev = clamp((vRev - vT) / 0.10, 0.0, 1.0);
+        float grain = 0.86 + 0.28 * hash(vec2(vT * 199.0 + vW * 89.0, floor(uTime * 24.0)));
+        vec3 col = mix(vCol, vec3(1.0), uHeadWhite * exp(-vT * uHeadK));
+        gl_FragColor = vec4(col, edge * along * rev * vA * grain * uOpacity);
+      }`
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = order;
+  scene.add(mesh);
+  return {
+    mat, cols, rows, pos,
+    setPoint(k, c, x, y, z) {
+      const i = (k * cols + c) * 3;
+      pos[i] = x; pos[i + 1] = y; pos[i + 2] = z;
+    },
+    setAlpha(c, v) { for (let k = 0; k < rows; k++) aA[k * cols + c] = v; },
+    setRev(c, v)   { for (let k = 0; k < rows; k++) aRev[k * cols + c] = v; },
+    commit() { posAttr.needsUpdate = aAttr.needsUpdate = revAttr.needsUpdate = true; }
+  };
+}
+
+const exitSheet  = makeSheet(NC, 40, { opacity: 0.92 * CALM, headWhite: 0.55, headK: 5.5, alongBase: 0.34, alongK: 1.5 });
+const innerSheet = makeSheet(NC, 8,  { opacity: 0.30 * CALM, headWhite: 0.65, headK: 4.0, alongBase: 0.55, alongK: 0.9 });
+
+// Interpolate a point along a sheet column (for sprites riding the light).
+const SAMP = new THREE.Vector3();
+function sampleSheet(sheet, c, u, out) {
+  const f = clamp01(u) * (sheet.rows - 1);
+  const k = Math.min(sheet.rows - 2, Math.floor(f));
+  const m = f - k;
+  const i0 = (k * sheet.cols + c) * 3, i1 = ((k + 1) * sheet.cols + c) * 3;
+  const p = sheet.pos;
+  out.set(p[i0] + (p[i1] - p[i0]) * m,
+          p[i0 + 1] + (p[i1 + 1] - p[i0 + 1]) * m,
+          p[i0 + 2] + (p[i1 + 2] - p[i0 + 2]) * m);
+}
+
+const SEGL = new Float64Array(MAX_PTS);
+function writeInnerColumn(rec, c, zOff) {
+  const rows = innerSheet.rows, cnt = rec.count;
+  if (cnt < 2) return;
+  let total = 0;
+  for (let i = 1; i < cnt; i++) {
+    SEGL[i] = Math.hypot(rec.pts[i].x - rec.pts[i - 1].x, rec.pts[i].y - rec.pts[i - 1].y);
+    total += SEGL[i];
+  }
+  if (total < 1e-6) return;
+  let seg = 1, acc = 0;
+  for (let k = 0; k < rows; k++) {
+    const target = total * k / (rows - 1);
+    while (seg < cnt - 1 && acc + SEGL[seg] < target) { acc += SEGL[seg]; seg++; }
+    const u = SEGL[seg] > 1e-9 ? (target - acc) / SEGL[seg] : 0;
+    const a = rec.pts[seg - 1], b = rec.pts[seg];
+    innerSheet.setPoint(k, c, a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u, zOff);
+  }
+}
+
+function writeExitColumn(c, w, ex, ey, ang0, tA, zOff) {
+  const rows = exitSheet.rows, step = EXIT_LEN / (rows - 1);
+  // Bow gently toward horizontal so the fan reads like the classic album cover.
+  const angFar = ang0 * (1 - 0.5 * clamp01(Math.cos(ang0)));
+  let x = ex, y = ey;
+  for (let k = 0; k < rows; k++) {
+    const u = k / (rows - 1);
+    const ang = ang0 + (angFar - ang0) * smooth(u) * 0.9;
+    if (k > 0) { x += Math.cos(ang) * step; y += Math.sin(ang) * step; }
+    const sway = Math.sin(tA * 0.8 + w * 5.4 + u * 2.4) * 0.13 * u * MOT;
+    exitSheet.setPoint(k, c, x - Math.sin(ang) * sway, y + Math.cos(ang) * sway, zOff);
+  }
+}
+
+/* ================= sprites ================= */
+
+function makeSprite(hex, scale, opacity, order) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color: hex, transparent: true, opacity,
+    blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false
+  }));
+  s.scale.setScalar(scale);
+  s.renderOrder = order;
+  scene.add(s);
+  return s;
+}
+const sourceDot = makeSprite(0xffffff, 0.17, 0.95, 9);
+const entryGlow = makeSprite(0xddeaff, 0.30, 0, 9);
+const exitGlow  = makeSprite(0xffffff, 0.50, 0, 9);
+const cornerDots = [0, 1, 2].map(() => makeSprite(0xffffff, 0.09, 0, 9));
+const CORNER_LOCAL = LOCAL_V.map(v => new THREE.Vector3(v.x, v.y, DEPTH / 2 + 0.02));
+const CORNER_W = new THREE.Vector3();
+
+// Little white photons riding the incoming beam.
+const NPULSE = 3, T_EMIT = 1.9, CYCLE = NPULSE * T_EMIT;
+const pulses = Array.from({ length: NPULSE }, () => makeSprite(0xffffff, 0.085, 0, 9));
+function samplePts(pts, u, out) {
+  const f = clamp01(u) * (pts.length - 1);
+  const i = Math.min(pts.length - 2, Math.floor(f));
+  const m = f - i;
+  out.set(pts[i].x + (pts[i + 1].x - pts[i].x) * m,
+          pts[i].y + (pts[i + 1].y - pts[i].y) * m, 0.02);
+}
+
+// Big soft color washes for atmosphere along the fan.
+const WASH_COLS = [2, Math.floor(NC / 2), NC - 3];
+const washes = WASH_COLS.map(c => {
+  const [r, g, b] = specRGB(c / (NC - 1));
+  return makeSprite(new THREE.Color(r, g, b).getHex(), 5.5, 0, 2);
+});
+
+/* ================= interaction ================= */
+
+let dragging = false, lastPX = 0, lastPY = 0;
+let userX = 0, userY = 0, userZ = 0;
+let velX = 0, velY = 0, velZ = 0;
+let velTrail = [];
+let autoAmp = 1, lastInteract = -10;
+let mouseNX = 0, mouseNY = 0;
+let parX = 0, parY = 0, parTX = 0, parTY = 0;
+let tGlobal = 0;
+
+canvas.addEventListener("pointerdown", e => {
+  dragging = true;
+  velX = velY = velZ = 0;
+  velTrail = [{ t: performance.now(), z: userZ, y: userY, x: userX }];
+  lastPX = e.clientX; lastPY = e.clientY;
+  lastInteract = tGlobal;
+  document.body.classList.add("grabbing", "touched");
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+});
+window.addEventListener("pointermove", e => {
+  mouseNX = e.clientX / window.innerWidth  * 2 - 1;
+  mouseNY = e.clientY / window.innerHeight * 2 - 1;
+  if (!dragging) return;
+  const dx = e.clientX - lastPX, dy = e.clientY - lastPY;
+  lastPX = e.clientX; lastPY = e.clientY;
+  userZ += dx * 0.006;                       // spin — this steers the rainbow
+  userY  = clamp(userY + dx * 0.0028, -0.5, 0.5);
+  userX  = clamp(userX + dy * 0.0035, -0.3, 0.3);
+  const now = performance.now();
+  velTrail.push({ t: now, z: userZ, y: userY, x: userX });
+  while (velTrail.length > 2 && now - velTrail[0].t > 120) velTrail.shift();
+  lastInteract = tGlobal;
+});
+function endDrag() {
+  if (!dragging) return;
+  dragging = false;
+  if (velTrail.length > 1) {
+    const a = velTrail[0], b = velTrail[velTrail.length - 1];
+    const dt = Math.max((b.t - a.t) / 1000, 1 / 240);
+    velZ = clamp((b.z - a.z) / dt, -6, 6);
+    velY = clamp((b.y - a.y) / dt, -2, 2);
+    velX = clamp((b.x - a.x) / dt, -2, 2);
+  }
+  velTrail = [];
+  lastInteract = tGlobal;
+  document.body.classList.remove("grabbing");
+}
+window.addEventListener("pointerup", endDrag);
+window.addEventListener("pointercancel", endDrag);
+
+/* ================= per-frame optics update ================= */
+
+const colAlpha = new Float32Array(NC);
+const T_OUT = new Float32Array(NC);
+let entryAlpha = 0, trapGlow = 0, lastMean = -0.05;
+const CTR_COL = Math.floor(NC / 2);
+
+function updateOptics(tA, dt, rotZ, bob) {
+  updateTri(rotZ, bob);
+  const hasEntry = castEntry();
+  const ease = 1 - Math.exp(-6 * dt);
+  entryAlpha += ((hasEntry ? 1 : 0) - entryAlpha) * ease;
+
+  const tP = Math.max(0, tA - T0);
+  const lamp = clamp01(tP / 0.3);
+
+  buildIncoming(tA, hasEntry);
+  incoming.update(INC_PTS);
+  const x0 = viewX.left - 0.5;
+  const y00 = RAY.py + (x0 - RAY.px) * SLOPE;
+  const dIn = hasEntry ? Math.hypot(ENTRY.x - x0, ENTRY.y - y00)
+                       : (viewX.right + 1 - x0) / RAY.dx;
+  incoming.mat.uniforms.uReveal.value = clamp01(CV * tP / dIn);
+  const airT = dIn / CV;
+  const sinceEntry = Math.max(0, tP - airT);
+
+  for (let c = 0; c < NC; c++) trace(N_COL[c], TRACES[c]);
+
+  // Mean exit angle to spread around.
+  let sum = 0, cnt = 0;
+  for (const rec of TRACES) if (rec.valid) { sum += Math.atan2(rec.dy, rec.dx); cnt++; }
+  const meanAng = cnt ? sum / cnt : lastMean;
+  lastMean = meanAng;
+
+  let gx = 0, gy = 0, ga = 0, alive = 0, tFirstOut = Infinity;
+  for (let c = 0; c < NC; c++) {
+    const rec = TRACES[c];
+    const w = c / (NC - 1);
+    colAlpha[c] += ((hasEntry && rec.valid ? 1 : 0) - colAlpha[c]) * ease;
+    const zOff = (w - 0.5) * 0.3;
+    if (rec.valid) {
+      alive++;
+      const ang = Math.atan2(rec.dy, rec.dx);
+      writeExitColumn(c, w, rec.ex, rec.ey, meanAng + wrapPI(ang - meanAng) * SPREAD, tA, zOff);
+      writeInnerColumn(rec, c, zOff);
+      T_OUT[c] = airT + rec.len * N_COL[c] / CV;
+    }
+    const glassRev = rec.len > 1e-6 ? clamp01(sinceEntry * (CV / N_COL[c]) / rec.len) : 0;
+    innerSheet.setAlpha(c, colAlpha[c]);
+    innerSheet.setRev(c, glassRev);
+    exitSheet.setAlpha(c, colAlpha[c]);
+    exitSheet.setRev(c, clamp01(Math.max(0, tP - T_OUT[c]) * CV / EXIT_LEN));
+    if (rec.valid || colAlpha[c] > 0.05) {
+      gx += rec.ex * colAlpha[c]; gy += rec.ey * colAlpha[c]; ga += colAlpha[c];
+      if (rec.valid && T_OUT[c] < tFirstOut) tFirstOut = T_OUT[c];
+    }
+  }
+  exitSheet.commit();
+  innerSheet.commit();
+
+  // When most wavelengths are trapped (TIR), let the glass smolder.
+  const trapT = hasEntry ? (1 - alive / NC) * 0.85 : 0;
+  trapGlow += (trapT - trapGlow) * (1 - Math.exp(-3 * dt));
+  innerSheet.mat.uniforms.uOpacity.value = 0.30 * CALM * (1 + trapGlow * 1.6);
+
+  // Sprites.
+  const exitFront = clamp01(Math.max(0, tP - tFirstOut) * CV / 1.5);
+  if (ga > 0.05) exitGlow.position.set(gx / ga, gy / ga, 0.05);
+  exitGlow.scale.setScalar(0.5 * (1 + 0.12 * Math.sin(tA * 3)));
+  exitGlow.material.opacity = 0.9 * CALM * clamp01(ga / (NC * 0.5)) * exitFront;
+  if (hasEntry) entryGlow.position.set(ENTRY.x, ENTRY.y, 0.05);
+  entryGlow.material.opacity = 0.7 * CALM * entryAlpha * clamp01(sinceEntry * CV / 0.7);
+
+  samplePts(INC_PTS, 0.03, SAMP);
+  sourceDot.position.copy(SAMP);
+  sourceDot.scale.setScalar(0.17 + 0.02 * Math.sin(tA * 2.1));
+  sourceDot.material.opacity = 0.95 * CALM * lamp;
+
+  for (let s = 0; s < NPULSE; s++) {
+    const emit = s * T_EMIT;
+    const spr = pulses[s];
+    if (tP < emit) { spr.material.opacity = 0; continue; }
+    const age = (tP - emit) % CYCLE;
+    const d = age * CV;
+    if (d < dIn) {
+      samplePts(INC_PTS, d / dIn, SAMP);
+      spr.position.copy(SAMP);
+      spr.material.opacity = 0.85 * CALM * lamp;
+    } else spr.material.opacity = 0;
+  }
+
+  for (let i = 0; i < WASH_COLS.length; i++) {
+    const c = WASH_COLS[i];
+    sampleSheet(exitSheet, c, 0.38, SAMP);
+    washes[i].position.set(SAMP.x, SAMP.y, -2);
+    washes[i].material.opacity = 0.05 * colAlpha[c] *
+      clamp01(Math.max(0, tP - T_OUT[c]) * CV / 5);
+  }
+
+  incoming.mat.uniforms.uOpacity.value =
+    0.95 * CALM * lamp * (0.97 + 0.02 * Math.sin(tA * 9.1) + 0.015 * Math.sin(tA * 3.7));
+  incoming.mat.uniforms.uTime.value = tA;
+  exitSheet.mat.uniforms.uTime.value = tA;
+  innerSheet.mat.uniforms.uTime.value = tA;
+  return lamp;
+}
+
+/* ================= main loop ================= */
+
+const clock = new THREE.Clock();
+const THIRD = TAU / 3;
+let ready = false;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  tGlobal += dt;
+  const t = tGlobal;
+
+  // Inertia after release.
+  if (!dragging && (velZ || velY || velX)) {
+    userZ += velZ * dt;
+    userY = clamp(userY + velY * dt, -0.5, 0.5);
+    userX = clamp(userX + velX * dt, -0.3, 0.3);
+    velZ *= Math.exp(-dt * 1.5);
+    velY *= Math.exp(-dt * 3.5);
+    velX *= Math.exp(-dt * 3.5);
+    if (Math.abs(velZ) > 0.05) lastInteract = tGlobal;
+    else {
+      if (Math.abs(velZ) < 0.03) velZ = 0;
+      if (Math.abs(velY) < 0.02) velY = 0;
+      if (Math.abs(velX) < 0.02) velX = 0;
+    }
+  }
+
+  // Ambient sway fades in when idle; tilt relaxes home; spin settles to a face.
+  const idle = tGlobal - lastInteract;
+  const ampTarget = dragging ? 0 : idle > 1.6 ? 1 : 0;
+  autoAmp += (ampTarget - autoAmp) * (1 - Math.exp(-dt * 1.4));
+  if (!dragging && idle > 1.6) {
+    const dec = Math.exp(-dt * 0.22);
+    userX *= dec; userY *= dec;
+    const home = Math.round(userZ / THIRD) * THIRD;
+    userZ = home + (userZ - home) * dec;
+  }
+  const amp = autoAmp * MOT;
+  const rotZ = (Math.sin(t * 0.31) * 0.15 + Math.sin(t * 0.127) * 0.06) * amp + userZ;
+  const rotY = Math.sin(t * 0.21) * 0.32 * amp + userY;
+  const rotX = (Math.sin(t * 0.165) * 0.09 + 0.02) * amp + userX;
+  const bob  = Math.sin(t * 0.5) * 0.055 * amp;
+  prism.rotation.set(rotX, rotY, rotZ);
+  prism.position.set(SCENE_SHIFT_X, bob, 0);
+  prism.updateMatrixWorld();
+
+  const lamp = updateOptics(t, dt, rotZ, bob);
+
+  for (let i = 0; i < 3; i++) {
+    CORNER_W.copy(CORNER_LOCAL[i]).applyMatrix4(prism.matrixWorld);
+    cornerDots[i].position.copy(CORNER_W);
+    cornerDots[i].material.opacity = CALM * lamp * (0.35 + 0.25 * Math.sin(t * 2 + i * 2.1));
+  }
+
+  glassMat.uniforms.uTime.value = t;
+  glassMat.uniforms.uCam.value.copy(camera.position);
+  edgeMat.opacity = 0.45 + 0.08 * Math.sin(t * 1.3) + trapGlow * 0.3;
+  wordMat.opacity = (0.05 + 0.02 * (0.5 + 0.5 * Math.sin(t * 0.35))) * CALM;
+  dustMat.uniforms.uTime.value = t * MOT;
+
+  if (!dragging) { parTX = mouseNX * 0.38; parTY = -mouseNY * 0.22; }
+  const pe = 1 - Math.exp(-dt * 3);
+  parX += (parTX - parX) * pe;
+  parY += (parTY - parY) * pe;
+  camera.position.set(parX + Math.sin(t * 0.13) * 0.15 * MOT,
+                      0.35 + parY + Math.cos(t * 0.10) * 0.08 * MOT, camZ);
+  camera.lookAt(SCENE_SHIFT_X, 0.05, 0);
+
+  renderer.render(scene, camera);
+  if (!ready) { ready = true; document.body.classList.add("ready"); }
+}
+animate();
+
+// Rebuild the word texture once webfonts arrive.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    word = buildWordTexture();
+    wordMat.map = word.texture;
+    wordMat.needsUpdate = true;
+    glassMat.uniforms.uTex.value = word.texture;
+  });
+}
+})();
+</script>
+
+<script>
+/* Marks the current page in the nav from the URL, so the underline can never
+   disagree with the page you're actually on — whichever folder the site is
+   served from, and whether pages are folders (/chess/) or files (/chess.html).
+   Falls back to this page's own data-self value if the URL says nothing. */
+(function () {
+  var parts = location.pathname.split('/').filter(Boolean);
+  var file = parts.length ? parts[parts.length - 1].toLowerCase() : '';
+  var key = '';
+
+  if (/^index\.html?$/i.test(file) || file === '') {
+    parts.pop();                                  // /foo/  or  /foo/index.html
+    key = (parts.pop() || '').toLowerCase();
+  } else {
+    key = file.replace(/\.html?$/i, '');           // /foo/chess.html
+  }
+
+  var nav = document.querySelector('nav[data-self]');
+  var page = (key === 'chess' || key === 'about') ? key
+           : (key === '' ? 'home' : (nav ? nav.dataset.self : 'home'));
+
+  document.querySelectorAll('nav a[data-page]').forEach(function (a) {
+    if (a.dataset.page === page) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+})();
+</script>
+</body>
+</html>
