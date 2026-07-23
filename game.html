@@ -439,6 +439,87 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ---------- AI difficulty picker (Đấu với máy) ----------
+     Same overlay language as the end-of-game screen, with the spectral
+     ramp mapping straight onto the ladder: blue = dễ, violet = khó,
+     warm = thách đấu. Shown before every machine match — including
+     rematches — so the level is always a fresh choice. */
+  #aiOverlay {
+    position: fixed; inset: 0;
+    background: rgba(5,6,9,.9);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .45s ease;
+    z-index: 60;
+    --wc: var(--accent2);
+  }
+  #aiOverlay.show { opacity: 1; pointer-events: auto; }
+  #aiOverlay.show .wLine { animation: lineGrow .55s .1s cubic-bezier(.2,.9,.2,1) forwards; }
+  .aiTitle {
+    font-size: clamp(20px, 5.6vw, 30px);
+    font-weight: 700;
+    color: rgba(232,234,242,.94);
+    letter-spacing: .4em;
+    text-indent: .4em;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  #aiOverlay.show .aiTitle { animation: titleIn .8s .25s cubic-bezier(.16,1,.3,1) forwards; }
+  .aiSub {
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: .16em;
+    color: var(--muted);
+    opacity: 0;
+  }
+  #aiOverlay.show .aiSub { animation: fadeUp .6s .55s ease forwards; }
+  .aiOpts {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(80vw, 300px);
+    margin-top: 4px;
+  }
+  .aiOpt {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    opacity: 0;
+  }
+  #aiOverlay.show .aiOpt { animation: fadeUp .5s ease forwards; }
+  #aiOverlay.show .aiOpt:nth-child(1) { animation-delay: .7s; }
+  #aiOverlay.show .aiOpt:nth-child(2) { animation-delay: .82s; }
+  #aiOverlay.show .aiOpt:nth-child(3) { animation-delay: .94s; }
+  .aiOpt .lvName {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .3em;
+    text-indent: .3em;
+    color: var(--oc);
+  }
+  .aiOpt .lvDesc {
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: .1em;
+    color: var(--muted);
+  }
+  .aiOpt[data-lv="easy"] { --oc: var(--accent); }
+  .aiOpt[data-lv="hard"] { --oc: var(--accent2); }
+  .aiOpt[data-lv="chal"] { --oc: var(--accent3); }
+  .aiOpt:hover:not(:disabled) {
+    border-color: var(--oc);
+    background: rgba(130,150,220,.08);
+  }
+  #aiOverlay.show .wHint { animation: fadeUp .6s 1.15s ease forwards; }
+
   .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
   #copyBtn { color: var(--muted); }
   #copyBtn.ok {
@@ -505,6 +586,29 @@
   <div class="wHint">chạm để đóng</div>
 </div>
 
+<!-- Difficulty picker for the machine mode. Also re-shown on every
+     rematch, so each new match is a fresh choice of level. -->
+<div id="aiOverlay">
+  <div class="wLine"></div>
+  <div class="aiTitle">ĐẤU VỚI MÁY</div>
+  <div class="aiSub">Chọn độ khó cho ván này</div>
+  <div class="aiOpts">
+    <button class="aiOpt" data-lv="easy">
+      <span class="lvName">DỄ</span>
+      <span class="lvDesc">Máy đi ngẫu hứng — hợp để làm quen luật</span>
+    </button>
+    <button class="aiOpt" data-lv="hard">
+      <span class="lvName">KHÓ</span>
+      <span class="lvDesc">Biết gánh, biết giữ quân</span>
+    </button>
+    <button class="aiOpt" data-lv="chal">
+      <span class="lvName">THÁCH ĐẤU</span>
+      <span class="lvDesc">Tính trước nhiều nước — cẩn thận!</span>
+    </button>
+  </div>
+  <div class="wHint">chạm nền để quay lại</div>
+</div>
+
 <!-- cards start here; JS moves them into topSlot/bottomSlot -->
 <div style="display:none" id="cardStore">
   <div class="pcard" id="pw">
@@ -526,7 +630,8 @@
 </div>
 
 <div id="panel">
-  <button id="createBtn">TẠO VÁN MỚI</button>
+  <button id="createBtn">MỜI BẠN CHƠI CÙNG</button>
+  <button id="aiBtn">ĐẤU VỚI MÁY</button>
   <div id="linkBox">
     <input id="link" readonly onclick="this.select()">
     <button id="copyBtn" style="margin-top:8px">SAO CHÉP LINK</button>
@@ -638,6 +743,114 @@ function hasAnyMove(b, side){
   return false;
 }
 
+/* ---------- AI ENGINE (Đấu với máy) ----------
+   Ba mức:  easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
+            hard = minimax 2 nước (đi + đòn đáp hay nhất của bạn);
+            chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
+   Pure functions only — no DOM in this block (the test harness slices
+   everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
+const AI_DEPTH = { hard: 2, chal: 5 };
+const AI_NOISE = { hard: 4, chal: 0.6 };   // hard is deliberately fallible
+
+function allMoves(b, side){
+  const out = [];
+  for(let i = 0; i < SIZE; i++){
+    if(b[i] !== side) continue;
+    for(const n of ADJ[i]) if(b[n] === 0) out.push([i, n]);
+  }
+  return out;
+}
+
+// Mirrors checkEnd() exactly (white's loss conditions are tested first),
+// so the search can never disagree with the referee about who lost.
+// ply pushes the score toward faster wins and slower losses.
+function terminalScore(b, me, ply){
+  if(count(b,1) === 0 || !hasAnyMove(b,1)) return me === 2 ? 9000 - ply : -9000 + ply;
+  if(count(b,2) === 0 || !hasAnyMove(b,2)) return me === 1 ? 9000 - ply : -9000 + ply;
+  return null;
+}
+
+// Material dominates. Mobility (empty neighbours) keeps groups out of vây
+// range at the horizon, and the junction term nudges pieces toward the
+// well-connected points where gánh pairs are richest. The pressure term
+// rewards crowding enemy stones down to their last liberty — it is what
+// keeps the machine pushing for a finish instead of shuffling forever.
+function evalBoard(b, me){
+  let score = 0;
+  for(let i = 0; i < SIZE; i++){
+    const v = b[i];
+    if(v === 0) continue;
+    const sign = v === me ? 1 : -1;
+    let empt = 0;
+    for(const n of ADJ[i]) if(b[n] === 0) empt++;
+    score += sign * (100 + 3 * empt + 2 * (ADJ[i].length - 3));
+    if(v !== me && empt <= 1) score += 6;   // foe stone nearly smothered
+  }
+  return score;
+}
+
+function search(b, side, me, depth, alpha, beta, ply){
+  const t = terminalScore(b, me, ply);
+  if(t !== null) return t;
+  if(depth === 0) return evalBoard(b, me);
+  const foe = side === 1 ? 2 : 1;
+  const kids = [];
+  for(const [f, to] of allMoves(b, side)){
+    const nb = applyMove(b, f, to);
+    kids.push([count(nb, side) - count(nb, foe), nb]);
+  }
+  kids.sort((a, z) => z[0] - a[0]);        // captures first => better pruning
+  if(side === me){
+    let v = -Infinity;
+    for(const [, nb] of kids){
+      v = Math.max(v, search(nb, foe, me, depth - 1, alpha, beta, ply + 1));
+      alpha = Math.max(alpha, v);
+      if(alpha >= beta) break;
+    }
+    return v;
+  } else {
+    let v = Infinity;
+    for(const [, nb] of kids){
+      v = Math.min(v, search(nb, foe, me, depth - 1, alpha, beta, ply + 1));
+      beta = Math.min(beta, v);
+      if(beta <= alpha) break;
+    }
+    return v;
+  }
+}
+
+function aiChooseMove(b, side, level){
+  const moves = allMoves(b, side);
+  if(moves.length === 0) return null;
+  const foe = side === 1 ? 2 : 1;
+
+  if(level === 'easy'){
+    // Ngẫu hứng: chỉ 40% thấy miếng gánh thì ăn, còn lại đi bừa.
+    const base = count(b, foe);
+    const caps = moves.filter(([f, t]) => count(applyMove(b, f, t), foe) < base);
+    if(caps.length && Math.random() < 0.4)
+      return caps[(Math.random() * caps.length) | 0];
+    return moves[(Math.random() * moves.length) | 0];
+  }
+
+  const depth = AI_DEPTH[level] || 2;
+  const noise = AI_NOISE[level] || 0;
+  // capture-first ordering at the root too
+  const scored = moves.map(m => {
+    const nb = applyMove(b, m[0], m[1]);
+    return [count(nb, side) - count(nb, foe), m, nb];
+  }).sort((a, z) => z[0] - a[0]);
+  let best = null, bestScore = -Infinity, alpha = -Infinity;
+  for(const [, m, nb] of scored){
+    let s = search(nb, foe, side, depth - 1, alpha, Infinity, 1);
+    s += (Math.random() - 0.5) * noise;    // fallibility / variety
+    if(s > bestScore){ bestScore = s; best = m; }
+    if(s > alpha) alpha = s;
+  }
+  return best;
+}
+/* ---------- AI ENGINE END ---------- */
+
 /* ---------- STATE ---------- */
 let board = initialBoard();
 let turn = 1;            // 1 = white moves first
@@ -647,6 +860,9 @@ let hints = [];
 let gameOver = false;
 let conn = null, peer = null;
 let gameActive = false;   // true while a match is live (nav guard)
+let vsAI = false;         // playing against the machine?
+let aiLevel = null;       // 'easy' | 'hard' | 'chal'
+let aiTimer = null;       // pending machine "thinking" timeout
 
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
@@ -787,20 +1003,23 @@ function refreshPlayers(){
   for(const side of [1,2]){
     const isMe = (side === myColor);
     let label;
-    if(!conn && !isMe) label = 'đang chờ…';
-    else if(isMe)      label = 'Bạn';
-    else               label = 'Đối thủ';
+    if(isMe)       label = 'Bạn';
+    else if(vsAI)  label = 'Máy · ' + AI_NAMES[aiLevel];
+    else if(!conn) label = 'đang chờ…';
+    else           label = 'Đối thủ';
     subs[side].textContent = label;
-    cards[side].classList.toggle('active', !gameOver && !!conn && turn === side);
+    cards[side].classList.toggle('active',
+      !gameOver && (!!conn || vsAI) && turn === side);
   }
 }
 
 function updateStatus(){
   refreshPlayers();
   if(gameOver) return;
-  if(!conn) return;
+  if(!conn && !vsAI) return;
   const name = c => c === 1 ? 'Trắng' : 'Đen';
   if(turn === myColor) setStatus(`▶ Lượt bạn (${name(myColor)})`);
+  else if(vsAI) setStatus('Máy đang nghĩ…');
   else setStatus(`Đợi đối thủ (${name(turn)})…`);
 }
 
@@ -849,11 +1068,13 @@ function showOverlay(kind){
   if(kind === 'win'){
     overlay.style.setProperty('--wc', 'var(--accent)');
     title.textContent = 'CHIẾN THẮNG';
-    sub.textContent = 'Bạn đã gánh sạch bàn cờ';
+    sub.textContent = vsAI ? `Bạn đã hạ máy mức ${AI_NAMES[aiLevel]}`
+                           : 'Bạn đã gánh sạch bàn cờ';
   } else if(kind === 'lose'){
     overlay.style.setProperty('--wc', '#8d94a8');
     title.textContent = 'THẤT BẠI';
-    sub.textContent = 'Ván sau gỡ lại nhé';
+    sub.textContent = vsAI ? `Máy mức ${AI_NAMES[aiLevel]} thắng ván này`
+                           : 'Ván sau gỡ lại nhé';
   } else {
     overlay.style.setProperty('--wc', '#d9a2ff');
     title.textContent = 'HÒA CỜ';
@@ -873,7 +1094,7 @@ svg.addEventListener('click', e => {
   const t = e.target.closest('.pt');
   if(!t) return;
   const i = +t.dataset.i;
-  if(gameOver || !conn || turn !== myColor) return;
+  if(gameOver || (!conn && !vsAI) || turn !== myColor) return;
 
   if(selected !== null && hints.includes(i)){
     doMove(selected, i, true);
@@ -901,6 +1122,47 @@ function doMove(from, to, broadcast){
   animateMove(from, to, flips);
   if(broadcast && conn && conn.open) conn.send({t:'move', from, to});
   if(!checkEnd()) updateStatus();
+  maybeAIMove();                          // no-op unless it's the machine's turn
+}
+
+/* ---------- AI MODE (Đấu với máy) ---------- */
+const AI_NAMES = { easy: 'DỄ', hard: 'KHÓ', chal: 'THÁCH ĐẤU' };
+const AI_DELAY = { easy: [260, 520], hard: [420, 820], chal: [600, 1050] };
+const aiOverlay = document.getElementById('aiOverlay');
+
+function showAIPicker(){ aiOverlay.classList.add('show'); }
+function hideAIPicker(){ aiOverlay.classList.remove('show'); }
+aiOverlay.addEventListener('click', e => { if(e.target === aiOverlay) hideAIPicker(); });
+document.getElementById('aiBtn').onclick = showAIPicker;
+for(const b of document.querySelectorAll('.aiOpt'))
+  b.addEventListener('click', () => { hideAIPicker(); startAIGame(b.dataset.lv); });
+
+function startAIGame(level){
+  vsAI = true;
+  aiLevel = level;
+  myColor = 1;                            // bạn cầm Trắng, đi trước
+  gameActive = true;
+  document.getElementById('createBtn').style.display = 'none';
+  document.getElementById('aiBtn').style.display = 'none';
+  document.getElementById('linkBox').style.display = 'none';
+  document.querySelector('#pb .avatar').textContent = '🤖';
+  resetGame();
+  setStatus(`▶ Lượt bạn (Trắng) — máy mức ${AI_NAMES[level]}`);
+  maybeAIMove();                          // safety: no-op while it's your turn
+}
+
+// Schedules the machine's reply with a short "thinking" pause. The pause
+// scales with the level, and every guard is re-checked when it fires so a
+// rematch or finished game can never receive a stray move.
+function maybeAIMove(){
+  if(!vsAI || gameOver || turn === myColor) return;
+  const [lo, hi] = AI_DELAY[aiLevel] || [400, 800];
+  aiTimer = setTimeout(() => {
+    aiTimer = null;
+    if(!vsAI || gameOver || turn === myColor) return;
+    const mv = aiChooseMove(board, turn, aiLevel);
+    if(mv) doMove(mv[0], mv[1], false);
+  }, lo + Math.random() * (hi - lo));
 }
 
 /* ---------- NETWORK ---------- */
@@ -924,6 +1186,7 @@ function wire(c){
   conn.on('close', () => { setStatus('Mất kết nối.'); conn = null; gameActive = false; refreshPlayers(); });
   conn.on('error', () => setStatus('Lỗi kết nối.'));
   document.getElementById('createBtn').style.display = 'none';
+  document.getElementById('aiBtn').style.display = 'none';
   document.getElementById('linkBox').style.display = 'none';
   document.getElementById('drawBtn').style.display = 'block';
   updateStatus();
@@ -932,6 +1195,7 @@ function wire(c){
 function resetGame(){
   board = initialBoard();
   turn = 1; selected = null; hints = []; gameOver = false;
+  if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
   hideOverlay();
@@ -947,108 +1211,121 @@ document.getElementById('copyBtn').onclick = async () => {
   let ok = false;
   try {
     if(navigator.clipboard && window.isSecureContext){
-	  await navigator.clipboard.writeText(matchUrl);
-	  ok = true;
-	  } else {
-	  input.select();
-	  input.setSelectionRange(0, 99999);
-	  ok = document.execCommand('copy');
-	  }
-	  } catch(e){ ok = false; }
+      await navigator.clipboard.writeText(matchUrl);
+      ok = true;
+    } else {
+      input.select();
+      input.setSelectionRange(0, 99999);
+      ok = document.execCommand('copy');
+    }
+  } catch(e){ ok = false; }
 
-	  if(ok){
-	  btn.textContent = '✓ ĐÃ SAO CHÉP';
-	  btn.classList.add('ok');
-	  setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; btn.classList.remove('ok'); }, 1800);
-	  } else {
-	  btn.textContent = 'HÃY SAO CHÉP THỦ CÔNG';
-	  input.select();
-	  setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; }, 2500);
-	  }
-	  };
+  if(ok){
+    btn.textContent = '✓ ĐÃ SAO CHÉP';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; btn.classList.remove('ok'); }, 1800);
+  } else {
+    btn.textContent = 'HÃY SAO CHÉP THỦ CÔNG';
+    input.select();
+    setTimeout(() => { btn.textContent = 'SAO CHÉP LINK'; }, 2500);
+  }
+};
 
-	  const hostId = location.hash.slice(1);
+const hostId = location.hash.slice(1);
 
-	  /* ============================================================
-	  TURN SERVER — needed to connect across different networks.
-	  Paste your credential from the Metered dashboard below.
-	  (TURN Server page → the "credential" value in the code block)
-	  ============================================================ */
-	  const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
-	  const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
+/* ============================================================
+   TURN SERVER — needed to connect across different networks.
+   Paste your credential from the Metered dashboard below.
+   (TURN Server page → the "credential" value in the code block)
+   ============================================================ */
+const TURN_USERNAME   = 'ac26e8769c809d07ae519ea6';
+const TURN_CREDENTIAL = 'WAse66kdxp3VMEA7';
 
-	  const iceServers = [
-	  { urls: 'stun:stun.l.google.com:19302' },
-	  { urls: 'stun:stun.relay.metered.ca:80' },
-	  ];
-	  if(TURN_CREDENTIAL !== 'PASTE_YOUR_CREDENTIAL_HERE'){
-	  iceServers.push(
-	  { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-	  { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-	  { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-	  { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
-	  );
-	  }
+const iceServers = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+];
+if(TURN_CREDENTIAL !== 'PASTE_YOUR_CREDENTIAL_HERE'){
+  iceServers.push(
+    { urls: 'turn:global.relay.metered.ca:80',                    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:80?transport=tcp',      username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turn:global.relay.metered.ca:443',                   username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+    { urls: 'turns:global.relay.metered.ca:443?transport=tcp',    username: TURN_USERNAME, credential: TURN_CREDENTIAL },
+  );
+}
 
-	  peer = new Peer({ config: { iceServers } });
-	  peer.on('error', err => setStatus('Lỗi: ' + err.type));
+// PeerJS may fail to load (offline / CDN blocked). The machine mode has no
+// network dependency, so keep the page alive and steer the player there.
+if(typeof Peer !== 'undefined'){
+  peer = new Peer({ config: { iceServers } });
+  peer.on('error', err => { if(!vsAI) setStatus('Lỗi: ' + err.type); });
 
-	  if(hostId){
-	  // ---- GUEST ----
-	  myColor = 2;
-	  setStatus('Đang kết nối…');
-	  // If the tunnel can't be established in 15s, tell the user instead of hanging
-	  const connTimer = setTimeout(() => {
-	  if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
-	  }, 15000);
-	  peer.on('open', () => {
-	  const c = peer.connect(hostId, {reliable:true});
-	  c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
-	  c.on('error', () => setStatus('Không kết nối được. Kiểm tra lại link.'));
-	  });
-	  document.getElementById('createBtn').style.display = 'none';
-	  } else {
-	  // ---- HOST ----
-	  myColor = 1;
-	  peer.on('open', id => {
-	  setStatus('Bấm "Tạo ván mới" để lấy link.');
-	  document.getElementById('createBtn').onclick = () => {
-	  matchUrl = location.origin + location.pathname + '#' + id;
-	  document.getElementById('link').value = matchUrl;
-	  document.getElementById('linkBox').style.display = 'block';
-	  document.getElementById('createBtn').style.display = 'none';
-	  setStatus('Đang chờ đối thủ vào…');
-	  };
-	  });
-	  peer.on('connection', c => {
-	  c.on('open', () => { wire(c); setStatus('Đối thủ đã vào! Bạn cầm quân Trắng, đi trước.'); updateStatus(); });
-	  });
-	  }
+  if(hostId){
+    // ---- GUEST ----
+    myColor = 2;
+    setStatus('Đang kết nối…');
+    // If the tunnel can't be established in 15s, tell the user instead of hanging
+    const connTimer = setTimeout(() => {
+      if(!conn) setStatus('⚠️ Không kết nối được — hai máy ở khác mạng cần TURN server (xem hướng dẫn).');
+    }, 15000);
+    peer.on('open', () => {
+      const c = peer.connect(hostId, {reliable:true});
+      c.on('open', () => { wire(c); setStatus('Đã kết nối! Bạn cầm quân Đen.'); updateStatus(); });
+      c.on('error', () => setStatus('Không kết nối được. Kiểm tra lại link.'));
+    });
+    document.getElementById('createBtn').style.display = 'none';
+    document.getElementById('aiBtn').style.display = 'none';
+  } else {
+    // ---- HOST ----
+    myColor = 1;
+    peer.on('open', id => {
+      if(!vsAI) setStatus('Mời bạn qua link, hoặc đấu với máy.');
+      document.getElementById('createBtn').onclick = () => {
+        matchUrl = location.origin + location.pathname + '#' + id;
+        document.getElementById('link').value = matchUrl;
+        document.getElementById('linkBox').style.display = 'block';
+        document.getElementById('createBtn').style.display = 'none';
+        setStatus('Đang chờ đối thủ vào…');
+      };
+    });
+    peer.on('connection', c => {
+      // Mid-machine-match, a stale link must not hijack the board.
+      if(vsAI){ try{ c.close(); }catch(_){ } return; }
+      c.on('open', () => { wire(c); setStatus('Đối thủ đã vào! Bạn cầm quân Trắng, đi trước.'); updateStatus(); });
+    });
+  }
+} else {
+  // ---- NO NETWORK LIB ----
+  myColor = 1;
+  document.getElementById('createBtn').style.display = 'none';
+  setStatus('Không tải được thư viện mạng — hãy đấu với máy.');
+}
 
-	  function endDraw(){
-	  gameOver = true;
-	  setStatus('🤝 Ván hòa.');
-	  document.getElementById('drawBtn').style.display = 'none';
-	  document.getElementById('rematchBtn').style.display = 'block';
-	  refreshPlayers();
-	  setTimeout(() => showOverlay('draw'), 300);
-	  }
+function endDraw(){
+  gameOver = true;
+  setStatus('🤝 Ván hòa.');
+  document.getElementById('drawBtn').style.display = 'none';
+  document.getElementById('rematchBtn').style.display = 'block';
+  refreshPlayers();
+  setTimeout(() => showOverlay('draw'), 300);
+}
 
-	  document.getElementById('drawBtn').onclick = () => {
-	  if(conn && conn.open){
+document.getElementById('drawBtn').onclick = () => {
+  if(conn && conn.open){
     conn.send({t:'draw-offer'});
     setStatus('Đã gửi lời xin hòa…');
   }
 };
 
 document.getElementById('rematchBtn').onclick = () => {
+  if(vsAI){ showAIPicker(); return; }   // chọn lại độ khó trước mỗi ván mới
   if(conn && conn.open) conn.send({t:'rematch'});
   resetGame();
 };
 
 /* ---------- NAV GUARD ----------
    Warn before leaving while a match is live, since navigating away
-   tears down the WebRTC connection. */
+   tears down the WebRTC connection (and abandons a machine match). */
 window.addEventListener('beforeunload', e => {
   if(gameActive && !gameOver){ e.preventDefault(); e.returnValue = ''; }
 });
