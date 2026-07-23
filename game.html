@@ -833,10 +833,10 @@ function aiChooseMove(b, side, level, lastMove, seen){
   const foe = side === 1 ? 2 : 1;
 
   if(level === 'easy'){
-    // Ngẫu hứng: chỉ 40% thấy miếng gánh thì ăn, còn lại đi bừa.
+    // Ngẫu hứng: chỉ 75% thấy miếng gánh thì ăn, còn lại đi bừa.
     const base = count(b, foe);
     const caps = moves.filter(([f, t]) => count(applyMove(b, f, t), foe) < base);
-    if(caps.length && Math.random() < 0.4)
+    if(caps.length && Math.random() < 0.75)
       return caps[(Math.random() * caps.length) | 0];
     return moves[(Math.random() * moves.length) | 0];
   }
