@@ -1534,385 +1534,385 @@ function aiChooseMove(b, side, level, lastMove, seen){
     // from is discouraged. The penalty sits above the noise but far below
     // one stone (100), so a genuinely necessary retreat still wins.
     if(lastMove && m[0] === lastMove[1] && m[1] === lastMove[0]) s -= AI_UNDO;
-    // Anti-repetition: returning the BOARD to a state it has already been
-    // in gets costlier every time (12, 24, 36, ...). This catches the long
-    // cycles the undo penalty can't see — multi-square tours, multi-piece
-    // rotations — while eight repeats still cost less than one stone, so
-    // a genuinely forced defence is never sacrificed to avoid the loop.
-    if(seen){
-      const rep = seen[nb.join('')] || 0;
-      if(rep) s -= AI_REP * rep;
-    }
-    if(s > bestScore){ bestScore = s; best = m; }
-    if(s > alpha) alpha = s;
-  }
-  return best;
-}
-/* ---------- AI ENGINE END ---------- */
+	  // Anti-repetition: returning the BOARD to a state it has already been
+	  // in gets costlier every time (12, 24, 36, ...). This catches the long
+	  // cycles the undo penalty can't see — multi-square tours, multi-piece
+	  // rotations — while eight repeats still cost less than one stone, so
+	  // a genuinely forced defence is never sacrificed to avoid the loop.
+	  if(seen){
+	  const rep = seen[nb.join('')] || 0;
+	  if(rep) s -= AI_REP * rep;
+	  }
+	  if(s > bestScore){ bestScore = s; best = m; }
+	  if(s > alpha) alpha = s;
+	  }
+	  return best;
+	  }
+	  /* ---------- AI ENGINE END ---------- */
 
-/* ---------- STATE ---------- */
-let board = initialBoard();
-let turn = 1;            // 1 = white moves first
-let myColor = null;      // 1 or 2, set on connect
-let selected = null;
-let hints = [];
-let gameOver = false;
-let gameEpoch = 0;         // invalidates delayed effects from an older match
-let conn = null, peer = null;
-let gameActive = false;   // true while a match is live (nav guard)
-let vsAI = false;         // playing against the machine?
-let aiLevel = null;       // 'easy' | 'hard' | 'chal'
-let aiTimer = null;       // pending machine "thinking" timeout
-let aiThinkSequence = 0;  // invalidates stale callbacks after reset/pause
-let activeAIThinkPlan = null;
-let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
-let aiSeen = {};          // position -> occurrence count (anti-repetition)
-let aiPickerPaused = false; // pause a live machine turn while choosing a replay level
+	  /* ---------- STATE ---------- */
+	  let board = initialBoard();
+	  let turn = 1;            // 1 = white moves first
+	  let myColor = null;      // 1 or 2, set on connect
+	  let selected = null;
+	  let hints = [];
+	  let gameOver = false;
+	  let gameEpoch = 0;         // invalidates delayed effects from an older match
+	  let conn = null, peer = null;
+	  let gameActive = false;   // true while a match is live (nav guard)
+	  let vsAI = false;         // playing against the machine?
+	  let aiLevel = null;       // 'easy' | 'hard' | 'chal'
+	  let aiTimer = null;       // pending machine "thinking" timeout
+	  let aiThinkSequence = 0;  // invalidates stale callbacks after reset/pause
+	  let activeAIThinkPlan = null;
+	  let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
+	  let aiSeen = {};          // position -> occurrence count (anti-repetition)
+	  let aiPickerPaused = false; // pause a live machine turn while choosing a replay level
 
-/* ---------- BOT PERSONALITY + CHAT ---------- */
-const BOT_PROFILES = {
-  easy: {
-    name: 'KOI MƠ MÀNG',
-    avatar: '🐟',
-    style: 'playful',
-    baseMood: .35,
-    baseConfidence: .12,
-    talkRate: .76,
-    cooldown: 2900,
-    thinking: {
-      weights: { snap:.22, normal:.31, silent:.20, spoken:.22, deep:.05 },
-      times: {
-        snap:[300, 600],
-        normal:[650, 1200],
-        silent:[1250, 2100],
-        spoken:[1900, 3000],
-        deep:[2600, 3900]
-      }
-    }
-  },
-  hard: {
-    name: 'KOI LÁU LỈNH',
-    avatar: '🤖',
-    style: 'cocky',
-    baseMood: .10,
-    baseConfidence: .28,
-    talkRate: .56,
-    cooldown: 3900,
-    thinking: {
-      weights: { snap:.14, normal:.28, silent:.28, spoken:.18, deep:.12 },
-      times: {
-        snap:[450, 750],
-        normal:[850, 1450],
-        silent:[1400, 2400],
-        spoken:[2100, 3300],
-        deep:[2900, 4500]
-      }
-    }
-  },
-  chal: {
-    name: 'KOI ĐẠI SƯ',
-    avatar: '🐉',
-    style: 'calm',
-    baseMood: -.05,
-    baseConfidence: .42,
-    talkRate: .39,
-    cooldown: 4800,
-    thinking: {
-      weights: { snap:.09, normal:.24, silent:.33, spoken:.13, deep:.21 },
-      times: {
-        snap:[650, 1000],
-        normal:[1050, 1750],
-        silent:[1700, 2900],
-        spoken:[2400, 3800],
-        deep:[3200, 5200]
-      }
-    }
-  }
-};
+	  /* ---------- BOT PERSONALITY + CHAT ---------- */
+	  const BOT_PROFILES = {
+	  easy: {
+	  name: 'KOI MƠ MÀNG',
+	  avatar: '🐟',
+	  style: 'playful',
+	  baseMood: .35,
+	  baseConfidence: .12,
+	  talkRate: .76,
+	  cooldown: 2900,
+	  thinking: {
+	  weights: { snap:.22, normal:.31, silent:.20, spoken:.22, deep:.05 },
+	  times: {
+	  snap:[300, 600],
+	  normal:[650, 1200],
+	  silent:[1250, 2100],
+	  spoken:[1900, 3000],
+	  deep:[2600, 3900]
+	  }
+	  }
+	  },
+	  hard: {
+	  name: 'KOI LÁU LỈNH',
+	  avatar: '🤖',
+	  style: 'cocky',
+	  baseMood: .10,
+	  baseConfidence: .28,
+	  talkRate: .56,
+	  cooldown: 3900,
+	  thinking: {
+	  weights: { snap:.14, normal:.28, silent:.28, spoken:.18, deep:.12 },
+	  times: {
+	  snap:[450, 750],
+	  normal:[850, 1450],
+	  silent:[1400, 2400],
+	  spoken:[2100, 3300],
+	  deep:[2900, 4500]
+	  }
+	  }
+	  },
+	  chal: {
+	  name: 'KOI ĐẠI SƯ',
+	  avatar: '🐉',
+	  style: 'calm',
+	  baseMood: -.05,
+	  baseConfidence: .42,
+	  talkRate: .39,
+	  cooldown: 4800,
+	  thinking: {
+	  weights: { snap:.09, normal:.24, silent:.33, spoken:.13, deep:.21 },
+	  times: {
+	  snap:[650, 1000],
+	  normal:[1050, 1750],
+	  silent:[1700, 2900],
+	  spoken:[2400, 3800],
+	  deep:[3200, 5200]
+	  }
+	  }
+	  }
+	  };
 
-const BOT_LINES = {
-  start: {
-    playful: [
-      'Bạn đi trước nhé. Tôi còn đang ngắm cá.',
-      'Dòng nước êm quá… bắt đầu thôi!',
-      'Nếu tôi đi lạc, cứ xem như cá bơi ngược dòng.'
-    ],
-    cocky: [
-      'Bạn đi trước. Tôi thích có thêm dữ liệu.',
-      'Bàn cờ đã sẵn sàng. Đừng để lộ khe hở nhé.',
-      'Một ván nhanh hay một bài học dài? Bắt đầu nào.'
-    ],
-    calm: [
-      'Mỗi nước đi đều để lại một gợn sóng.',
-      'Cứ đi theo ý bạn. Bàn cờ sẽ trả lời.',
-      'Tĩnh tâm. Quan sát. Rồi mới gánh.'
-    ]
-  },
-  thinking: {
-    playful: [
-      'Khoan nhé… vây cá cũng cần nghệ thuật.',
-      'Tôi đang hỏi đàn cá nên bơi hướng nào.',
-      'Một chút thôi, bộ nhớ cá vàng đang làm việc.'
-    ],
-    cocky: [
-      'Để tôi kiểm tra xem đó là bẫy hay lời mời.',
-      'Tính thêm một nhịp… rồi đến lượt bạn lo.',
-      'Nước hay thường cần im lặng một chút.'
-    ],
-    calm: [
-      'Tôi đang nhìn cả bàn, không chỉ một quân.',
-      'Dòng chảy tốt nhất thường không ồn ào.',
-      'Chậm một nhịp để đi xa hơn.'
-    ]
-  },
-  thinking_confident: {
-    playful: [
-      'Ồ, tôi thấy một dòng nước khá tinh nghịch rồi.',
-      'Nước này vui đấy… để tôi chọn cú quẫy đẹp nhất.',
-      'Tôi có ý rồi, chỉ đang làm nó kịch tính hơn thôi.'
-    ],
-    cocky: [
-      'Tôi đã thấy khe hở. Chỉ đang chọn cách dùng nó.',
-      'Có vài nước tốt — vấn đề là nước nào làm bạn khó chịu nhất.',
-      'Kế hoạch đã rõ. Tôi đang kiểm tra lần cuối.'
-    ],
-    calm: [
-      'Thế cờ đã mở ra một đường rõ ràng.',
-      'Tôi thấy nước đi. Giờ chỉ cần xác nhận hệ quả.',
-      'Một phương án nổi lên, nhưng tôi vẫn nhìn thêm một nhịp.'
-    ]
-  },
-  thinking_rattled: {
-    playful: [
-      'Khoan… đàn cá vừa làm tôi quên mất kế hoạch.',
-      'Nước đó làm sóng lớn quá. Cho tôi nhìn lại đã.',
-      'Tôi vẫn ổn! Chỉ là đang… tính lại gần như mọi thứ.'
-    ],
-    cocky: [
-      'Nước đó buộc tôi tính lại. Đừng vội mừng.',
-      'Tôi đã bỏ sót một chi tiết. Sẽ không có lần hai.',
-      'Thế cờ đổi nhanh hơn dự tính — tôi cần một nhịp.'
-    ],
-    calm: [
-      'Tôi cần bỏ giả định cũ và nhìn lại.',
-      'Nước vừa rồi đã thay đổi trật tự ưu tiên.',
-      'Khi thế cờ đổi, kiên nhẫn quan trọng hơn tốc độ.'
-    ]
-  },
-  player_capture: {
-    playful: [
-      'Ối, {count} quân vừa đổi đội thật à?',
-      'Cú gánh đẹp đấy. Tôi hơi chóng mặt rồi.',
-      'Được lắm! Cá của tôi vừa bơi sang phía bạn.'
-    ],
-    cocky: [
-      'Cú đó ổn. Nhưng bạn đã nhìn nước tiếp theo chưa?',
-      'Bạn lấy {count} quân. Tôi ghi nhớ rồi.',
-      'Một cú gánh sạch sẽ. Chưa đủ để tôi hoảng đâu.'
-    ],
-    calm: [
-      'Hay. Bạn đã thấy đúng điểm tựa.',
-      '{count} quân đổi màu — thế cờ cũng vừa đổi.',
-      'Một nước chính xác. Tôi sẽ điều chỉnh.'
-    ]
-  },
-  player_big_capture: {
-    playful: [
-      'Khoan… {count} quân một lúc? Bạn chơi thật đấy à!',
-      'Cả đàn cá của tôi vừa theo bạn luôn rồi!',
-      'Ui da. Cú đó tạo sóng lớn quá.'
-    ],
-    cocky: [
-      '{count} quân. Được, giờ ván này mới đáng chú ý.',
-      'Cú gánh lớn. Tôi sẽ không tặng bạn lần hai.',
-      'Bạn vừa đổi hẳn nhịp ván cờ.'
-    ],
-    calm: [
-      'Một đợt sóng mạnh: {count} quân.',
-      'Xuất sắc. Thế cân bằng vừa bị phá vỡ.',
-      'Tôi đã đánh giá thấp đường gánh đó.'
-    ]
-  },
-  bot_capture: {
-    playful: [
-      'Xin phép mượn {count} chú cá nhé!',
-      'Ú òa — quân này giờ bơi cùng tôi.',
-      'Dòng nước vừa nghiêng về phía máy một chút.'
-    ],
-    cocky: [
-      'Tôi thấy khe hở đó từ nước trước.',
-      '{count} quân đổi phe. Kế hoạch đang chạy tốt.',
-      'Cảm ơn bạn đã để cửa mở.'
-    ],
-    calm: [
-      'Tôi nhận lấy cơ hội này.',
-      '{count} quân đã đổi màu. Tiếp tục nhé.',
-      'Một chuyển đổi nhỏ, một hệ quả lớn.'
-    ]
-  },
-  bot_big_capture: {
-    playful: [
-      'Ồ! {count} quân theo tôi — tiệc cá bắt đầu rồi!',
-      'Sóng lớn quá, tôi cũng bất ngờ đấy.',
-      'Một cú quẫy đuôi và cả đàn đổi hướng!'
-    ],
-    cocky: [
-      '{count} quân. Đó là cái giá của một khe hở.',
-      'Bàn cờ vừa nghiêng mạnh về phía tôi.',
-      'Tôi đã chờ đúng khoảnh khắc này.'
-    ],
-    calm: [
-      '{count} quân đổi phe. Thế trận đã sang chương mới.',
-      'Đòn gánh đã khép lại đúng như dự tính.',
-      'Một nước quyết định, không cần vội vàng.'
-    ]
-  },
-  ahead: {
-    playful: [
-      'Hình như đàn cá bên tôi đang đông lên rồi.',
-      'Tôi đang dẫn trước à? Đừng làm tôi tự mãn nhé.',
-      'Nước đang chảy khá thuận cho tôi.'
-    ],
-    cocky: [
-      'Lợi thế đã rõ. Bạn cần một cú đảo chiều.',
-      'Bây giờ mỗi khe hở của bạn đều rất đắt.',
-      'Tôi đang kiểm soát nhịp ván cờ.'
-    ],
-    calm: [
-      'Lợi thế chỉ có ý nghĩa nếu giữ được nó.',
-      'Thế trận nghiêng về tôi, nhưng chưa kết thúc.',
-      'Tôi sẽ không nhầm ưu thế với chiến thắng.'
-    ]
-  },
-  behind: {
-    playful: [
-      'Ít cá hơn, nhưng tôi vẫn còn nhiều bong bóng!',
-      'Được rồi… kế hoạch B. Hoặc C.',
-      'Tôi đang thua một chút. Chỉ một chút thôi nhé.'
-    ],
-    cocky: [
-      'Bạn đang dẫn, nhưng một cú gánh là đủ đảo chiều.',
-      'Tạm thời bạn hơn quân. Đừng mất tập trung.',
-      'Tôi bị ép, chưa bị khuất phục.'
-    ],
-    calm: [
-      'Bất lợi đã rõ. Tôi cần một đường phản công.',
-      'Ít quân hơn buộc tôi phải chính xác hơn.',
-      'Thế yếu vẫn có thể tạo ra nước mạnh.'
-    ]
-  },
-  danger: {
-    playful: [
-      'Ơ… đàn cá của tôi đâu hết rồi?',
-      'Không còn nhiều chỗ để bơi nữa.',
-      'Báo động nhẹ. Rất nhẹ. Chắc vậy.'
-    ],
-    cocky: [
-      'Bạn dồn tôi sát bờ rồi. Nước tiếp theo rất quan trọng.',
-      'Tình thế nguy hiểm — cuối cùng cũng thú vị.',
-      'Ít lựa chọn hơn đôi khi lại dễ nhìn hơn.'
-    ],
-    calm: [
-      'Đường lui đang khép lại.',
-      'Tôi còn rất ít tự do trên bàn cờ.',
-      'Đây là lúc một nước đi phải làm nhiều việc.'
-    ]
-  },
-  repetition: {
-    playful: [
-      'Chỗ này quen quá… ta vừa bơi qua đây phải không?',
-      'Bộ nhớ cá vàng của tôi cũng nhận ra vòng lặp này.',
-      'Lại con đường cũ à? Thử tạo sóng mới nhé.'
-    ],
-    cocky: [
-      'Lặp lại vị trí không làm nó an toàn hơn đâu.',
-      'Tôi nhớ thế cờ này. Bạn định đổi điều gì?',
-      'Chúng ta đang đi vòng. Tôi sẽ tìm lối ra.'
-    ],
-    calm: [
-      'Một thế cờ cũ đã trở lại.',
-      'Vòng lặp là dấu hiệu cả hai đang chờ sai lầm.',
-      'Ta nên thay đổi nhịp.'
-    ]
-  },
-  quiet: {
-    playful: [
-      'Im ắng ghê. Có phải bạn đang giăng lưới không?',
-      'Không gánh nhau một lúc cũng… dễ thương.',
-      'Tôi thích nước yên, nhưng bàn cờ thì không.'
-    ],
-    cocky: [
-      'Một nước yên lặng thường che một ý đồ.',
-      'Bạn đang xây thế hay chỉ đang chờ tôi sơ hở?',
-      'Không đổi quân, nhưng áp lực vẫn tăng.'
-    ],
-    calm: [
-      'Khoảng lặng cũng là một phần của thế trận.',
-      'Không phải nước mạnh nào cũng đổi màu quân.',
-      'Bàn cờ đang tích lũy căng thẳng.'
-    ]
-  },
-  win: {
-    playful: [
-      'Tôi thắng rồi! Cá máy hôm nay bơi đúng hướng.',
-      'Ván hay lắm. Làm thêm một ván chứ?',
-      'Chiến thắng nhỏ, bong bóng lớn!'
-    ],
-    cocky: [
-      'Hết đường rồi. Nhưng bạn đã khiến tôi phải tính kỹ.',
-      'Ván này thuộc về tôi. Ván sau thì chưa chắc.',
-      'Kế hoạch đã khép lại. Cảm ơn vì một ván hay.'
-    ],
-    calm: [
-      'Ván cờ kết thúc. Cảm ơn bạn.',
-      'Một sai lệch nhỏ đã quyết định kết quả.',
-      'Chiến thắng đến từ cả chuỗi nước đi.'
-    ]
-  },
-  lose: {
-    playful: [
-      'Tôi thua rồi… nhưng cú gánh đó đáng để vỗ tay!',
-      'Bạn bắt được cả đàn cá máy. Phục!',
-      'Được thôi, tôi sẽ luyện bơi rồi quay lại.'
-    ],
-    cocky: [
-      'Bạn đọc bàn cờ tốt hơn tôi ở ván này.',
-      'Thua rõ ràng. Tôi nợ bạn một trận phục thù.',
-      'Nước quyết định là của bạn. Chơi hay lắm.'
-    ],
-    calm: [
-      'Tôi nhận thua. Bạn đã giữ được thế tốt hơn.',
-      'Một ván chính xác từ phía bạn.',
-      'Kết quả xứng đáng. Cảm ơn vì bài học.'
-    ]
-  }
-};
+	  const BOT_LINES = {
+	  start: {
+	  playful: [
+	  'Đi trước đi. Tôi còn đang ngắm cá.',
+	  'Dòng nước êm quá… bắt đầu thôi!',
+	  'Nếu tôi đi lạc, cứ xem như cá bơi ngược dòng.'
+	  ],
+	  cocky: [
+	  'Nhường cao nhân đi nước đầu.',
+	  'Thử chiến thắng một lần xem nào.',
+	  'Không Biết ai dạy ai chơi cờ đâu.'
+	  ],
+	  calm: [
+	  'Khắp thiên hạ này chỉ duy mẹ bạn là tôi không gánh được.',
+	  'Đi bộ vuốt râu, đặc quyền của kẻ mạnh.',
+	  'Đừng nóng vội chứ chàng trai trẻ.'
+	  ]
+	  },
+	  thinking: {
+	  playful: [
+	  'Gánh sao cho được nước cờ.',
+	  'Tôi đang hỏi đàn cá nên bơi hướng nào.',
+	  'Liệu trong nước cờ này có cá cờ không?.'
+	  ],
+	  cocky: [
+	  'Một cái bẫy? Ngươi đủ thông minh sao?.',
+	  'Sự im lặng của anh liệu có làm em bối rối.',
+	  'Đáng suy ngẫm.'
+	  ],
+	  calm: [
+	  'Cờ hay, chẳng cần vội.',
+	  'Người nóng, cờ nguội.',
+	  'Hấp tấp là tự thua.'
+	  ]
+	  },
+	  thinking_confident: {
+	  playful: [
+	  'Ồ, có sơ hở.',
+	  'Nước này vui đấy… sẵn sàng đỡ nhé.',
+	  'Tăng sự kịch tính lên chút nhé.'
+	  ],
+	  cocky: [
+	  'Có sơ hở!',
+	  'Đã suy Nghĩ kĩ chưa đó?.',
+	  'Tất cả đã nằm trong kế hoạch của ta.'
+	  ],
+	  calm: [
+	  'Cờ loạn vì tâm loạn.',
+	  'Nước hay nhất thường không cần khoe.',
+	  'Tâm tịnh định cờ tinh.'
+	  ]
+	  },
+	  thinking_rattled: {
+	  playful: [
+	  'Một chút lơ đễnh đáng yêu.',
+	  'Nước cờ dậy sóng lòng, đàn cá sợ cơn sóng lớn.',
+	  'Thật là nan giải.'
+	  ],
+	  cocky: [
+	  'Không thể nào',
+	  'Cái thế cờ này…',
+	  'Không tệ, nhưng đừng vội đắc ý.'
+	  ],
+	  calm: [
+	  'Cờ tàn mới rõ tay hay',
+	  'Một nước đi huyền diệu.',
+	  'Khi thế cờ đổi, kiên nhẫn quan trọng hơn tốc độ.'
+	  ]
+	  },
+	  player_capture: {
+	  playful: [
+	  'Ối, {count} quân vừa đổi đội thật à?',
+	  'Cú gánh đẹp đấy. Tôi hơi chóng mặt rồi.',
+	  'Được lắm! Cá của tôi vừa bơi sang phía bạn.'
+	  ],
+	  cocky: [
+	  'Khá khen. Nhưng ngươi đã nhìn nước tiếp theo chưa?',
+	  'Chiếm {count} quân. Đừng vội mừng.',
+	  'Không tệ. Chuẩn bị trả giá đi.'
+	  ],
+	  calm: [
+	  'Hay. Bạn đã thấy đúng điểm tựa.',
+	  '{count} quân đổi màu — liệu có đủ sức thay đổi thế trận.',
+	  'Bạn chọn nước đó. đến lượt tôi.'
+	  ]
+	  },
+	  player_big_capture: {
+	  playful: [
+	  'Khoan… {count} quân một lúc? Bạn chơi thật đấy à!',
+	  'Cả đàn cá của tôi vừa theo bạn luôn rồi!',
+	  'Ui da. nước đi hay đó.'
+	  ],
+	  cocky: [
+	  '{count} quân. Nước đó… khá phiền đấy.',
+	  'Tặng ngươi vài con, coi như cân bằng thế trận',
+	  'Chưa thua đâu, ta vẫn còn đây'
+	  ],
+	  calm: [
+	  'Một lượt {count} quân, Đúng là cao kiến.',
+	  'Xuất sắc. Thế cân bằng vừa bị phá vỡ.',
+	  'Tôi đã đánh giá thấp đường gánh đó.'
+	  ]
+	  },
+	  bot_capture: {
+	  playful: [
+	  'Xin phép mượn {count} chú cá nhé!',
+	  'Ú òa — quân này giờ bơi cùng tôi.',
+	  'Dòng nước vừa nghiêng về phía tôi hơn một chút.'
+	  ],
+	  cocky: [
+	  'Sai lầm sao?.',
+	  '{count} quân chiếm, ngươi chỉ đến thế thôi sao.',
+	  'Cần phải cố gắng hơn.'
+	  ],
+	  calm: [
+	  'Tôi nhận lấy cơ hội này.',
+	  '{count} quân đã đổi màu. Tiếp tục nhé.',
+	  'Một chuyển đổi nhỏ, một hệ quả lớn.'
+	  ]
+	  },
+	  bot_big_capture: {
+	  playful: [
+	  'Ồ! {count} quân theo tôi — tiệc cá bắt đầu rồi!',
+	  'Sóng lớn quá, tôi cũng bất ngờ đấy.',
+	  'Một cú quẫy đuôi và cả đàn đổi hướng!'
+	  ],
+	  cocky: [
+	  '{count} quân. Tàn cờ được chưa?.',
+	  'Tất cả đã nằm trong tính toán.',
+	  'Ngọn cỏ ven đường, sao có thể với được mây.'
+	  ],
+	  calm: [
+	  '{count} quân đổi phe. Cục diện xoay chuyển.',
+	  'Đòn gánh đã khép lại đúng như dự tính.',
+	  'Gần như đã là kết thúc.'
+	  ]
+	  },
+	  ahead: {
+	  playful: [
+	  'Hình như đàn cá bên tôi đang đông lên rồi.',
+	  'Tôi đang dẫn trước à? Đừng làm tôi tự mãn nhé.',
+	  'Nước đang chảy khá thuận cho tôi.'
+	  ],
+	  cocky: [
+	  'Cố lên nào, đừng làm ta thất vọng chứ.',
+	  'Mọi sai lầm đều phải trả giá.',
+	  'Ta kì vọng nhiều hơn vào người đấy.'
+	  ],
+	  calm: [
+	  'Lợi thế chỉ có ý nghĩa nếu giữ được nó.',
+	  'Thế trận nghiêng về tôi, nhưng chưa kết thúc.',
+	  'Một lợi thế, chưa chắc đã là một chiến thắng.'
+	  ]
+	  },
+	  behind: {
+	  playful: [
+	  'Ít cá hơn, nhưng tôi vẫn còn nhiều bong bóng!',
+	  'Được rồi… kế hoạch B. Hoặc C.',
+	  'Đó hẳn là cơn gió.'
+	  ],
+	  cocky: [
+	  'Đừng vội tự mãn, ta lật lại ngay đây',
+	  'Ngươi nghĩ ngươi còn may mắn được bao lâu nữa',
+	  'Tất cả vẫn nằm trong tính toán.'
+	  ],
+	  calm: [
+	  'Bất lợi đã rõ. Tôi cần phản công.',
+	  'Không tệ chút nào, quả là kì phùng địch thủ',
+	  'Thế yếu vẫn có thể tạo ra nước mạnh.'
+	  ]
+	  },
+	  danger: {
+	  playful: [
+	  'Ơ… đàn cá của tôi đâu hết rồi?',
+	  'Không còn nhiều chỗ để bơi nữa.',
+	  'Báo động nhẹ. Rất nhẹ. Chắc vậy.'
+	  ],
+	  cocky: [
+	  'Ta đã bỏ sót gì sao?',
+	  'Ta chưa thua đâu.',
+	  'Ngươi có chắc là ngươi đã chiến thắng không?.'
+	  ],
+	  calm: [
+	  'Đường lui đang khép lại.',
+	  'Tôi còn rất ít tự do trên bàn cờ.',
+	  'Xuất sắc, đúng là nước cờ vi diệu.'
+	  ]
+	  },
+	  repetition: {
+	  playful: [
+	  'Chỗ này quen quá… ta vừa bơi qua đây phải không?',
+	  'Bộ nhớ cá vàng của tôi cũng nhận ra vòng lặp này.',
+	  'Lại con đường cũ à? Thử tạo sóng mới nhé.'
+	  ],
+	  cocky: [
+	  'Bí cờ rồi sao anh bạn?.',
+	  'Đảo qua đảo lại, người chỉ đến thế thôi sao?',
+	  'Thật là nhàm chán, như người vậy'
+	  ],
+	  calm: [
+	  'Một thế cờ cũ đã trở lại.',
+	  'Vòng lặp là dấu hiệu cả hai đang chờ sai lầm.',
+	  'Ta nên thay đổi nhịp.'
+	  ]
+	  },
+	  quiet: {
+	  playful: [
+	  'Im ắng ghê. Có phải bạn đang giăng lưới không?',
+	  'Không gánh nhau một lúc cũng… dễ thương.',
+	  'Make love, not war!.'
+	  ],
+	  cocky: [
+	  'Ngươi vẫn đang cố moi ra thứ gì đó trong cái đầu rỗng tuếch kia sao?',
+	  'Nghĩ kĩ vào, cũng có thắng được đâu',
+	  'Nước đi tuyệt diệu của ta đã làm người ngất lịm?.'
+	  ],
+	  calm: [
+	  'Cứ từ từ. Tâm sáng vốn chẳng cần vội',
+	  'Không phải nước mạnh nào cũng đổi màu quân.',
+	  'Sự bình yên trước cơn sóng gió.'
+	  ]
+	  },
+	  win: {
+	  playful: [
+	  'Tôi thắng rồi! Cá máy hôm nay bơi đúng hướng.',
+	  'Ván hay lắm. Làm thêm một ván chứ?',
+	  'Chiến thắng nhỏ, bong bóng lớn!'
+	  ],
+	  cocky: [
+	  'Nỗ lực làm gì khi không có kĩ năng',
+	  'Có vẻ người không phải là đối thủ của ta rồi.',
+	  'Không có trình độ thì không có gì phải buồn.'
+	  ],
+	  calm: [
+	  'Có nỗ lực, chỉ cần thêm chút kĩ năng.',
+	  'Có lẽ ván tiếp theo sẽ thắng .',
+	  'Thể thao là không ngừng bỏ cuộc.'
+	  ]
+	  },
+	  lose: {
+	  playful: [
+	  'Tôi thua rồi… nhưng cú gánh đó đáng để vỗ tay!',
+	  'Bạn bắt được cả đàn cá máy. Phục!',
+	  'Được thôi, tôi sẽ luyện bơi rồi quay lại.'
+	  ],
+	  cocky: [
+	  'Thôi thì nhường ngươi một ván',
+	  'Khá khen, ngươi đánh bao nhiêu trận rồi mới thắng được vậy?',
+	  'Kẻ mạnh thì phải nhường kẻ yếu.'
+	  ],
+	  calm: [
+	  'Tôi nhận thua. Bạn thực sự rất giỏi.',
+	  'Không thể tin được lại có nước cờ này.',
+	  'Kết quả xứng đáng. Cảm ơn vì bài học.'
+	  ]
+	  }
+	  };
 
-let botMind = null;
-let botMatchId = 0;
-let botPendingTimer = null;
-let botIdleTimer = null;
-let botHideTimer = null;
-let botTypingDelay = null;
-let botTypeInterval = null;
+	  let botMind = null;
+	  let botMatchId = 0;
+	  let botPendingTimer = null;
+	  let botIdleTimer = null;
+	  let botHideTimer = null;
+	  let botTypingDelay = null;
+	  let botTypeInterval = null;
 
-const clampBot = (value, min, max) => Math.max(min, Math.min(max, value));
+	  const clampBot = (value, min, max) => Math.max(min, Math.min(max, value));
 
-function clearBotTimers(includeDisplay = false){
-  if(botPendingTimer){ clearTimeout(botPendingTimer); botPendingTimer = null; }
-  if(botIdleTimer){ clearTimeout(botIdleTimer); botIdleTimer = null; }
-  if(includeDisplay){
-    if(botHideTimer){ clearTimeout(botHideTimer); botHideTimer = null; }
-    if(botTypingDelay){ clearTimeout(botTypingDelay); botTypingDelay = null; }
-    if(botTypeInterval){ clearInterval(botTypeInterval); botTypeInterval = null; }
-  }
-}
+	  function clearBotTimers(includeDisplay = false){
+	  if(botPendingTimer){ clearTimeout(botPendingTimer); botPendingTimer = null; }
+	  if(botIdleTimer){ clearTimeout(botIdleTimer); botIdleTimer = null; }
+	  if(includeDisplay){
+	  if(botHideTimer){ clearTimeout(botHideTimer); botHideTimer = null; }
+	  if(botTypingDelay){ clearTimeout(botTypingDelay); botTypingDelay = null; }
+	  if(botTypeInterval){ clearInterval(botTypeInterval); botTypeInterval = null; }
+	  }
+	  }
 
-function botMoodBand(){
-  if(!botMind) return 'neutral';
-  const feeling = botMind.confidence + botMind.mood * .35;
-  if(feeling >= .35) return 'confident';
-  if(feeling <= -.30) return 'rattled';
+	  function botMoodBand(){
+	  if(!botMind) return 'neutral';
+	  const feeling = botMind.confidence + botMind.mood * .35;
+	  if(feeling >= .35) return 'confident';
+	  if(feeling <= -.30) return 'rattled';
   return 'neutral';
 }
 
