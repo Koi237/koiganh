@@ -239,6 +239,81 @@
   button:disabled { opacity: .35; cursor: default; }
   button.ghost { color: var(--accent); border-color: rgba(143,180,255,.28); }
 
+  /* ---------- sound controls ---------- */
+  .sound-controls {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .sound-row {
+    display: grid;
+    grid-template-columns: 44px 76px minmax(90px, 1fr) 38px;
+    align-items: center;
+    gap: 10px;
+  }
+  .sound-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 17px;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--accent);
+  }
+  .sound-toggle:hover:not(:disabled) { letter-spacing: 0; }
+  .sound-toggle[aria-pressed="false"] {
+    color: var(--muted);
+    border-color: var(--hair);
+  }
+  .sound-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .16em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .volume-slider {
+    width: 100%;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .volume-value {
+    font-size: 9px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: rgba(220,226,244,.62);
+  }
+  .sound-toggle:focus-visible,
+  .volume-slider:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .sound-row--bgm .sound-toggle { color: var(--accent2); }
+  .sound-row--bgm .volume-slider { accent-color: var(--accent2); }
+  .sound-row--bgm .sound-toggle:focus-visible,
+  .sound-row--bgm .volume-slider:focus-visible { outline-color: var(--accent2); }
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
   #linkBox { display: none; margin-top: 8px; }
   #link {
     width: 100%;
@@ -288,6 +363,7 @@
     50%     { box-shadow: 0 0 0 1px rgba(143,180,255,.62), 0 0 26px rgba(143,180,255,.32); }
   }
   .avatar {
+    position: relative;
     width: 40px; height: 40px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -333,6 +409,174 @@
   }
   .pcard.active .turnTag { opacity: 1; animation: blink 2.4s ease-in-out infinite; }
   @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  /* A silent thinking turn still needs visible feedback so the pause feels
+     intentional rather than like a frozen page. Spoken thoughts use the
+     chat bubble as well; these card cues are shared by both behaviours. */
+  .pcard.active.thinking {
+    border-color: rgba(217,162,255,.55);
+    animation: thinkingGlow 1.8s ease-in-out infinite;
+  }
+  .pcard.thinking .avatar {
+    border-color: var(--accent2);
+    animation: thinkingFloat 1.35s ease-in-out infinite;
+  }
+  .pcard.thinking .avatar::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    right: -7px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow:
+      6px -5px 0 -1px rgba(217,162,255,.74),
+      10px -12px 0 -1.5px rgba(143,180,255,.62);
+    animation: thoughtTrail 1.35s ease-in-out infinite;
+  }
+  .pcard.thinking .turnTag {
+    color: var(--accent2);
+    animation: thinkingBlink 1.35s ease-in-out infinite;
+  }
+  .pcard.thinking[data-think-mode="deep"] {
+    border-color: rgba(217,162,255,.7);
+    background: rgba(32,25,50,.82);
+  }
+  .pcard.thinking[data-think-mode="spoken"] .turnTag { color: var(--accent3); }
+  @keyframes thinkingGlow {
+    0%,100% { box-shadow: 0 0 0 1px rgba(217,162,255,.26), 0 0 13px rgba(143,180,255,.10); }
+    50% { box-shadow: 0 0 0 1px rgba(217,162,255,.62), 0 0 26px rgba(217,162,255,.22); }
+  }
+  @keyframes thinkingFloat {
+    0%,100% { transform: translateY(1px) scale(1.03); }
+    50% { transform: translateY(-2px) scale(1.08); }
+  }
+  @keyframes thoughtTrail {
+    0%,100% { opacity: .32; transform: translate(0,2px) scale(.8); }
+    50% { opacity: 1; transform: translate(2px,-1px) scale(1.08); }
+  }
+  @keyframes thinkingBlink {
+    0%,100% { opacity: .5; }
+    50% { opacity: 1; }
+  }
+
+  /* ---------- animated machine chat ---------- */
+  .bot-chat {
+    position: relative;
+    z-index: 3;
+    width: min(92vw, 380px);
+    height: 62px;
+    margin: -2px 0 10px;
+  }
+  .bot-chat[hidden] { display: none; }
+  .bot-chat__bubble {
+    position: absolute;
+    inset: 0 10px auto 10px;
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 9px 12px;
+    background: rgba(15,18,29,.94);
+    border: 1px solid rgba(143,180,255,.28);
+    border-radius: 9px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.26);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-7px) scale(.98);
+    transform-origin: 32px 0;
+    transition: opacity .2s ease, transform .35s cubic-bezier(.2,1.25,.4,1), visibility 0s .35s;
+  }
+  .bot-chat__bubble::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 24px;
+    width: 10px;
+    height: 10px;
+    background: rgba(15,18,29,.94);
+    border-left: 1px solid rgba(143,180,255,.28);
+    border-top: 1px solid rgba(143,180,255,.28);
+    transform: rotate(45deg);
+  }
+  .bot-chat.is-visible .bot-chat__bubble {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
+    animation: chatGlow 2.5s ease-in-out infinite;
+  }
+  .bot-chat__avatar {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(86,112,190,.14);
+    border: 1px solid rgba(143,180,255,.32);
+    font-size: 16px;
+  }
+  .bot-chat.is-visible .bot-chat__avatar { animation: botNod .55s .08s ease both; }
+  .bot-chat__copy { min-width: 0; }
+  .bot-chat__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .bot-chat__name,
+  .bot-chat__mood {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .16em;
+  }
+  .bot-chat__name { color: var(--accent); }
+  .bot-chat__mood { color: var(--muted); }
+  .bot-chat[data-mood="confident"] .bot-chat__name { color: var(--accent3); }
+  .bot-chat[data-mood="rattled"] .bot-chat__name { color: var(--accent2); }
+  .bot-chat__text {
+    margin: 0;
+    min-height: 18px;
+    color: rgba(235,238,248,.9);
+    font-size: 11px;
+    font-weight: 300;
+    line-height: 1.45;
+  }
+  .bot-chat__typing {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    height: 18px;
+  }
+  .bot-chat.is-typing .bot-chat__text { display: none; }
+  .bot-chat.is-typing .bot-chat__typing { display: flex; }
+  .bot-chat__typing i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: typingDot .85s ease-in-out infinite;
+  }
+  .bot-chat__typing i:nth-child(2) { animation-delay: .12s; }
+  .bot-chat__typing i:nth-child(3) { animation-delay: .24s; }
+  @keyframes chatGlow {
+    0%,100% { box-shadow: 0 12px 28px rgba(0,0,0,.26), 0 0 0 rgba(143,180,255,0); }
+    50% { box-shadow: 0 12px 28px rgba(0,0,0,.26), 0 0 18px rgba(143,180,255,.09); }
+  }
+  @keyframes botNod {
+    0% { transform: translateY(2px) rotate(-4deg) scale(.9); }
+    65% { transform: translateY(-2px) rotate(3deg) scale(1.08); }
+    100% { transform: none; }
+  }
+  @keyframes typingDot {
+    0%,100% { opacity: .3; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
+  }
 
   /* --- piece animation (timings unchanged; the JS depends on them) --- */
   .pieceG { transition: transform .28s cubic-bezier(.3,1.3,.5,1); }
@@ -533,9 +777,26 @@
     .koi-nav nav { gap: 20px; }
     .koi-nav nav a { font-size: 9.5px; letter-spacing: .22em; }
     body { padding-top: 100px; }
+    .sound-row { grid-template-columns: 44px 68px minmax(70px, 1fr) 34px; gap: 8px; }
+    .bot-chat { height: 74px; }
+    .bot-chat__bubble { inset-inline: 6px; }
+  }
+  @media (max-width: 360px) {
+    .sound-label { font-size: 8px; letter-spacing: .11em; }
+    .pcard.thinking .turnTag { font-size: 8.5px; letter-spacing: .12em; }
   }
   @media (prefers-reduced-motion: reduce) {
     .grain { animation: none; }
+    .bot-chat__bubble,
+    .bot-chat__avatar,
+    .bot-chat__typing i,
+    .pcard.thinking,
+    .pcard.thinking .avatar,
+    .pcard.thinking .avatar::after,
+    .pcard.thinking .turnTag,
+    .pcard.active,
+    .pcard.active .avatar,
+    .pcard.active .turnTag { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
@@ -553,9 +814,24 @@
 </div>
 
 <h1>CỜ GÁNH</h1>
-<div id="status">Đang khởi tạo…</div>
+<div id="status" role="status" aria-live="polite">Đang khởi tạo…</div>
 
 <div id="topSlot"></div>
+
+<div id="botChat" class="bot-chat" data-mood="neutral" hidden>
+  <div class="bot-chat__bubble">
+    <div id="botChatAvatar" class="bot-chat__avatar" aria-hidden="true">🤖</div>
+    <div class="bot-chat__copy">
+      <div class="bot-chat__meta">
+        <span id="botChatName" class="bot-chat__name">KOI BOT</span>
+        <span id="botChatMood" class="bot-chat__mood">BÌNH TĨNH</span>
+      </div>
+      <p id="botChatText" class="bot-chat__text" aria-hidden="true"></p>
+      <div class="bot-chat__typing" aria-hidden="true"><i></i><i></i><i></i></div>
+      <span id="botChatAnnounce" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
+    </div>
+  </div>
+</div>
 
 <div id="boardWrap">
   <svg id="board" viewBox="0 0 100 100">
@@ -630,6 +906,24 @@
 </div>
 
 <div id="panel">
+  <div id="soundControls" class="sound-controls" role="group" aria-label="Điều khiển âm thanh">
+    <div class="sound-row" role="group" aria-label="Âm thanh hiệu ứng">
+      <button id="sfxToggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Tắt âm thanh hiệu ứng">
+        <span id="sfxIcon" aria-hidden="true">🔊</span>
+      </button>
+      <label class="sound-label" for="sfxVolumeSlider">HIỆU ỨNG</label>
+      <input id="sfxVolumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="62" aria-valuetext="62 phần trăm">
+      <output id="sfxVolumeValue" class="volume-value" for="sfxVolumeSlider">62%</output>
+    </div>
+    <div class="sound-row sound-row--bgm" role="group" aria-label="Nhạc nền">
+      <button id="bgmToggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Tắt nhạc nền">
+        <span id="bgmIcon" aria-hidden="true">♫</span>
+      </button>
+      <label class="sound-label" for="bgmVolumeSlider">NHẠC NỀN</label>
+      <input id="bgmVolumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="28" aria-valuetext="28 phần trăm">
+      <output id="bgmVolumeValue" class="volume-value" for="bgmVolumeSlider">28%</output>
+    </div>
+  </div>
   <button id="createBtn">MỜI BẠN CHƠI CÙNG</button>
   <button id="aiBtn">ĐẤU VỚI MÁY</button>
   <div id="linkBox">
@@ -647,6 +941,380 @@
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
+	/* ============================================================
+	SOUND MANAGER
+
+	CUSTOM AUDIO FILES:
+	1. Create: ./assets/audio/
+	2. Put your .mp3, .ogg, or .wav files there.
+	3. Replace any empty string below, for example:
+	move: './assets/audio/move.mp3'
+	bgm:  './assets/audio/bgm.mp3'
+
+	Empty SFX entries automatically use the built-in synthesized
+	placeholder. The BGM slot stays silent until you add a music file.
+	============================================================ */
+	const KOI_SOUND_FILES = {
+	select:     '',
+	move:       './assets/audio/move.mp3',
+	capture:    './assets/audio/capture.mp3',
+	invalid:    '',
+	start:      '',
+	win:        './assets/audio/win.mp3',
+	lose:       './assets/audio/lose.mp3',
+	draw:       './assets/audio/draw.mp3',
+	chat:       './assets/audio/chat.mp3',
+	connect:    '',
+	disconnect: '',
+	bgm:        './assets/audio/bgm.mp3'
+	};
+
+	const KOI_SYNTH_SOUNDS = {
+	select: [
+	{ wave:'sine', from:520, to:690, at:0,    length:.055, gain:.10 }
+	],
+	move: [
+	{ wave:'sine', from:235, to:150, at:0,    length:.10,  gain:.13 },
+	{ wave:'sine', from:410, to:310, at:.025, length:.07,  gain:.05 }
+	],
+	capture: [
+	{ wave:'triangle', from:210, to:420, at:0,    length:.13, gain:.15 },
+	{ wave:'sine',     from:480, to:760, at:.055, length:.12, gain:.10 }
+	],
+	invalid: [
+	{ wave:'square', from:125, to:92, at:0, length:.11, gain:.045 }
+	],
+	start: [
+	{ wave:'sine', from:260, to:340, at:0,   length:.16, gain:.09 },
+	{ wave:'sine', from:390, to:520, at:.09, length:.18, gain:.08 }
+	],
+	win: [
+	{ wave:'sine', from:392, to:440, at:0,   length:.24, gain:.10 },
+	{ wave:'sine', from:494, to:554, at:.10, length:.26, gain:.09 },
+	{ wave:'sine', from:659, to:784, at:.20, length:.34, gain:.08 }
+	],
+	lose: [
+	{ wave:'triangle', from:330, to:250, at:0,   length:.24, gain:.09 },
+	{ wave:'sine',     from:247, to:165, at:.15, length:.34, gain:.08 }
+	],
+	draw: [
+	{ wave:'sine', from:294, to:294, at:0,   length:.22, gain:.08 },
+	{ wave:'sine', from:349, to:330, at:.10, length:.24, gain:.07 }
+	],
+	chat: [
+	{ wave:'sine', from:640, to:820, at:0,    length:.06, gain:.07 },
+	{ wave:'sine', from:760, to:960, at:.055, length:.07, gain:.055 }
+	],
+	connect: [
+	{ wave:'sine', from:350, to:520, at:0,   length:.14, gain:.08 },
+	{ wave:'sine', from:520, to:700, at:.10, length:.15, gain:.07 }
+	],
+	disconnect: [
+	{ wave:'triangle', from:280, to:120, at:0, length:.28, gain:.07 }
+	]
+	};
+
+	class KoiSoundManager {
+	constructor(files, presets){
+	this.files = files;
+	this.presets = presets;
+	this.context = null;
+	this.master = null;
+	this.sfxVolume = .62;
+	this.lastNonZeroSfxVolume = .62;
+	this.sfxMuted = false;
+	this.bgmVolume = .28;
+	this.lastNonZeroBgmVolume = .28;
+	this.bgmMuted = false;
+	this.bgm = null;
+	this.bgmFailed = false;
+	this.storage = {
+	sfxVolume: 'koiChess.audio.volume.v1',
+	sfxMuted: 'koiChess.audio.muted.v1',
+	bgmVolume: 'koiChess.audio.bgm.volume.v1',
+	bgmMuted: 'koiChess.audio.bgm.muted.v1'
+	};
+	this.readSettings();
+	this.bindControls();
+	}
+
+	readSettings(){
+	try {
+	const rawSfxVolume = localStorage.getItem(this.storage.sfxVolume);
+	if(rawSfxVolume !== null){
+	const savedVolume = Number(rawSfxVolume);
+	if(Number.isFinite(savedVolume)){
+	this.sfxVolume = Math.max(0, Math.min(1, savedVolume));
+	if(this.sfxVolume > 0) this.lastNonZeroSfxVolume = this.sfxVolume;
+	}
+	}
+	this.sfxMuted = localStorage.getItem(this.storage.sfxMuted) === 'true' ||
+	this.sfxVolume === 0;
+
+	const rawBgmVolume = localStorage.getItem(this.storage.bgmVolume);
+	if(rawBgmVolume !== null){
+	const savedVolume = Number(rawBgmVolume);
+	if(Number.isFinite(savedVolume)){
+	this.bgmVolume = Math.max(0, Math.min(1, savedVolume));
+	if(this.bgmVolume > 0) this.lastNonZeroBgmVolume = this.bgmVolume;
+	}
+	}
+	this.bgmMuted = localStorage.getItem(this.storage.bgmMuted) === 'true' ||
+	this.bgmVolume === 0;
+	} catch(_){ /* Storage can be unavailable under file:// or privacy modes. */ }
+	}
+
+	saveSettings(){
+	try {
+	localStorage.setItem(this.storage.sfxVolume, String(this.sfxVolume));
+	localStorage.setItem(this.storage.sfxMuted, String(this.sfxMuted));
+	localStorage.setItem(this.storage.bgmVolume, String(this.bgmVolume));
+	localStorage.setItem(this.storage.bgmMuted, String(this.bgmMuted));
+	} catch(_){ }
+	}
+
+	unlock(){
+	const AudioCtx = window.AudioContext || window.webkitAudioContext;
+	if(!AudioCtx) return false;
+	try {
+	if(!this.context){
+	this.context = new AudioCtx();
+	this.master = this.context.createGain();
+	this.master.connect(this.context.destination);
+	this.applySfxGain();
+	}
+	if(this.context.state === 'suspended') this.context.resume().catch(() => {});
+	return true;
+	} catch(_){
+	return false;
+	}
+	}
+
+	applySfxGain(){
+	if(!this.master || !this.context) return;
+	const value = this.sfxMuted ? 0 : this.sfxVolume;
+	this.master.gain.cancelScheduledValues(this.context.currentTime);
+	this.master.gain.setTargetAtTime(value, this.context.currentTime, .015);
+	}
+
+	applyBgmGain(){
+	if(!this.bgm) return;
+	this.bgm.volume = this.bgmMuted ? 0 : Math.max(0, Math.min(1, this.bgmVolume));
+	}
+
+	setSfxMuted(value){
+	this.sfxMuted = Boolean(value);
+	if(!this.sfxMuted && this.sfxVolume === 0){
+      this.sfxVolume = this.lastNonZeroSfxVolume || .62;
+    }
+    this.applySfxGain();
+    this.saveSettings();
+    this.syncControls();
+  }
+
+  toggleSfx(){
+    this.unlock();
+    this.setSfxMuted(!this.sfxMuted);
+    if(!this.sfxMuted) this.play('select');
+  }
+
+  setSfxVolume(value){
+    const next = Math.max(0, Math.min(1, Number(value) || 0));
+    this.sfxVolume = next;
+    if(next > 0){
+      this.lastNonZeroSfxVolume = next;
+      this.sfxMuted = false;
+    } else {
+      this.sfxMuted = true;
+    }
+    this.applySfxGain();
+    this.saveSettings();
+    this.syncControls();
+  }
+
+  setBgmMuted(value){
+    this.bgmMuted = Boolean(value);
+    if(!this.bgmMuted && this.bgmVolume === 0){
+      this.bgmVolume = this.lastNonZeroBgmVolume || .28;
+    }
+    this.applyBgmGain();
+    if(this.bgmMuted) this.pauseBgm();
+    else this.startBgm();
+    this.saveSettings();
+    this.syncControls();
+  }
+
+  toggleBgm(){
+    this.setBgmMuted(!this.bgmMuted);
+  }
+
+  setBgmVolume(value){
+    const next = Math.max(0, Math.min(1, Number(value) || 0));
+    this.bgmVolume = next;
+    if(next > 0){
+      this.lastNonZeroBgmVolume = next;
+      this.bgmMuted = false;
+      this.startBgm();
+    } else {
+      this.bgmMuted = true;
+      this.pauseBgm();
+    }
+    this.applyBgmGain();
+    this.saveSettings();
+    this.syncControls();
+  }
+
+  startBgm(){
+    if(this.bgmMuted || this.bgmVolume <= 0 || document.hidden) return false;
+    const url = this.files.bgm;
+    if(!url || this.bgmFailed || typeof Audio === 'undefined') return false;
+
+    if(!this.bgm){
+      const track = new Audio(url);
+      track.loop = true;
+      track.preload = 'auto';
+      track.addEventListener('error', () => {
+        this.bgmFailed = true;
+        if(this.bgm === track){
+          track.pause();
+          this.bgm = null;
+        }
+      }, { once:true });
+      this.bgm = track;
+    }
+
+    this.applyBgmGain();
+    const started = this.bgm.play();
+    if(started && typeof started.catch === 'function') started.catch(() => {});
+    return true;
+  }
+
+  pauseBgm(){
+    if(this.bgm) this.bgm.pause();
+  }
+
+  syncControls(){
+    const sfxToggle = document.getElementById('sfxToggle');
+    const sfxIcon = document.getElementById('sfxIcon');
+    const sfxSlider = document.getElementById('sfxVolumeSlider');
+    const sfxOutput = document.getElementById('sfxVolumeValue');
+    const bgmToggle = document.getElementById('bgmToggle');
+    const bgmIcon = document.getElementById('bgmIcon');
+    const bgmSlider = document.getElementById('bgmVolumeSlider');
+    const bgmOutput = document.getElementById('bgmVolumeValue');
+    if(!sfxToggle || !sfxIcon || !sfxSlider || !sfxOutput ||
+       !bgmToggle || !bgmIcon || !bgmSlider || !bgmOutput) return;
+
+    const sfxActive = !this.sfxMuted && this.sfxVolume > 0;
+    const sfxPercent = Math.round(this.sfxVolume * 100);
+    sfxToggle.setAttribute('aria-pressed', String(sfxActive));
+    sfxToggle.setAttribute('aria-label',
+      sfxActive ? 'Tắt âm thanh hiệu ứng' : 'Bật âm thanh hiệu ứng');
+    sfxIcon.textContent = sfxActive ? (this.sfxVolume < .45 ? '🔉' : '🔊') : '🔇';
+    sfxSlider.value = String(sfxPercent);
+    sfxSlider.setAttribute('aria-valuetext', `${sfxPercent} phần trăm`);
+    sfxOutput.value = `${sfxPercent}%`;
+    sfxOutput.textContent = `${sfxPercent}%`;
+
+    const bgmActive = !this.bgmMuted && this.bgmVolume > 0;
+    const bgmPercent = Math.round(this.bgmVolume * 100);
+    bgmToggle.setAttribute('aria-pressed', String(bgmActive));
+    bgmToggle.setAttribute('aria-label', bgmActive ? 'Tắt nhạc nền' : 'Bật nhạc nền');
+    bgmIcon.textContent = bgmActive ? '♫' : '🔇';
+    bgmSlider.value = String(bgmPercent);
+    bgmSlider.setAttribute('aria-valuetext', `${bgmPercent} phần trăm`);
+    bgmOutput.value = `${bgmPercent}%`;
+    bgmOutput.textContent = `${bgmPercent}%`;
+  }
+
+  bindControls(){
+    const sfxToggle = document.getElementById('sfxToggle');
+    const sfxSlider = document.getElementById('sfxVolumeSlider');
+    const bgmToggle = document.getElementById('bgmToggle');
+    const bgmSlider = document.getElementById('bgmVolumeSlider');
+    if(!sfxToggle || !sfxSlider || !bgmToggle || !bgmSlider) return;
+
+    this.syncControls();
+    sfxToggle.addEventListener('click', () => this.toggleSfx());
+    sfxSlider.addEventListener('input',
+      () => this.setSfxVolume(Number(sfxSlider.value) / 100));
+    sfxSlider.addEventListener('change', () => this.play('select'));
+    bgmToggle.addEventListener('click', () => this.toggleBgm());
+    bgmSlider.addEventListener('input',
+      () => this.setBgmVolume(Number(bgmSlider.value) / 100));
+
+    const unlock = () => {
+      this.unlock();
+      this.startBgm();
+    };
+    document.addEventListener('pointerdown', unlock, { once:true, capture:true });
+    document.addEventListener('keydown', unlock, { once:true, capture:true });
+    document.addEventListener('visibilitychange', () => {
+      if(document.hidden) this.pauseBgm();
+      else this.startBgm();
+    });
+  }
+
+  play(name, options = {}){
+    if(this.sfxMuted || this.sfxVolume <= 0 || document.hidden) return;
+    this.unlock();
+    const url = this.files[name];
+    if(url && typeof Audio !== 'undefined'){
+      let fellBack = false;
+      const fallback = () => {
+        if(fellBack) return;
+        fellBack = true;
+        this.playSynth(name, options);
+      };
+      try {
+        const voice = new Audio(url);
+        voice.preload = 'auto';
+        voice.volume = Math.max(0,
+          Math.min(1, this.sfxVolume * (options.gain || 1)));
+        voice.addEventListener('error', fallback, { once:true });
+        const started = voice.play();
+        if(started && typeof started.catch === 'function') started.catch(fallback);
+        return;
+      } catch(_){
+        fallback();
+        return;
+      }
+    }
+    this.playSynth(name, options);
+  }
+
+  playSynth(name, options = {}){
+    if(!this.context || !this.master || this.sfxMuted) return;
+    const preset = this.presets[name];
+    if(!preset) return;
+    const intensity = Math.max(.55, Math.min(1.35, options.intensity || 1));
+    const now = this.context.currentTime + .005;
+    for(const tone of preset){
+      const oscillator = this.context.createOscillator();
+      const envelope = this.context.createGain();
+      const start = now + tone.at;
+      const end = start + tone.length;
+      oscillator.type = tone.wave;
+      oscillator.frequency.setValueAtTime(tone.from * intensity, start);
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, tone.to * intensity), end);
+      envelope.gain.setValueAtTime(.0001, start);
+      envelope.gain.exponentialRampToValueAtTime(Math.max(.0001, tone.gain), start + Math.min(.018, tone.length / 4));
+      envelope.gain.exponentialRampToValueAtTime(.0001, end);
+      oscillator.connect(envelope);
+      envelope.connect(this.master);
+      oscillator.start(start);
+      oscillator.stop(end + .02);
+    }
+  }
+}
+
+const koiSound = new KoiSoundManager(KOI_SOUND_FILES, KOI_SYNTH_SOUNDS);
+// Handy for testing: koiSound.play('capture') or koiSound.startBgm()
+window.koiSound = koiSound;
+// Try immediately on page load. If the browser blocks audible autoplay,
+// bindControls() retries on the visitor's first click or keypress anywhere.
+koiSound.startBgm();
+
 /* ---------- BOARD MODEL ---------- */
 // 25 points, index = row*5 + col
 const N = 5, SIZE = N*N;
@@ -889,14 +1557,591 @@ let myColor = null;      // 1 or 2, set on connect
 let selected = null;
 let hints = [];
 let gameOver = false;
+let gameEpoch = 0;         // invalidates delayed effects from an older match
 let conn = null, peer = null;
 let gameActive = false;   // true while a match is live (nav guard)
 let vsAI = false;         // playing against the machine?
 let aiLevel = null;       // 'easy' | 'hard' | 'chal'
 let aiTimer = null;       // pending machine "thinking" timeout
+let aiThinkSequence = 0;  // invalidates stale callbacks after reset/pause
+let activeAIThinkPlan = null;
 let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
 let aiSeen = {};          // position -> occurrence count (anti-repetition)
 let aiPickerPaused = false; // pause a live machine turn while choosing a replay level
+
+/* ---------- BOT PERSONALITY + CHAT ---------- */
+const BOT_PROFILES = {
+  easy: {
+    name: 'KOI MƠ MÀNG',
+    avatar: '🐟',
+    style: 'playful',
+    baseMood: .35,
+    baseConfidence: .12,
+    talkRate: .76,
+    cooldown: 2900,
+    thinking: {
+      weights: { snap:.22, normal:.31, silent:.20, spoken:.22, deep:.05 },
+      times: {
+        snap:[300, 600],
+        normal:[650, 1200],
+        silent:[1250, 2100],
+        spoken:[1900, 3000],
+        deep:[2600, 3900]
+      }
+    }
+  },
+  hard: {
+    name: 'KOI LÁU LỈNH',
+    avatar: '🤖',
+    style: 'cocky',
+    baseMood: .10,
+    baseConfidence: .28,
+    talkRate: .56,
+    cooldown: 3900,
+    thinking: {
+      weights: { snap:.14, normal:.28, silent:.28, spoken:.18, deep:.12 },
+      times: {
+        snap:[450, 750],
+        normal:[850, 1450],
+        silent:[1400, 2400],
+        spoken:[2100, 3300],
+        deep:[2900, 4500]
+      }
+    }
+  },
+  chal: {
+    name: 'KOI ĐẠI SƯ',
+    avatar: '🐉',
+    style: 'calm',
+    baseMood: -.05,
+    baseConfidence: .42,
+    talkRate: .39,
+    cooldown: 4800,
+    thinking: {
+      weights: { snap:.09, normal:.24, silent:.33, spoken:.13, deep:.21 },
+      times: {
+        snap:[650, 1000],
+        normal:[1050, 1750],
+        silent:[1700, 2900],
+        spoken:[2400, 3800],
+        deep:[3200, 5200]
+      }
+    }
+  }
+};
+
+const BOT_LINES = {
+  start: {
+    playful: [
+      'Bạn đi trước nhé. Tôi còn đang ngắm cá.',
+      'Dòng nước êm quá… bắt đầu thôi!',
+      'Nếu tôi đi lạc, cứ xem như cá bơi ngược dòng.'
+    ],
+    cocky: [
+      'Bạn đi trước. Tôi thích có thêm dữ liệu.',
+      'Bàn cờ đã sẵn sàng. Đừng để lộ khe hở nhé.',
+      'Một ván nhanh hay một bài học dài? Bắt đầu nào.'
+    ],
+    calm: [
+      'Mỗi nước đi đều để lại một gợn sóng.',
+      'Cứ đi theo ý bạn. Bàn cờ sẽ trả lời.',
+      'Tĩnh tâm. Quan sát. Rồi mới gánh.'
+    ]
+  },
+  thinking: {
+    playful: [
+      'Khoan nhé… vây cá cũng cần nghệ thuật.',
+      'Tôi đang hỏi đàn cá nên bơi hướng nào.',
+      'Một chút thôi, bộ nhớ cá vàng đang làm việc.'
+    ],
+    cocky: [
+      'Để tôi kiểm tra xem đó là bẫy hay lời mời.',
+      'Tính thêm một nhịp… rồi đến lượt bạn lo.',
+      'Nước hay thường cần im lặng một chút.'
+    ],
+    calm: [
+      'Tôi đang nhìn cả bàn, không chỉ một quân.',
+      'Dòng chảy tốt nhất thường không ồn ào.',
+      'Chậm một nhịp để đi xa hơn.'
+    ]
+  },
+  thinking_confident: {
+    playful: [
+      'Ồ, tôi thấy một dòng nước khá tinh nghịch rồi.',
+      'Nước này vui đấy… để tôi chọn cú quẫy đẹp nhất.',
+      'Tôi có ý rồi, chỉ đang làm nó kịch tính hơn thôi.'
+    ],
+    cocky: [
+      'Tôi đã thấy khe hở. Chỉ đang chọn cách dùng nó.',
+      'Có vài nước tốt — vấn đề là nước nào làm bạn khó chịu nhất.',
+      'Kế hoạch đã rõ. Tôi đang kiểm tra lần cuối.'
+    ],
+    calm: [
+      'Thế cờ đã mở ra một đường rõ ràng.',
+      'Tôi thấy nước đi. Giờ chỉ cần xác nhận hệ quả.',
+      'Một phương án nổi lên, nhưng tôi vẫn nhìn thêm một nhịp.'
+    ]
+  },
+  thinking_rattled: {
+    playful: [
+      'Khoan… đàn cá vừa làm tôi quên mất kế hoạch.',
+      'Nước đó làm sóng lớn quá. Cho tôi nhìn lại đã.',
+      'Tôi vẫn ổn! Chỉ là đang… tính lại gần như mọi thứ.'
+    ],
+    cocky: [
+      'Nước đó buộc tôi tính lại. Đừng vội mừng.',
+      'Tôi đã bỏ sót một chi tiết. Sẽ không có lần hai.',
+      'Thế cờ đổi nhanh hơn dự tính — tôi cần một nhịp.'
+    ],
+    calm: [
+      'Tôi cần bỏ giả định cũ và nhìn lại.',
+      'Nước vừa rồi đã thay đổi trật tự ưu tiên.',
+      'Khi thế cờ đổi, kiên nhẫn quan trọng hơn tốc độ.'
+    ]
+  },
+  player_capture: {
+    playful: [
+      'Ối, {count} quân vừa đổi đội thật à?',
+      'Cú gánh đẹp đấy. Tôi hơi chóng mặt rồi.',
+      'Được lắm! Cá của tôi vừa bơi sang phía bạn.'
+    ],
+    cocky: [
+      'Cú đó ổn. Nhưng bạn đã nhìn nước tiếp theo chưa?',
+      'Bạn lấy {count} quân. Tôi ghi nhớ rồi.',
+      'Một cú gánh sạch sẽ. Chưa đủ để tôi hoảng đâu.'
+    ],
+    calm: [
+      'Hay. Bạn đã thấy đúng điểm tựa.',
+      '{count} quân đổi màu — thế cờ cũng vừa đổi.',
+      'Một nước chính xác. Tôi sẽ điều chỉnh.'
+    ]
+  },
+  player_big_capture: {
+    playful: [
+      'Khoan… {count} quân một lúc? Bạn chơi thật đấy à!',
+      'Cả đàn cá của tôi vừa theo bạn luôn rồi!',
+      'Ui da. Cú đó tạo sóng lớn quá.'
+    ],
+    cocky: [
+      '{count} quân. Được, giờ ván này mới đáng chú ý.',
+      'Cú gánh lớn. Tôi sẽ không tặng bạn lần hai.',
+      'Bạn vừa đổi hẳn nhịp ván cờ.'
+    ],
+    calm: [
+      'Một đợt sóng mạnh: {count} quân.',
+      'Xuất sắc. Thế cân bằng vừa bị phá vỡ.',
+      'Tôi đã đánh giá thấp đường gánh đó.'
+    ]
+  },
+  bot_capture: {
+    playful: [
+      'Xin phép mượn {count} chú cá nhé!',
+      'Ú òa — quân này giờ bơi cùng tôi.',
+      'Dòng nước vừa nghiêng về phía máy một chút.'
+    ],
+    cocky: [
+      'Tôi thấy khe hở đó từ nước trước.',
+      '{count} quân đổi phe. Kế hoạch đang chạy tốt.',
+      'Cảm ơn bạn đã để cửa mở.'
+    ],
+    calm: [
+      'Tôi nhận lấy cơ hội này.',
+      '{count} quân đã đổi màu. Tiếp tục nhé.',
+      'Một chuyển đổi nhỏ, một hệ quả lớn.'
+    ]
+  },
+  bot_big_capture: {
+    playful: [
+      'Ồ! {count} quân theo tôi — tiệc cá bắt đầu rồi!',
+      'Sóng lớn quá, tôi cũng bất ngờ đấy.',
+      'Một cú quẫy đuôi và cả đàn đổi hướng!'
+    ],
+    cocky: [
+      '{count} quân. Đó là cái giá của một khe hở.',
+      'Bàn cờ vừa nghiêng mạnh về phía tôi.',
+      'Tôi đã chờ đúng khoảnh khắc này.'
+    ],
+    calm: [
+      '{count} quân đổi phe. Thế trận đã sang chương mới.',
+      'Đòn gánh đã khép lại đúng như dự tính.',
+      'Một nước quyết định, không cần vội vàng.'
+    ]
+  },
+  ahead: {
+    playful: [
+      'Hình như đàn cá bên tôi đang đông lên rồi.',
+      'Tôi đang dẫn trước à? Đừng làm tôi tự mãn nhé.',
+      'Nước đang chảy khá thuận cho tôi.'
+    ],
+    cocky: [
+      'Lợi thế đã rõ. Bạn cần một cú đảo chiều.',
+      'Bây giờ mỗi khe hở của bạn đều rất đắt.',
+      'Tôi đang kiểm soát nhịp ván cờ.'
+    ],
+    calm: [
+      'Lợi thế chỉ có ý nghĩa nếu giữ được nó.',
+      'Thế trận nghiêng về tôi, nhưng chưa kết thúc.',
+      'Tôi sẽ không nhầm ưu thế với chiến thắng.'
+    ]
+  },
+  behind: {
+    playful: [
+      'Ít cá hơn, nhưng tôi vẫn còn nhiều bong bóng!',
+      'Được rồi… kế hoạch B. Hoặc C.',
+      'Tôi đang thua một chút. Chỉ một chút thôi nhé.'
+    ],
+    cocky: [
+      'Bạn đang dẫn, nhưng một cú gánh là đủ đảo chiều.',
+      'Tạm thời bạn hơn quân. Đừng mất tập trung.',
+      'Tôi bị ép, chưa bị khuất phục.'
+    ],
+    calm: [
+      'Bất lợi đã rõ. Tôi cần một đường phản công.',
+      'Ít quân hơn buộc tôi phải chính xác hơn.',
+      'Thế yếu vẫn có thể tạo ra nước mạnh.'
+    ]
+  },
+  danger: {
+    playful: [
+      'Ơ… đàn cá của tôi đâu hết rồi?',
+      'Không còn nhiều chỗ để bơi nữa.',
+      'Báo động nhẹ. Rất nhẹ. Chắc vậy.'
+    ],
+    cocky: [
+      'Bạn dồn tôi sát bờ rồi. Nước tiếp theo rất quan trọng.',
+      'Tình thế nguy hiểm — cuối cùng cũng thú vị.',
+      'Ít lựa chọn hơn đôi khi lại dễ nhìn hơn.'
+    ],
+    calm: [
+      'Đường lui đang khép lại.',
+      'Tôi còn rất ít tự do trên bàn cờ.',
+      'Đây là lúc một nước đi phải làm nhiều việc.'
+    ]
+  },
+  repetition: {
+    playful: [
+      'Chỗ này quen quá… ta vừa bơi qua đây phải không?',
+      'Bộ nhớ cá vàng của tôi cũng nhận ra vòng lặp này.',
+      'Lại con đường cũ à? Thử tạo sóng mới nhé.'
+    ],
+    cocky: [
+      'Lặp lại vị trí không làm nó an toàn hơn đâu.',
+      'Tôi nhớ thế cờ này. Bạn định đổi điều gì?',
+      'Chúng ta đang đi vòng. Tôi sẽ tìm lối ra.'
+    ],
+    calm: [
+      'Một thế cờ cũ đã trở lại.',
+      'Vòng lặp là dấu hiệu cả hai đang chờ sai lầm.',
+      'Ta nên thay đổi nhịp.'
+    ]
+  },
+  quiet: {
+    playful: [
+      'Im ắng ghê. Có phải bạn đang giăng lưới không?',
+      'Không gánh nhau một lúc cũng… dễ thương.',
+      'Tôi thích nước yên, nhưng bàn cờ thì không.'
+    ],
+    cocky: [
+      'Một nước yên lặng thường che một ý đồ.',
+      'Bạn đang xây thế hay chỉ đang chờ tôi sơ hở?',
+      'Không đổi quân, nhưng áp lực vẫn tăng.'
+    ],
+    calm: [
+      'Khoảng lặng cũng là một phần của thế trận.',
+      'Không phải nước mạnh nào cũng đổi màu quân.',
+      'Bàn cờ đang tích lũy căng thẳng.'
+    ]
+  },
+  win: {
+    playful: [
+      'Tôi thắng rồi! Cá máy hôm nay bơi đúng hướng.',
+      'Ván hay lắm. Làm thêm một ván chứ?',
+      'Chiến thắng nhỏ, bong bóng lớn!'
+    ],
+    cocky: [
+      'Hết đường rồi. Nhưng bạn đã khiến tôi phải tính kỹ.',
+      'Ván này thuộc về tôi. Ván sau thì chưa chắc.',
+      'Kế hoạch đã khép lại. Cảm ơn vì một ván hay.'
+    ],
+    calm: [
+      'Ván cờ kết thúc. Cảm ơn bạn.',
+      'Một sai lệch nhỏ đã quyết định kết quả.',
+      'Chiến thắng đến từ cả chuỗi nước đi.'
+    ]
+  },
+  lose: {
+    playful: [
+      'Tôi thua rồi… nhưng cú gánh đó đáng để vỗ tay!',
+      'Bạn bắt được cả đàn cá máy. Phục!',
+      'Được thôi, tôi sẽ luyện bơi rồi quay lại.'
+    ],
+    cocky: [
+      'Bạn đọc bàn cờ tốt hơn tôi ở ván này.',
+      'Thua rõ ràng. Tôi nợ bạn một trận phục thù.',
+      'Nước quyết định là của bạn. Chơi hay lắm.'
+    ],
+    calm: [
+      'Tôi nhận thua. Bạn đã giữ được thế tốt hơn.',
+      'Một ván chính xác từ phía bạn.',
+      'Kết quả xứng đáng. Cảm ơn vì bài học.'
+    ]
+  }
+};
+
+let botMind = null;
+let botMatchId = 0;
+let botPendingTimer = null;
+let botIdleTimer = null;
+let botHideTimer = null;
+let botTypingDelay = null;
+let botTypeInterval = null;
+
+const clampBot = (value, min, max) => Math.max(min, Math.min(max, value));
+
+function clearBotTimers(includeDisplay = false){
+  if(botPendingTimer){ clearTimeout(botPendingTimer); botPendingTimer = null; }
+  if(botIdleTimer){ clearTimeout(botIdleTimer); botIdleTimer = null; }
+  if(includeDisplay){
+    if(botHideTimer){ clearTimeout(botHideTimer); botHideTimer = null; }
+    if(botTypingDelay){ clearTimeout(botTypingDelay); botTypingDelay = null; }
+    if(botTypeInterval){ clearInterval(botTypeInterval); botTypeInterval = null; }
+  }
+}
+
+function botMoodBand(){
+  if(!botMind) return 'neutral';
+  const feeling = botMind.confidence + botMind.mood * .35;
+  if(feeling >= .35) return 'confident';
+  if(feeling <= -.30) return 'rattled';
+  return 'neutral';
+}
+
+function syncBotIdentity(){
+  if(!botMind) return;
+  const band = botMoodBand();
+  const moodLabels = { confident:'TỰ TIN', rattled:'DAO ĐỘNG', neutral:'BÌNH TĨNH' };
+  const shell = document.getElementById('botChat');
+  shell.dataset.mood = band;
+  document.getElementById('botChatName').textContent = botMind.profile.name;
+  document.getElementById('botChatAvatar').textContent = botMind.profile.avatar;
+  document.getElementById('botChatMood').textContent = moodLabels[band];
+}
+
+function hideBotChat(removeFromLayout = false){
+  const shell = document.getElementById('botChat');
+  shell.classList.remove('is-visible', 'is-typing');
+  if(removeFromLayout) shell.hidden = true;
+}
+
+function showBotChat(text, mood){
+  const shell = document.getElementById('botChat');
+  const copy = document.getElementById('botChatText');
+  const announce = document.getElementById('botChatAnnounce');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(botHideTimer){ clearTimeout(botHideTimer); botHideTimer = null; }
+  if(botTypingDelay){ clearTimeout(botTypingDelay); botTypingDelay = null; }
+  if(botTypeInterval){ clearInterval(botTypeInterval); botTypeInterval = null; }
+  shell.hidden = false;
+  shell.dataset.mood = mood || botMoodBand();
+  shell.classList.add('is-visible');
+  shell.classList.add('is-typing');
+  copy.textContent = '';
+  announce.textContent = '';
+  koiSound.play('chat');
+
+  const reveal = () => {
+    shell.classList.remove('is-typing');
+    if(reduceMotion){
+      copy.textContent = text;
+      announce.textContent = text;
+      return;
+    }
+    let index = 0;
+    botTypeInterval = setInterval(() => {
+      index += 1;
+      copy.textContent = text.slice(0, index);
+      if(index >= text.length){
+        clearInterval(botTypeInterval);
+        botTypeInterval = null;
+        announce.textContent = text;
+      }
+    }, 18);
+  };
+
+  if(reduceMotion) reveal();
+  else botTypingDelay = setTimeout(() => {
+    botTypingDelay = null;
+    reveal();
+  }, 310);
+  botHideTimer = setTimeout(
+    () => {
+      botHideTimer = null;
+      hideBotChat(false);
+    },
+    Math.max(3900, Math.min(6200, 2050 + text.length * 48))
+  );
+}
+
+function pickBotLine(situation, context = {}){
+  if(!botMind) return '';
+  const style = botMind.profile.style;
+  const pool = (BOT_LINES[situation] && BOT_LINES[situation][style]) || BOT_LINES.quiet[style];
+  const indexed = pool.map((line, index) => ({
+    line,
+    id: `${situation}:${style}:${index}`
+  }));
+  let choices = indexed.filter(item => !botMind.recentLineIds.includes(item.id));
+  if(!choices.length){
+    const lastId = botMind.recentLineIds[botMind.recentLineIds.length - 1];
+    choices = indexed.filter(item => item.id !== lastId);
+  }
+  if(!choices.length) choices = indexed;
+  const choice = choices[(Math.random() * choices.length) | 0];
+  return {
+    id: choice.id,
+    text: choice.line.replaceAll('{count}', String(context.count || 1))
+  };
+}
+
+function botReact(situation, context = {}, options = {}){
+  if(!vsAI || !botMind || aiPickerPaused || document.hidden) return false;
+  if(gameOver && !options.terminal) return false;
+
+  const forced = Boolean(options.force);
+  const guaranteed = Boolean(options.guaranteed);
+  const now = Date.now();
+  const eventWeight = options.weight ?? 1;
+  const chance = botMind.profile.talkRate * eventWeight *
+    (.85 + .3 * Math.abs(botMind.confidence));
+  const cooldown = botMind.profile.cooldown * (options.cooldownScale ?? 1);
+
+  if(!forced){
+    if(botPendingTimer) return false;
+    if(now - botMind.lastSpokeAt < cooldown) return false;
+    if(!guaranteed && Math.random() > chance) return false;
+  }
+
+  const picked = pickBotLine(situation, context);
+  if(!picked) return false;
+  const matchId = botMind.matchId;
+  if(botPendingTimer) clearTimeout(botPendingTimer);
+  botPendingTimer = setTimeout(() => {
+    botPendingTimer = null;
+    if(!botMind || botMind.matchId !== matchId || !vsAI || aiPickerPaused) return;
+    if(document.hidden || (gameOver && !options.terminal)) return;
+    botMind.lastSpokeAt = Date.now();
+    botMind.recentLineIds.push(picked.id);
+    botMind.recentLineIds = botMind.recentLineIds.slice(-4);
+    syncBotIdentity();
+    showBotChat(picked.text, botMoodBand());
+  }, Math.max(0, options.delay ?? (260 + Math.random() * 260)));
+  return true;
+}
+
+function startBotPersonality(level){
+  clearBotTimers(true);
+  botMatchId += 1;
+  const profile = BOT_PROFILES[level] || BOT_PROFILES.hard;
+  botMind = {
+    matchId: botMatchId,
+    profile,
+    mood: profile.baseMood,
+    confidence: profile.baseConfidence,
+    momentum: 0,
+    lastLead: 0,
+    quietPly: 0,
+    lastSpokeAt: 0,
+    lastThinkMode: null,
+    sameThinkCount: 0,
+    totalThinkTime: 0,
+    recentLineIds: []
+  };
+  const shell = document.getElementById('botChat');
+  shell.hidden = false;
+  syncBotIdentity();
+}
+
+function updateBotMind(move){
+  if(!botMind) return null;
+  const aiSide = myColor === 1 ? 2 : 1;
+  const beforeLead = count(move.before, aiSide) - count(move.before, myColor);
+  const lead = count(move.after, aiSide) - count(move.after, myColor);
+  const mobilityLead = allMoves(move.after, aiSide).length - allMoves(move.after, myColor).length;
+  const swing = lead - beforeLead;
+  botMind.momentum = clampBot(.65 * botMind.momentum + swing / 8, -1, 1);
+  const target = clampBot(lead / 6 + mobilityLead / 30 + botMind.momentum * .2, -1, 1);
+  botMind.confidence = .7 * botMind.confidence + .3 * target;
+  botMind.mood = clampBot(
+    botMind.profile.baseMood +
+    (botMind.mood - botMind.profile.baseMood) * .82 +
+    swing * .08,
+    -1,
+    1
+  );
+  botMind.lastLead = lead;
+  botMind.quietPly = move.captureCount ? 0 : botMind.quietPly + 1;
+  syncBotIdentity();
+  return { aiSide, beforeLead, lead, mobilityLead, swing };
+}
+
+function reactToBotMove(move){
+  if(!vsAI || !botMind) return;
+  const situation = updateBotMind(move);
+  if(!situation) return;
+  const aiMoved = move.mover === situation.aiSide;
+  const aiPieces = count(move.after, situation.aiSide);
+  const aiMoves = allMoves(move.after, situation.aiSide).length;
+  let reaction = null;
+  let weight = .55;
+
+  if(move.captureCount >= 3){
+    reaction = aiMoved ? 'bot_big_capture' : 'player_big_capture';
+    weight = 1.35;
+  } else if(aiPieces <= 2 || aiMoves <= 2){
+    reaction = 'danger';
+    weight = 1.15;
+  } else if(situation.beforeLead < 3 && situation.lead >= 3){
+    reaction = 'ahead';
+    weight = 1.05;
+  } else if(situation.beforeLead > -3 && situation.lead <= -3){
+    reaction = 'behind';
+    weight = 1.05;
+  } else if(move.captureCount > 0){
+    reaction = aiMoved ? 'bot_capture' : 'player_capture';
+    weight = .88;
+  } else if((aiSeen[move.after.join('')] || 0) >= 2){
+    reaction = 'repetition';
+    weight = .78;
+  } else if(botMind.quietPly >= 5){
+    reaction = 'quiet';
+    weight = .52;
+    botMind.quietPly = 0;
+  }
+
+  if(reaction){
+    botReact(reaction, { count:move.captureCount }, {
+      weight,
+      delay: move.captureCount ? 520 : 320
+    });
+  }
+}
+
+function scheduleBotIdle(){
+  if(botIdleTimer){ clearTimeout(botIdleTimer); botIdleTimer = null; }
+  if(document.hidden || !vsAI || !botMind || gameOver || aiPickerPaused || turn !== myColor) return;
+  const matchId = botMind.matchId;
+  botIdleTimer = setTimeout(() => {
+    botIdleTimer = null;
+    if(document.hidden || !botMind || botMind.matchId !== matchId || turn !== myColor || gameOver) return;
+    botReact('quiet', {}, { weight:.42, delay:0 });
+    scheduleBotIdle();
+  }, 9000 + Math.random() * 5000);
+}
+
+window.koiBot = {
+  say: text => showBotChat(String(text), botMoodBand()),
+  react: situation => botReact(situation, {}, { force:true })
+};
 
 /* ---------- RENDER ---------- */
 const svg = document.getElementById('board');
@@ -996,6 +2241,7 @@ function renderHints(){
 
 // Slide the moved piece, then shrink-swap-grow each captured piece.
 function animateMove(from, to, flips){
+  const epoch = gameEpoch;
   const g = pieceAt[from];
   if(!g){ syncPieces(); return; }        // desync safety net
   pieceAt[from] = null;
@@ -1005,14 +2251,19 @@ function animateMove(from, to, flips){
 
   const newSide = board[to];             // board is already updated
   setTimeout(() => {
+    if(epoch !== gameEpoch) return;
     for(const f of flips){
       const fg = pieceAt[f];
       if(!fg) continue;
       const c = fg.firstChild;
       c.classList.add('flipping');
       // swap color at the midpoint of the shrink, when the piece is invisible
-      setTimeout(() => { c.setAttribute('class', (newSide===1?'piece-w':'piece-b') + ' flipping'); }, 220);
-      setTimeout(() => { c.classList.remove('flipping'); }, 460);
+      setTimeout(() => {
+        if(epoch === gameEpoch) c.setAttribute('class', (newSide===1?'piece-w':'piece-b') + ' flipping');
+      }, 220);
+      setTimeout(() => {
+        if(epoch === gameEpoch) c.classList.remove('flipping');
+      }, 460);
     }
     refreshPlayers();
   }, 240);
@@ -1066,7 +2317,17 @@ function checkEnd(){
 
 function finish(winner){
   gameOver = true;
+  cancelAIThinking();
+  clearBotTimers(true);
   const won = winner === myColor;
+  koiSound.play(won ? 'win' : 'lose');
+  if(vsAI){
+    botReact(won ? 'lose' : 'win', {}, {
+      force:true,
+      terminal:true,
+      delay:120
+    });
+  }
   setStatus(won ? '🎉 Bạn thắng!' : 'Bạn thua.');
   document.getElementById('drawBtn').style.display = 'none';
   document.getElementById('rematchBtn').style.display = 'block';
@@ -1076,6 +2337,7 @@ function finish(winner){
 
 // Winner's pieces ripple in a stagger; loser's fade out. Then the overlay.
 function celebrate(winner, won){
+  const epoch = gameEpoch;
   let delay = 0;
   for(let i=0;i<SIZE;i++){
     const g = pieceAt[i];
@@ -1083,16 +2345,23 @@ function celebrate(winner, won){
     const c = g.firstChild;
     if(board[i] === winner){
       setTimeout(() => {
+        if(epoch !== gameEpoch) return;
         c.classList.remove('flipping');
         c.classList.add('winPulse');
-        setTimeout(() => c.classList.remove('winPulse'), 600);
+        setTimeout(() => {
+          if(epoch === gameEpoch) c.classList.remove('winPulse');
+        }, 600);
       }, 500 + delay);
       delay += 55;
     } else {
-      setTimeout(() => c.classList.add('losePiece'), 500);
+      setTimeout(() => {
+        if(epoch === gameEpoch) c.classList.add('losePiece');
+      }, 500);
     }
   }
-  setTimeout(() => showOverlay(won ? 'win' : 'lose'), 900 + delay);
+  setTimeout(() => {
+    if(epoch === gameEpoch) showOverlay(won ? 'win' : 'lose');
+  }, 900 + delay);
 }
 
 const overlay = document.getElementById('winOverlay');
@@ -1128,7 +2397,11 @@ svg.addEventListener('click', e => {
   const t = e.target.closest('.pt');
   if(!t) return;
   const i = +t.dataset.i;
-  if(gameOver || (!conn && !vsAI) || turn !== myColor) return;
+  if(gameOver || (!conn && !vsAI)) return;
+  if(turn !== myColor){
+    koiSound.play('invalid');
+    return;
+  }
 
   if(selected !== null && hints.includes(i)){
     doMove(selected, i, true);
@@ -1137,7 +2410,9 @@ svg.addEventListener('click', e => {
   if(board[i] === myColor){
     selected = i;
     hints = legalMoves(board, i);
+    koiSound.play('select');
   } else {
+    if(selected !== null) koiSound.play('invalid');
     selected = null; hints = [];
   }
   renderHints();
@@ -1145,6 +2420,7 @@ svg.addEventListener('click', e => {
 
 function doMove(from, to, broadcast){
   const prev = board;
+  const mover = prev[from];
   board = applyMove(board, from, to);
   // Flips = points whose color changed, other than the vacated and landed points
   const flips = [];
@@ -1154,26 +2430,282 @@ function doMove(from, to, broadcast){
   selected = null; hints = [];
   renderHints();
   animateMove(from, to, flips);
+  koiSound.play('move');
+  if(flips.length){
+    const soundEpoch = gameEpoch;
+    setTimeout(() => {
+      if(soundEpoch !== gameEpoch) return;
+      koiSound.play('capture', {
+        intensity: 1 + Math.min(.25, flips.length * .04)
+      });
+    }, 230);
+  }
   if(vsAI){                               // anti-repetition history
     const k = board.join('');
     aiSeen[k] = (aiSeen[k] || 0) + 1;
   }
   if(broadcast && conn && conn.open) conn.send({t:'move', from, to});
-  if(!checkEnd()) updateStatus();
-  maybeAIMove();                          // no-op unless it's the machine's turn
+  const ended = checkEnd();
+  const moveEvent = {
+    mover,
+    from,
+    to,
+    flips: flips.slice(),
+    captureCount: flips.length,
+    before: prev,
+    after: board
+  };
+  if(!ended){
+    reactToBotMove(moveEvent);
+    updateStatus();
+    scheduleBotIdle();
+  }
+  maybeAIMove(moveEvent);                 // no-op unless it's the machine's turn
 }
 
 /* ---------- AI MODE (Đấu với máy) ---------- */
 const AI_NAMES = { easy: 'DỄ', hard: 'KHÓ', chal: 'THÁCH ĐẤU' };
-const AI_DELAY = { easy: [260, 520], hard: [420, 820], chal: [600, 1050] };
+const AI_THINK_LABELS = {
+  snap:   { status:'Máy đã thấy một nước…',             tag:'ĐÃ THẤY' },
+  normal: { status:'Máy đang nghĩ…',                    tag:'ĐANG NGHĨ' },
+  silent: { status:'Máy đang cân nhắc trong im lặng…',  tag:'CÂN NHẮC' },
+  spoken: { status:'Máy đang nghĩ thành tiếng…',        tag:'LẨM BẨM' },
+  deep:   { status:'Máy đang đọc toàn bộ thế cờ…',      tag:'SUY TÍNH' }
+};
 const aiOverlay = document.getElementById('aiOverlay');
+
+function randomBetween([lo, hi]){
+  return lo + Math.random() * (hi - lo);
+}
+
+function weightedThinkMode(weights){
+  const entries = Object.entries(weights).filter(([, value]) => value > 0);
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  if(!total) return 'normal';
+  let roll = Math.random() * total;
+  for(const [mode, value] of entries){
+    roll -= value;
+    if(roll <= 0) return mode;
+  }
+  return entries[entries.length - 1][0];
+}
+
+function chooseAIThinkPlan(moveContext = {}){
+  const profile = (botMind && botMind.profile) || BOT_PROFILES[aiLevel] || BOT_PROFILES.hard;
+  const config = profile.thinking || BOT_PROFILES.hard.thinking;
+  const weights = { ...config.weights };
+  const mood = botMoodBand();
+  const aiSide = myColor === 1 ? 2 : 1;
+  const lead = count(board, aiSide) - count(board, myColor);
+  const mobility = allMoves(board, aiSide).length;
+  const repeatCount = aiSeen[board.join('')] || 0;
+  const chatShell = document.getElementById('botChat');
+  const speechAlreadyActive = Boolean(
+    botPendingTimer || (chatShell && chatShell.classList.contains('is-visible'))
+  );
+
+  // Confidence changes tempo: bold bots sometimes answer instantly, while a
+  // rattled bot is more likely to go quiet or calculate for several seconds.
+  if(mood === 'confident'){
+    weights.snap *= 1.75;
+    weights.normal *= 1.08;
+    weights.deep *= .48;
+  } else if(mood === 'rattled'){
+    weights.snap *= .38;
+    weights.normal *= .88;
+    weights.silent *= 1.28;
+    weights.spoken *= 1.18;
+    weights.deep *= 1.72;
+  }
+  if(lead >= 3) weights.snap += .12;
+  if(lead <= -3 || mobility <= 3){
+    weights.silent += .08;
+    weights.deep += .15;
+  }
+  if(repeatCount >= 2){
+    weights.snap *= .55;
+    weights.silent += .08;
+    weights.deep += .10;
+  }
+
+  // Avoid robotic pacing: the same mode becomes much less likely twice and
+  // cannot occur a third consecutive time. Spoken/deep turns never repeat.
+  if(botMind && botMind.lastThinkMode){
+    const previous = botMind.lastThinkMode;
+    weights[previous] *= botMind.sameThinkCount >= 2 ? 0 : .25;
+    if(previous === 'spoken') weights.spoken = 0;
+    if(previous === 'deep') weights.deep = 0;
+  }
+
+  // A more important capture/danger reaction may already be queued. Wait for
+  // it without letting a long-lived bubble force repeated "spoken" turns.
+  let mode = weightedThinkMode(weights);
+  if(speechAlreadyActive){
+    mode = botMind && botMind.lastThinkMode === 'spoken' ? 'silent' : 'spoken';
+  }
+  const timing = config.times[mode] || config.times.normal;
+  let duration = randomBetween(timing);
+  duration *= mood === 'rattled' ? 1.15 : mood === 'confident' ? .9 : 1;
+
+  // Never start the next move while the preceding piece animation is still
+  // resolving. Spoken turns also need enough time to type and read a line.
+  duration = Math.max(duration, moveContext.captureCount ? 760 : 340);
+  if(mode === 'spoken') duration = Math.max(duration, 2350);
+  if(speechAlreadyActive) duration = Math.max(duration, 2350);
+
+  return {
+    mode,
+    duration: Math.round(duration),
+    speechAlreadyActive,
+    mood,
+    status: AI_THINK_LABELS[mode].status,
+    tag: AI_THINK_LABELS[mode].tag
+  };
+}
+
+function clearAIThinkingVisual(){
+  for(const card of document.querySelectorAll('.pcard')){
+    card.classList.remove('thinking');
+    card.removeAttribute('data-think-mode');
+    card.removeAttribute('aria-busy');
+    const tag = card.querySelector('.turnTag');
+    if(tag) tag.textContent = 'ĐANG ĐI';
+  }
+  const status = document.getElementById('status');
+  status.removeAttribute('data-think-mode');
+}
+
+function showAIThinkingVisual(plan){
+  clearAIThinkingVisual();
+  const card = document.getElementById(plan.side === 1 ? 'pw' : 'pb');
+  if(card){
+    card.classList.add('thinking');
+    card.dataset.thinkMode = plan.mode;
+    card.setAttribute('aria-busy', 'true');
+    const tag = card.querySelector('.turnTag');
+    if(tag) tag.textContent = plan.tag;
+  }
+  const status = document.getElementById('status');
+  status.dataset.thinkMode = plan.mode;
+  setStatus(plan.status);
+}
+
+function validAIThinkContext(plan){
+  return Boolean(
+    plan &&
+    plan === activeAIThinkPlan &&
+    vsAI &&
+    !gameOver &&
+    turn === plan.side &&
+    board.join('') === plan.boardKey &&
+    botMind &&
+    botMind.matchId === plan.matchId
+  );
+}
+
+function cancelAIThinking(){
+  if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
+  aiThinkSequence += 1;
+  activeAIThinkPlan = null;
+  clearAIThinkingVisual();
+}
+
+function finishAIThink(plan, token){
+  // A paused/re-armed turn can leave an already-queued callback behind.
+  // Stale callbacks must not clear or otherwise touch the current plan.
+  if(token !== aiThinkSequence || activeAIThinkPlan !== plan) return;
+  aiTimer = null;
+  if(!validAIThinkContext(plan) || aiPickerPaused){
+    activeAIThinkPlan = null;
+    clearAIThinkingVisual();
+    return;
+  }
+  if(document.hidden){
+    pauseAIThinking(true);
+    plan.remaining = 500 + Math.random() * 350;
+    return;
+  }
+
+  // Keep the thinking cue visible during the synchronous search; on slower
+  // phones this avoids a blank beat before the piece starts moving.
+  const mv = aiChooseMove(board, turn, aiLevel, aiLastMove, aiSeen);
+  if(token !== aiThinkSequence || !validAIThinkContext(plan)) return;
+  if(botMind){
+    if(botMind.lastThinkMode === plan.mode) botMind.sameThinkCount += 1;
+    else botMind.sameThinkCount = 1;
+    botMind.lastThinkMode = plan.mode;
+    botMind.totalThinkTime += plan.duration;
+  }
+  activeAIThinkPlan = null;
+  clearAIThinkingVisual();
+  if(mv){
+    aiLastMove = mv;
+    doMove(mv[0], mv[1], false);
+  } else {
+    updateStatus();
+  }
+}
+
+function armAIThinkPlan(plan, delay){
+  const wait = Math.max(120, delay);
+  plan.paused = false;
+  plan.pausedForVisibility = false;
+  plan.remaining = wait;
+  plan.deadline = performance.now() + wait;
+  plan.token = ++aiThinkSequence;
+  const token = plan.token;
+  activeAIThinkPlan = plan;
+  showAIThinkingVisual(plan);
+  aiTimer = setTimeout(() => finishAIThink(plan, token), wait);
+}
+
+function pauseAIThinking(forVisibility = false){
+  const plan = activeAIThinkPlan;
+  if(!plan) return false;
+  if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
+  aiThinkSequence += 1;
+  plan.remaining = Math.max(160, plan.deadline - performance.now());
+  plan.paused = true;
+  plan.pausedForVisibility = forVisibility;
+  if(forVisibility){
+    clearBotTimers(true);
+    hideBotChat(false);
+  }
+  // If a spoken line is interrupted by an overlay/tab switch, resume as a
+  // quiet consideration instead of repeating or abruptly restarting speech.
+  if(plan.mode === 'spoken'){
+    plan.mode = 'silent';
+    plan.status = AI_THINK_LABELS.silent.status;
+    plan.tag = AI_THINK_LABELS.silent.tag;
+  }
+  clearAIThinkingVisual();
+  return true;
+}
+
+function resumeAIThinking(){
+  const plan = activeAIThinkPlan;
+  if(!plan){
+    maybeAIMove();
+    return;
+  }
+  if(!validAIThinkContext(plan)){
+    cancelAIThinking();
+    maybeAIMove();
+    return;
+  }
+  armAIThinkPlan(plan, plan.remaining || 500);
+}
 
 function showAIPicker(forReplay = false){
   // "Chơi lại" is also available during a machine match. Pause any pending
   // reply while the picker is open; cancelling the picker resumes that turn.
-  if(forReplay && vsAI && !gameOver){
-    aiPickerPaused = true;
-    if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
+  if(forReplay && vsAI){
+    if(!gameOver){
+      aiPickerPaused = true;
+      pauseAIThinking(false);
+    }
+    clearBotTimers(true);
+    hideBotChat(false);
   }
   aiOverlay.classList.add('show');
 }
@@ -1182,7 +2714,8 @@ function hideAIPicker(resumeGame = false){
   if(resumeGame && aiPickerPaused){
     aiPickerPaused = false;
     updateStatus();
-    maybeAIMove();
+    resumeAIThinking();
+    scheduleBotIdle();
   }
 }
 aiOverlay.addEventListener('click', e => { if(e.target === aiOverlay) hideAIPicker(true); });
@@ -1202,37 +2735,86 @@ function startAIGame(level){
   document.getElementById('createBtn').style.display = 'none';
   document.getElementById('aiBtn').style.display = 'none';
   document.getElementById('linkBox').style.display = 'none';
-  document.querySelector('#pb .avatar').textContent = '🤖';
   resetGame();
+  startBotPersonality(level);
+  document.querySelector('#pb .avatar').textContent = BOT_PROFILES[level].avatar;
   document.getElementById('rematchBtn').textContent = 'Tôi quá yếu';
   document.getElementById('wRematch').textContent = 'CHƠI LẠI';
   // Keep replay accessible throughout machine mode, not only after game over.
   document.getElementById('rematchBtn').style.display = 'block';
   setStatus(`▶ Lượt bạn (Trắng) — máy mức ${AI_NAMES[level]}`);
+  koiSound.play('start');
+  botReact('start', {}, { force:true, delay:340 });
+  scheduleBotIdle();
   maybeAIMove();                          // safety: no-op while it's your turn
 }
 
-// Schedules the machine's reply with a short "thinking" pause. The pause
-// scales with the level, and every guard is re-checked when it fires so a
-// rematch or finished game can never receive a stray move.
-function maybeAIMove(){
+// Plans one idempotent reply. A turn may be quick, ordinary, silently
+// thoughtful, spoken, or a longer deep calculation depending on personality,
+// mood, material pressure, repetition, and the previous thinking rhythm.
+function maybeAIMove(moveContext = {}){
   if(!vsAI || gameOver || aiPickerPaused || turn === myColor) return;
-  const [lo, hi] = AI_DELAY[aiLevel] || [400, 800];
-  aiTimer = setTimeout(() => {
-    aiTimer = null;
-    if(!vsAI || gameOver || aiPickerPaused || turn === myColor) return;
-    const mv = aiChooseMove(board, turn, aiLevel, aiLastMove, aiSeen);
-    if(mv){ aiLastMove = mv; doMove(mv[0], mv[1], false); }
-  }, lo + Math.random() * (hi - lo));
+  if(aiTimer || activeAIThinkPlan) return;
+
+  const plan = chooseAIThinkPlan(moveContext);
+  plan.matchId = botMind.matchId;
+  plan.side = turn;
+  plan.boardKey = board.join('');
+
+  if(plan.mode === 'spoken' && !plan.speechAlreadyActive){
+    const thoughtPool = plan.mood === 'rattled' ? 'thinking_rattled'
+      : plan.mood === 'confident' ? 'thinking_confident'
+      : 'thinking';
+    const speaking = botReact(thoughtPool, {}, {
+      guaranteed:true,
+      cooldownScale:.68,
+      delay:140
+    });
+    if(!speaking){
+      // Cooldown can reject a planned line. Fall back without bypassing the
+      // "never use the same thinking rhythm three times" rule.
+      plan.mode = botMind.lastThinkMode === 'silent' ? 'normal' : 'silent';
+      plan.status = AI_THINK_LABELS[plan.mode].status;
+      plan.tag = AI_THINK_LABELS[plan.mode].tag;
+    }
+  }
+
+  armAIThinkPlan(plan, plan.duration);
 }
 
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){
+    if(activeAIThinkPlan && aiTimer) pauseAIThinking(true);
+    if(botIdleTimer){ clearTimeout(botIdleTimer); botIdleTimer = null; }
+    return;
+  }
+  if(activeAIThinkPlan && activeAIThinkPlan.pausedForVisibility && !aiPickerPaused){
+    resumeAIThinking();
+  } else {
+    scheduleBotIdle();
+  }
+});
+
 /* ---------- NETWORK ---------- */
+function validRemoteMove(message){
+  if(!message || !Number.isInteger(message.from) || !Number.isInteger(message.to)) return false;
+  if(message.from < 0 || message.from >= SIZE || message.to < 0 || message.to >= SIZE) return false;
+  if(turn === myColor || board[message.from] !== turn) return false;
+  return legalMoves(board, message.from).includes(message.to);
+}
+
 function wire(c){
   conn = c;
   gameActive = true;
+  hideBotChat(true);
   conn.on('data', m => {
-    if(m.t === 'move'){ doMove(m.from, m.to, false); }
-    if(m.t === 'rematch'){ resetGame(); setStatus('Ván mới bắt đầu.'); }
+    if(!m || typeof m !== 'object') return;
+    if(m.t === 'move' && validRemoteMove(m)){ doMove(m.from, m.to, false); }
+    if(m.t === 'rematch'){
+      resetGame();
+      koiSound.play('start');
+      setStatus('Ván mới bắt đầu.');
+    }
     if(m.t === 'draw-offer'){
       if(confirm('Đối thủ xin hòa. Bạn đồng ý?')){
         conn.send({t:'draw-accept'});
@@ -1244,21 +2826,35 @@ function wire(c){
     if(m.t === 'draw-accept'){ endDraw(); }
     if(m.t === 'draw-decline'){ setStatus('Đối thủ từ chối hòa.'); setTimeout(updateStatus, 1800); }
   });
-  conn.on('close', () => { setStatus('Mất kết nối.'); conn = null; gameActive = false; refreshPlayers(); });
-  conn.on('error', () => setStatus('Lỗi kết nối.'));
+  conn.on('close', () => {
+    const interrupted = gameActive && !gameOver;
+    setStatus('Mất kết nối.');
+    conn = null;
+    gameActive = false;
+    if(interrupted) koiSound.play('disconnect');
+    refreshPlayers();
+  });
+  conn.on('error', () => {
+    koiSound.play('invalid');
+    setStatus('Lỗi kết nối.');
+  });
   document.getElementById('createBtn').style.display = 'none';
   document.getElementById('aiBtn').style.display = 'none';
   document.getElementById('linkBox').style.display = 'none';
   document.getElementById('drawBtn').style.display = 'block';
+  koiSound.play('connect');
   updateStatus();
 }
 
 function resetGame(){
+  gameEpoch += 1;
+  cancelAIThinking();
+  clearBotTimers(true);
+  hideBotChat(!vsAI);
   board = initialBoard();
   turn = 1; selected = null; hints = []; gameOver = false;
-  if(aiTimer){ clearTimeout(aiTimer); aiTimer = null; }
   aiLastMove = null;
-  aiSeen = {};
+  aiSeen = { [board.join('')]: 1 };
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
   hideOverlay();
@@ -1366,16 +2962,23 @@ if(typeof Peer !== 'undefined'){
 
 function endDraw(){
   gameOver = true;
+  cancelAIThinking();
+  clearBotTimers(true);
+  koiSound.play('draw');
   setStatus('🤝 Ván hòa.');
   document.getElementById('drawBtn').style.display = 'none';
   document.getElementById('rematchBtn').style.display = 'block';
   refreshPlayers();
-  setTimeout(() => showOverlay('draw'), 300);
+  const drawEpoch = gameEpoch;
+  setTimeout(() => {
+    if(drawEpoch === gameEpoch) showOverlay('draw');
+  }, 300);
 }
 
 document.getElementById('drawBtn').onclick = () => {
   if(conn && conn.open){
     conn.send({t:'draw-offer'});
+    koiSound.play('select');
     setStatus('Đã gửi lời xin hòa…');
   }
 };
@@ -1384,6 +2987,7 @@ document.getElementById('rematchBtn').onclick = () => {
   if(vsAI){ showAIPicker(true); return; } // chọn lại độ khó trước mỗi ván mới
   if(conn && conn.open) conn.send({t:'rematch'});
   resetGame();
+  koiSound.play('start');
 };
 
 /* ---------- NAV GUARD ----------
