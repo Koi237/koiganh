@@ -686,8 +686,8 @@
   /* ---------- AI difficulty picker (Đấu với máy) ----------
      Same overlay language as the end-of-game screen, with the spectral
      ramp mapping straight onto the ladder: blue = dễ, violet = khó,
-     warm = thách đấu. Shown before every machine match — including
-     rematches — so the level is always a fresh choice. */
+     pink = cao thủ, warm = thách đấu. Shown before every machine match —
+     including rematches — so the level is always a fresh choice. */
   #aiOverlay {
     position: fixed; inset: 0;
     background: rgba(5,6,9,.9);
@@ -742,6 +742,7 @@
   #aiOverlay.show .aiOpt:nth-child(1) { animation-delay: .7s; }
   #aiOverlay.show .aiOpt:nth-child(2) { animation-delay: .82s; }
   #aiOverlay.show .aiOpt:nth-child(3) { animation-delay: .94s; }
+  #aiOverlay.show .aiOpt:nth-child(4) { animation-delay: 1.06s; }
   .aiOpt .lvName {
     font-size: 12px;
     font-weight: 700;
@@ -757,12 +758,13 @@
   }
   .aiOpt[data-lv="easy"] { --oc: var(--accent); }
   .aiOpt[data-lv="hard"] { --oc: var(--accent2); }
+  .aiOpt[data-lv="master"] { --oc: #eba6d0; }
   .aiOpt[data-lv="chal"] { --oc: var(--accent3); }
   .aiOpt:hover:not(:disabled) {
     border-color: var(--oc);
     background: rgba(130,150,220,.08);
   }
-  #aiOverlay.show .wHint { animation: fadeUp .6s 1.15s ease forwards; }
+  #aiOverlay.show .wHint { animation: fadeUp .6s 1.27s ease forwards; }
 
   .dot { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; }
   #copyBtn { color: var(--muted); }
@@ -876,6 +878,10 @@
     <button class="aiOpt" data-lv="hard">
       <span class="lvName">KHÓ</span>
       <span class="lvDesc">Biết gánh, biết giữ quân — nhưng đôi lúc sơ hở</span>
+    </button>
+    <button class="aiOpt" data-lv="master">
+      <span class="lvName">CAO THỦ</span>
+      <span class="lvDesc">Tính trước đến 3 nước — sắc sảo nhưng vẫn có lúc lơ đễnh</span>
     </button>
     <button class="aiOpt" data-lv="chal">
       <span class="lvName">THÁCH ĐẤU</span>
@@ -1412,21 +1418,26 @@ function hasAnyMove(b, side){
 }
 
 /* ---------- AI ENGINE (Đấu với máy) ----------
-   Ba mức:  easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
+   Bốn mức: easy = ngẫu hứng, thỉnh thoảng mới thèm ăn quân;
             hard = minimax 2 nước, nhưng hay sơ hở: 8% số nước đi đại một
                    nước bất kỳ (có thể dâng quân), 28% chỉ nhìn 1 nước —
                    thấy miếng ăn mà không thấy đòn đáp, nên sập bẫy được;
+            master = một lần rút chiến thuật cho mỗi lượt chưa bị khóa:
+                   35% đọc 3 nước và giữ chế độ đó trong 3 lượt máy,
+                   28% đọc 2 nước tối ưu, 17% đọc 2 nước nhưng cố ý chọn
+                   phương án kém hơn, 15% đọc 1 nước, 5% đi ngẫu nhiên;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
    Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
    quay về thế cờ đã xuất hiện, nặng dần theo số lần lặp (AI_REP × count).
    Pure functions only — no DOM in this block (the test harness slices
    everything from BOARD MODEL down to AI ENGINE END and runs it headless). */
-const AI_DEPTH    = { hard: 2, chal: 5 };
-const AI_NOISE    = { hard: 10, chal: 0.6 };  // hard is deliberately sloppy
+const AI_DEPTH    = { hard: 2, master: 3, chal: 5 };
+const AI_NOISE    = { hard: 10, master: 0, chal: 0.6 };  // hard is deliberately sloppy
 const AI_BLUNDER  = { hard: 0.28 };  // chance to look only 1 ply (falls for traps)
 const AI_CARELESS = { hard: 0.08 };  // chance to just play any legal move (hangs stones)
 const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
 const AI_REP  = 12;   // per prior occurrence of the position a move returns to
+const MASTER_LOCK_MOVES = 3; // triggering move + the next two machine turns
 
 function allMoves(b, side){
   const out = [];
@@ -1495,7 +1506,65 @@ function search(b, side, me, depth, alpha, beta, ply){
   }
 }
 
-function aiChooseMove(b, side, level, lastMove, seen){
+// One cumulative roll keeps the requested Master bands exact. The 35% band
+// starts a three-machine-turn depth-3 commitment; later committed turns do not
+// roll again. They recalculate from the live board, so a human deviation or a
+// capture can never leave the machine following stale coordinates.
+function masterPolicyForRoll(roll){
+  if(roll < .35)
+    return { mode:'depth3-lock', depth:3, lessOptimal:false, random:false };
+  if(roll < .63)
+    return { mode:'depth2', depth:2, lessOptimal:false, random:false };
+  if(roll < .80)
+    return { mode:'depth2-less', depth:2, lessOptimal:true, random:false };
+  if(roll < .95)
+    return { mode:'depth1', depth:1, lessOptimal:false, random:false };
+  return { mode:'random', depth:0, lessOptimal:false, random:true };
+}
+
+function nextMasterPolicy(lockRemaining, roll){
+  if(lockRemaining > 0){
+    return {
+      policy: { mode:'depth3-lock', depth:3, lessOptimal:false, random:false },
+      nextLock: lockRemaining - 1
+    };
+  }
+  const policy = masterPolicyForRoll(roll === undefined ? Math.random() : roll);
+  return {
+    policy,
+    nextLock: policy.mode === 'depth3-lock' ? MASTER_LOCK_MOVES - 1 : 0
+  };
+}
+
+// Master needs exact root scores so its 17% lapse can choose a genuinely
+// weaker alternative rather than another move tied for best. Depth is at most
+// three here, so scoring every legal root with a full alpha-beta window stays
+// inexpensive while producing a trustworthy ranking.
+function rankMasterMoves(b, side, depth, lastMove, seen){
+  const foe = side === 1 ? 2 : 1;
+  return allMoves(b, side).map((move, order) => {
+    const nb = applyMove(b, move[0], move[1]);
+    let score = search(nb, foe, side, depth - 1, -Infinity, Infinity, 1);
+    if(lastMove && move[0] === lastMove[1] && move[1] === lastMove[0])
+      score -= AI_UNDO;
+    if(seen){
+      const rep = seen[nb.join('')] || 0;
+      if(rep) score -= AI_REP * rep;
+    }
+    return {
+      move,
+      score,
+      captureLead: count(nb, side) - count(nb, foe),
+      order
+    };
+  }).sort((a, z) =>
+    z.score - a.score ||
+    z.captureLead - a.captureLead ||
+    a.order - z.order
+  );
+}
+
+function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
   const moves = allMoves(b, side);
   if(moves.length === 0) return null;
   const foe = side === 1 ? 2 : 1;
@@ -1507,6 +1576,20 @@ function aiChooseMove(b, side, level, lastMove, seen){
     if(caps.length && Math.random() < 0.75)
       return caps[(Math.random() * caps.length) | 0];
     return moves[(Math.random() * moves.length) | 0];
+  }
+
+  if(level === 'master'){
+    const policy = masterPolicy || masterPolicyForRoll(Math.random());
+    if(policy.random)
+      return moves[(Math.random() * moves.length) | 0];
+
+    const ranked = rankMasterMoves(b, side, policy.depth, lastMove, seen);
+    if(policy.lessOptimal){
+      const bestScore = ranked[0].score;
+      const weaker = ranked.find(candidate => candidate.score < bestScore);
+      if(weaker) return weaker.move;
+    }
+    return ranked[0].move;
   }
 
   // The careless lapse: sometimes it just moves — any legal move at all,
@@ -1561,12 +1644,13 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  let conn = null, peer = null;
 	  let gameActive = false;   // true while a match is live (nav guard)
 	  let vsAI = false;         // playing against the machine?
-	  let aiLevel = null;       // 'easy' | 'hard' | 'chal'
+	  let aiLevel = null;       // 'easy' | 'hard' | 'master' | 'chal'
 	  let aiTimer = null;       // pending machine "thinking" timeout
 	  let aiThinkSequence = 0;  // invalidates stale callbacks after reset/pause
 	  let activeAIThinkPlan = null;
 	  let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
 	  let aiSeen = {};          // position -> occurrence count (anti-repetition)
+	  let aiMasterLockRemaining = 0; // future Master turns still locked to depth 3
 	  let aiPickerPaused = false; // pause a live machine turn while choosing a replay level
 
 	  /* ---------- BOT PERSONALITY + CHAT ---------- */
@@ -1609,6 +1693,25 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  }
 	  }
 	  },
+	  master: {
+	  name: 'KOI HỌC BÁ',
+	  avatar: '👩‍🎓',
+	  style: 'college',
+	  baseMood: .08,
+	  baseConfidence: .35,
+	  talkRate: .49,
+	  cooldown: 4350,
+	  thinking: {
+	  weights: { snap:.11, normal:.26, silent:.30, spoken:.16, deep:.17 },
+	  times: {
+	  snap:[550, 850],
+	  normal:[950, 1600],
+	  silent:[1550, 2650],
+	  spoken:[2250, 3550],
+	  deep:[3050, 4850]
+	  }
+	  }
+	  },
 	  chal: {
 	  name: 'KOI ĐẠI SƯ',
 	  avatar: '🐉',
@@ -1642,6 +1745,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Thử chiến thắng một lần xem nào.',
 	  'Không Biết ai dạy ai chơi cờ đâu.'
 	  ],
+	  college: [
+	  'Chào cậu, mình vừa nộp deadline xong — vào trận nhé!',
+	  'Đi trước đi, mình còn kịp nhấp một ngụm cà phê.',
+	  'Ván này tính điểm chuyên cần không nhỉ?'
+	  ],
 	  calm: [
 	  'Khắp thiên hạ này chỉ duy mẹ bạn là tôi không gánh được.',
 	  'Đi bộ vuốt râu, đặc quyền của kẻ mạnh.',
@@ -1658,6 +1766,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Một cái bẫy? Ngươi đủ thông minh sao?.',
 	  'Sự im lặng của anh liệu có làm em bối rối.',
 	  'Đáng suy ngẫm.'
+	  ],
+	  college: [
+	  'Khoan nhé, não mình đang mở thêm một tab.',
+	  'Nước này khó hơn câu cuối đề thi rồi đó.',
+	  'Cho mình mượn chút caffeine để tính tiếp.'
 	  ],
 	  calm: [
 	  'Cờ hay, chẳng cần vội.',
@@ -1676,6 +1789,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Đã suy Nghĩ kĩ chưa đó?.',
 	  'Tất cả đã nằm trong kế hoạch của ta.'
 	  ],
+	  college: [
+	  'Ồ, đáp án này không cần xem cuối giáo trình.',
+	  'Nước này đủ đẹp để cộng điểm chuyên cần.',
+	  'Mình thấy đường rồi — não vừa bắt được Wi‑Fi.'
+	  ],
 	  calm: [
 	  'Cờ loạn vì tâm loạn.',
 	  'Nước hay nhất thường không cần khoe.',
@@ -1692,6 +1810,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Không thể nào',
 	  'Cái thế cờ này…',
 	  'Không tệ, nhưng đừng vội đắc ý.'
+	  ],
+	  college: [
+	  'Ủa, nước này không có trong đề cương.',
+	  'Não mình vừa báo pin yếu, chờ xíu nhé.',
+	  'Cảm giác như giảng viên vừa đổi đề phút chót.'
 	  ],
 	  calm: [
 	  'Cờ tàn mới rõ tay hay',
@@ -1710,6 +1833,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Chiếm {count} quân. Đừng vội mừng.',
 	  'Không tệ. Chuẩn bị trả giá đi.'
 	  ],
+	  college: [
+	  '{count} quân luôn à? Cậu học bài kỹ ghê.',
+	  'Cú gánh đẹp đó — mình ghi chú lại rồi.',
+	  'Ôi, điểm giữa kỳ của mình vừa tụt một chút.'
+	  ],
 	  calm: [
 	  'Hay. Bạn đã thấy đúng điểm tựa.',
 	  '{count} quân đổi màu — liệu có đủ sức thay đổi thế trận.',
@@ -1726,6 +1854,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  '{count} quân. Nước đó… khá phiền đấy.',
 	  'Tặng ngươi vài con, coi như cân bằng thế trận',
 	  'Chưa thua đâu, ta vẫn còn đây'
+	  ],
+	  college: [
+	  '{count} quân một lượt? Cậu muốn lấy học bổng à?',
+	  'Khoan, đây là bài kiểm tra hay bài luận cuối kỳ vậy?',
+	  'Pha đó làm mình muốn xin phúc khảo luôn.'
 	  ],
 	  calm: [
 	  'Một lượt {count} quân, Đúng là cao kiến.',
@@ -1744,6 +1877,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  '{count} quân chiếm, ngươi chỉ đến thế thôi sao.',
 	  'Cần phải cố gắng hơn.'
 	  ],
+	  college: [
+	  'Mình xin {count} quân nhé — coi như điểm cộng.',
+	  'Bắt được rồi! Caffeine hôm nay có tác dụng.',
+	  'Ghi chú bài học: đừng để mình thấy sơ hở.'
+	  ],
 	  calm: [
 	  'Tôi nhận lấy cơ hội này.',
 	  '{count} quân đã đổi màu. Tiếp tục nhé.',
@@ -1760,6 +1898,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  '{count} quân. Tàn cờ được chưa?.',
 	  'Tất cả đã nằm trong tính toán.',
 	  'Ngọn cỏ ven đường, sao có thể với được mây.'
+	  ],
+	  college: [
+	  '{count} quân! Bài nhóm hôm nay mình gánh thật rồi.',
+	  'Cú này xứng đáng một ly trà sữa tự thưởng.',
+	  'Não học bá vừa online đúng lúc.'
 	  ],
 	  calm: [
 	  '{count} quân đổi phe. Cục diện xoay chuyển.',
@@ -1778,6 +1921,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Mọi sai lầm đều phải trả giá.',
 	  'Ta kì vọng nhiều hơn vào người đấy.'
 	  ],
+	  college: [
+	  'Mình đang dẫn trước — chắc điểm chuyên cần có hiệu lực.',
+	  'Thế này thì GPA của mình vẫn ổn.',
+	  'Cà phê, ghi chú và một chút lợi thế.'
+	  ],
 	  calm: [
 	  'Lợi thế chỉ có ý nghĩa nếu giữ được nó.',
 	  'Thế trận nghiêng về tôi, nhưng chưa kết thúc.',
@@ -1794,6 +1942,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Đừng vội tự mãn, ta lật lại ngay đây',
 	  'Ngươi nghĩ ngươi còn may mắn được bao lâu nữa',
 	  'Tất cả vẫn nằm trong tính toán.'
+	  ],
+	  college: [
+	  'Được rồi, chuyển sang chế độ ôn thi cấp tốc.',
+	  'GPA hơi rung, nhưng chưa rớt môn đâu.',
+	  'Kế hoạch nhóm đang lệch, để mình sửa.'
 	  ],
 	  calm: [
 	  'Bất lợi đã rõ. Tôi cần phản công.',
@@ -1812,6 +1965,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Ta chưa thua đâu.',
 	  'Ngươi có chắc là ngươi đã chiến thắng không?.'
 	  ],
+	  college: [
+	  'Ơ… đây là tuần thi cuối kỳ hả?',
+	  'Mình sắp hết quân như sắp hết tiền cuối tháng.',
+	  'Bình tĩnh, học bá cũng có ngày quên bài.'
+	  ],
 	  calm: [
 	  'Đường lui đang khép lại.',
 	  'Tôi còn rất ít tự do trên bàn cờ.',
@@ -1828,6 +1986,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Bí cờ rồi sao anh bạn?.',
 	  'Đảo qua đảo lại, người chỉ đến thế thôi sao?',
 	  'Thật là nhàm chán, như người vậy'
+	  ],
+	  college: [
+	  'Trang này mình đọc rồi thì phải.',
+	  'Lại nước cũ à? Bài này chưa đủ số chữ đâu.',
+	  'Vòng lặp này giống lịch học sáng thứ Hai ghê.'
 	  ],
 	  calm: [
 	  'Một thế cờ cũ đã trở lại.',
@@ -1846,6 +2009,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Nghĩ kĩ vào, cũng có thắng được đâu',
 	  'Nước đi tuyệt diệu của ta đã làm người ngất lịm?.'
 	  ],
+	  college: [
+	  'Yên quá… cậu đang làm bài hay ngủ trong thư viện vậy?',
+	  'Mình tranh thủ kiểm tra deadline nhé.',
+	  'Không ai gánh ai, hiếm như bài nhóm đúng hạn.'
+	  ],
 	  calm: [
 	  'Cứ từ từ. Tâm sáng vốn chẳng cần vội',
 	  'Không phải nước mạnh nào cũng đổi màu quân.',
@@ -1863,6 +2031,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Có vẻ người không phải là đối thủ của ta rồi.',
 	  'Không có trình độ thì không có gì phải buồn.'
 	  ],
+	  college: [
+	  'Mình qua môn rồi! Cảm ơn caffeine và alpha–beta.',
+	  'Học bá thắng ván này — đi trà sữa không?',
+	  'Ván hay lắm. Điểm A cho cả hai nhé!'
+	  ],
 	  calm: [
 	  'Có nỗ lực, chỉ cần thêm chút kĩ năng.',
 	  'Có lẽ ván tiếp theo sẽ thắng .',
@@ -1879,6 +2052,11 @@ function aiChooseMove(b, side, level, lastMove, seen){
 	  'Thôi thì nhường ngươi một ván',
 	  'Khá khen, ngươi đánh bao nhiêu trận rồi mới thắng được vậy?',
 	  'Kẻ mạnh thì phải nhường kẻ yếu.'
+	  ],
+	  college: [
+	  'Mình rớt ván này rồi — cho xin lịch thi lại nhé.',
+	  'Cậu chơi hay thật. Mình về mở giáo trình đây.',
+	  'Thua nhưng vẫn cute, được cộng điểm không?'
 	  ],
 	  calm: [
 	  'Tôi nhận thua. Bạn thực sự rất giỏi.',
@@ -2317,6 +2495,7 @@ function checkEnd(){
 
 function finish(winner){
   gameOver = true;
+  aiMasterLockRemaining = 0;
   cancelAIThinking();
   clearBotTimers(true);
   const won = winner === myColor;
@@ -2464,7 +2643,12 @@ function doMove(from, to, broadcast){
 }
 
 /* ---------- AI MODE (Đấu với máy) ---------- */
-const AI_NAMES = { easy: 'DỄ', hard: 'KHÓ', chal: 'THÁCH ĐẤU' };
+const AI_NAMES = {
+  easy: 'DỄ',
+  hard: 'KHÓ',
+  master: 'CAO THỦ',
+  chal: 'THÁCH ĐẤU'
+};
 const AI_THINK_LABELS = {
   snap:   { status:'Máy đã thấy một nước…',             tag:'ĐÃ THẤY' },
   normal: { status:'Máy đang nghĩ…',                    tag:'ĐANG NGHĨ' },
@@ -2628,7 +2812,17 @@ function finishAIThink(plan, token){
 
   // Keep the thinking cue visible during the synchronous search; on slower
   // phones this avoids a blank beat before the piece starts moving.
-  const mv = aiChooseMove(board, turn, aiLevel, aiLastMove, aiSeen);
+  const masterTurn = aiLevel === 'master'
+    ? nextMasterPolicy(aiMasterLockRemaining)
+    : null;
+  const mv = aiChooseMove(
+    board,
+    turn,
+    aiLevel,
+    aiLastMove,
+    aiSeen,
+    masterTurn && masterTurn.policy
+  );
   if(token !== aiThinkSequence || !validAIThinkContext(plan)) return;
   if(botMind){
     if(botMind.lastThinkMode === plan.mode) botMind.sameThinkCount += 1;
@@ -2639,9 +2833,11 @@ function finishAIThink(plan, token){
   activeAIThinkPlan = null;
   clearAIThinkingVisual();
   if(mv){
+    if(masterTurn) aiMasterLockRemaining = masterTurn.nextLock;
     aiLastMove = mv;
     doMove(mv[0], mv[1], false);
   } else {
+    if(masterTurn) aiMasterLockRemaining = 0;
     updateStatus();
   }
 }
@@ -2854,6 +3050,7 @@ function resetGame(){
   board = initialBoard();
   turn = 1; selected = null; hints = []; gameOver = false;
   aiLastMove = null;
+  aiMasterLockRemaining = 0;
   aiSeen = { [board.join('')]: 1 };
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
@@ -2962,6 +3159,7 @@ if(typeof Peer !== 'undefined'){
 
 function endDraw(){
   gameOver = true;
+  aiMasterLockRemaining = 0;
   cancelAIThinking();
   clearBotTimers(true);
   koiSound.play('draw');
