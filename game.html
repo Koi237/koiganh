@@ -1425,10 +1425,14 @@ function hasAnyMove(b, side){
             master = một lần rút chiến thuật cho mỗi lượt chưa bị khóa:
                    35% đọc 3 nước và giữ chế độ đó trong 3 lượt máy,
                    25% đọc 2 nước tối ưu, 20% đọc 2 nước nhưng cố ý chọn
-                   phương án kém 30–50%, 15% đọc 1 nước, 5% đi ngẫu nhiên.
+                   phương án kém 10–30%, 15% đọc 1 nước, 5% chọn ngẫu nhiên
+                   trong các nước không bị ép thua sau khi đọc trước 4 nước.
                    Hai chuỗi khóa độ sâu 3 không thể nối liền nhau. Sau 18
                    nước liên tiếp của cả hai bên không có quân đổi màu, máy
                    thử 1–3 nước độ sâu 2 kém tối ưu có kiểm soát để phá thế;
+                   khi chỉ còn tối đa 3 quân, máy có một lần "second wind":
+                   khóa độ sâu 4 trong 3 lượt máy rồi chặn khóa độ sâu 3 ở
+                   lần rút chiến thuật kế tiếp;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
    Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
    quay về thế cờ đã xuất hiện, nặng dần theo số lần lặp (AI_REP × count).
@@ -1441,10 +1445,14 @@ const AI_CARELESS = { hard: 0.08 };  // chance to just play any legal move (hang
 const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
 const AI_REP  = 12;   // per prior occurrence of the position a move returns to
 const MASTER_LOCK_MOVES = 3; // triggering move + the next two machine turns
-const MASTER_LESS_MIN = .30;
-const MASTER_LESS_MAX = .50;
+const MASTER_SAFE_RANDOM_DEPTH = 4;
+const MASTER_LESS_MIN = .10;
+const MASTER_LESS_MAX = .30;
 const MASTER_LESS_SCALE_FLOOR = 100; // one material unit in evalBoard()
 const MASTER_FORCED_LOSS = -8000;
+const MASTER_SECOND_WIND_PIECES = 3;
+const MASTER_SECOND_WIND_TURNS = 3;
+const MASTER_SECOND_WIND_DEPTH = 4;
 const MASTER_STAGNATION_PLIES = 18; // total moves by both sides, not 18 rounds
 const MASTER_PROGRESS_MIN_TURNS = 1;
 const MASTER_PROGRESS_MAX_TURNS = 3;
@@ -1533,7 +1541,12 @@ function masterPolicyForRoll(roll, blockDepth3 = false){
       return { mode:'depth2-less', depth:2, lessOptimal:true, random:false };
     if(roll < .60 / nonDepth3Weight)
       return { mode:'depth1', depth:1, lessOptimal:false, random:false };
-    return { mode:'random', depth:0, lessOptimal:false, random:true };
+    return {
+      mode:'safe-random',
+      depth:MASTER_SAFE_RANDOM_DEPTH,
+      lessOptimal:false,
+      random:true
+    };
   }
   if(roll < .35)
     return { mode:'depth3-lock', depth:3, lessOptimal:false, random:false };
@@ -1543,7 +1556,12 @@ function masterPolicyForRoll(roll, blockDepth3 = false){
     return { mode:'depth2-less', depth:2, lessOptimal:true, random:false };
   if(roll < .95)
     return { mode:'depth1', depth:1, lessOptimal:false, random:false };
-  return { mode:'random', depth:0, lessOptimal:false, random:true };
+  return {
+    mode:'safe-random',
+    depth:MASTER_SAFE_RANDOM_DEPTH,
+    lessOptimal:false,
+    random:true
+  };
 }
 
 function nextMasterPolicy(lockRemaining, roll, blockDepth3 = false){
@@ -1581,6 +1599,15 @@ function masterProgressPolicy(){
   };
 }
 
+function masterSecondWindPolicy(){
+  return {
+    mode:'depth4-second-wind',
+    depth:MASTER_SECOND_WIND_DEPTH,
+    lessOptimal:false,
+    random:false
+  };
+}
+
 function masterQuietStateAfterMove(state, captureCount){
   if(captureCount > 0){
     return {
@@ -1606,11 +1633,37 @@ function planMasterTurn(state, policyRoll, progressRoll){
   const lockRemaining = Math.max(0, state.lockRemaining || 0);
   const progressRemaining = Math.max(0, state.progressRemaining || 0);
   const noCapturePly = Math.max(0, state.noCapturePly || 0);
+  const secondWindRemaining = Math.max(0, state.secondWindRemaining || 0);
+  const secondWindUsed = Boolean(state.secondWindUsed);
+  const botPieceCount = Number.isFinite(state.botPieceCount)
+    ? state.botPieceCount
+    : Infinity;
   const nextProgressPly = Number.isFinite(state.nextProgressPly)
     ? state.nextProgressPly
     : MASTER_STAGNATION_PLIES;
 
+  // Second wind supersedes every other Master mode. Once it starts, all three
+  // machine turns stay at depth 4 even if captures lift the bot above 3 pieces.
+  if(secondWindRemaining > 0 ||
+     (!secondWindUsed && botPieceCount <= MASTER_SECOND_WIND_PIECES)){
+    const turns = secondWindRemaining > 0
+      ? secondWindRemaining
+      : MASTER_SECOND_WIND_TURNS;
+    return {
+      policy: masterSecondWindPolicy(),
+      nextLock: 0,
+      nextDepth3Blocked: true,
+      nextProgressRemaining: 0,
+      nextProgressPly: noCapturePly + 1 + MASTER_STAGNATION_PLIES,
+      nextSecondWindRemaining: turns - 1,
+      nextSecondWindUsed: true
+    };
+  }
+
+  // A cooldown roll owed by either depth lock takes priority over a stagnation
+  // burst, so the first turn after second wind really resumes chance rolling.
   if(lockRemaining === 0 &&
+     !state.depth3Blocked &&
      (progressRemaining > 0 || noCapturePly >= nextProgressPly)){
     const burst = progressRemaining > 0
       ? progressRemaining
@@ -1624,7 +1677,9 @@ function planMasterTurn(state, policyRoll, progressRoll){
       nextProgressRemaining: burst - 1,
       nextProgressPly: burst - 1 === 0
         ? noCapturePly + 1 + MASTER_STAGNATION_PLIES // include this planned attempt
-        : nextProgressPly
+        : nextProgressPly,
+      nextSecondWindRemaining: 0,
+      nextSecondWindUsed: secondWindUsed
     };
   }
 
@@ -1636,7 +1691,9 @@ function planMasterTurn(state, policyRoll, progressRoll){
   return {
     ...regular,
     nextProgressRemaining: progressRemaining,
-    nextProgressPly
+    nextProgressPly,
+    nextSecondWindRemaining: 0,
+    nextSecondWindUsed: secondWindUsed
   };
 }
 
@@ -1653,7 +1710,7 @@ function countPressuredPieces(b, side){
 
 // Master needs exact root scores so its depth-2 lapse can choose a genuinely
 // weaker alternative rather than another move tied for best. Depth is at most
-// three here, so scoring every legal root with a full alpha-beta window stays
+// four here, so scoring every legal root with a full alpha-beta window stays
 // inexpensive while producing a trustworthy ranking.
 function rankMasterMoves(b, side, depth, lastMove, seen){
   const foe = side === 1 ? 2 : 1;
@@ -1697,11 +1754,11 @@ function rankMasterMoves(b, side, depth, lastMove, seen){
   );
 }
 
-// Aim at a randomly sampled 30–50% score loss. Scores are zero-centred, so
+// Aim at a randomly sampled 10–30% score loss. Scores are zero-centred, so
 // balanced positions use one material unit (100 points) as the minimum scale.
 // Legal move scores are discrete: prefer a fresh/non-undo option, then an
 // exact-band move when one exists; otherwise the nearest smaller lapse is
-// allowed, but never anything beyond the 50% cap. If every weaker alternative
+// allowed, but never anything beyond the 30% cap. If every weaker alternative
 // is unsafe, retain the optimal move.
 function pickMasterLessOptimal(ranked, progress = false, roll){
   const best = ranked[0];
@@ -1744,6 +1801,19 @@ function pickMasterLessOptimal(ranked, progress = false, roll){
   )[0].move;
 }
 
+// Preserve the variety of Master's 5% band without knowingly walking into a
+// forced defeat. A move qualifies when minimax cannot force a terminal loss
+// within four total plies (the candidate move plus three replies). If every
+// legal move is already losing, fall back to the best delaying defence.
+function pickMasterSafeRandom(ranked, roll){
+  if(!ranked.length) return null;
+  const safe = ranked.filter(candidate => !candidate.forcedLoss);
+  if(!safe.length) return ranked[0].move;
+  const randomRoll = roll === undefined ? Math.random() : roll;
+  const bounded = Math.max(0, Math.min(.999999999, randomRoll));
+  return safe[Math.floor(bounded * safe.length)].move;
+}
+
 function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
   const moves = allMoves(b, side);
   if(moves.length === 0) return null;
@@ -1760,8 +1830,16 @@ function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
 
   if(level === 'master'){
     const policy = masterPolicy || masterPolicyForRoll(Math.random());
-    if(policy.random)
-      return moves[(Math.random() * moves.length) | 0];
+    if(policy.random){
+      const ranked = rankMasterMoves(
+        b,
+        side,
+        MASTER_SAFE_RANDOM_DEPTH,
+        lastMove,
+        seen
+      );
+      return pickMasterSafeRandom(ranked);
+    }
 
     const ranked = rankMasterMoves(b, side, policy.depth, lastMove, seen);
     if(policy.lessOptimal)
@@ -1829,6 +1907,8 @@ function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
 	  let aiSeen = {};          // position -> occurrence count (anti-repetition)
 	  let aiMasterLockRemaining = 0; // future Master turns still locked to depth 3
 	  let aiMasterDepth3Blocked = false; // next free roll after a lock cannot be depth 3
+	  let aiMasterSecondWindRemaining = 0; // future turns still locked to depth 4
+	  let aiMasterSecondWindUsed = false; // second wind can trigger only once per game
 	  let aiNoCapturePly = 0;   // combined human + machine moves since the last flip
 	  let aiMasterProgressRemaining = 0; // forced safe-less attempts left in this burst
 	  let aiMasterNextProgressPly = MASTER_STAGNATION_PLIES;
@@ -1837,6 +1917,8 @@ function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
 	  function resetMasterRuntime(){
 	    aiMasterLockRemaining = 0;
 	    aiMasterDepth3Blocked = false;
+	    aiMasterSecondWindRemaining = 0;
+	    aiMasterSecondWindUsed = false;
 	    aiNoCapturePly = 0;
 	    aiMasterProgressRemaining = 0;
 	    aiMasterNextProgressPly = MASTER_STAGNATION_PLIES;
@@ -3018,6 +3100,9 @@ function finishAIThink(plan, token){
     ? planMasterTurn({
         lockRemaining: aiMasterLockRemaining,
         depth3Blocked: aiMasterDepth3Blocked,
+        secondWindRemaining: aiMasterSecondWindRemaining,
+        secondWindUsed: aiMasterSecondWindUsed,
+        botPieceCount: count(board, turn),
         noCapturePly: aiNoCapturePly,
         progressRemaining: aiMasterProgressRemaining,
         nextProgressPly: aiMasterNextProgressPly
@@ -3044,6 +3129,8 @@ function finishAIThink(plan, token){
     if(masterTurn){
       aiMasterLockRemaining = masterTurn.nextLock;
       aiMasterDepth3Blocked = masterTurn.nextDepth3Blocked;
+      aiMasterSecondWindRemaining = masterTurn.nextSecondWindRemaining;
+      aiMasterSecondWindUsed = masterTurn.nextSecondWindUsed;
       aiMasterProgressRemaining = masterTurn.nextProgressRemaining;
       aiMasterNextProgressPly = masterTurn.nextProgressPly;
     }
