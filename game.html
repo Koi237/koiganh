@@ -1756,10 +1756,10 @@ function rankMasterMoves(b, side, depth, lastMove, seen){
 
 // Aim at a randomly sampled 10–30% score loss. Scores are zero-centred, so
 // balanced positions use one material unit (100 points) as the minimum scale.
-// Legal move scores are discrete: prefer a fresh/non-undo option, then an
-// exact-band move when one exists; otherwise the nearest smaller lapse is
-// allowed, but never anything beyond the 30% cap. If every weaker alternative
-// is unsafe, retain the optimal move.
+// Legal move scores are discrete: prefer fresh/non-undo alternatives. When no
+// move lands inside the exact band, find the safe weaker move nearest each end
+// (10% and 30%) and choose between those boundary candidates with an even coin
+// flip. If every weaker alternative is unsafe, retain the optimal move.
 function pickMasterLessOptimal(ranked, progress = false, roll){
   const best = ranked[0];
   if(!best || best.forcedLoss) return best ? best.move : null;
@@ -1769,33 +1769,54 @@ function pickMasterLessOptimal(ranked, progress = false, roll){
   const lowScore = best.score - scale * MASTER_LESS_MAX;
   const safeCandidates = ranked.slice(1).filter(candidate =>
     !candidate.forcedLoss &&
-    candidate.score < best.score &&
-    candidate.score >= lowScore
+    candidate.score < best.score
   );
   if(!safeCandidates.length) return best.move;
   const freshBand = safeCandidates.filter(candidate =>
     !candidate.isUndo && candidate.repeatCount === 0
   );
   const freshnessPool = freshBand.length ? freshBand : safeCandidates;
-  const exactBand = freshnessPool.filter(candidate => candidate.score <= highScore);
-  const candidateBand = exactBand.length ? exactBand : freshnessPool;
+  const exactBand = freshnessPool.filter(candidate =>
+    candidate.score <= highScore &&
+    candidate.score >= lowScore
+  );
 
   const targetRoll = roll === undefined ? Math.random() : roll;
   const boundedRoll = Math.max(0, Math.min(1, targetRoll));
+
+  if(!exactBand.length){
+    let fallbackPool = freshnessPool;
+    if(progress){
+      const strongestProgress = Math.max(...fallbackPool.map(c => c.progressScore));
+      fallbackPool = fallbackPool.filter(c => c.progressScore === strongestProgress);
+    }
+    const closestTo = boundaryScore => fallbackPool.reduce((closest, candidate) => {
+      const distance = Math.abs(candidate.score - boundaryScore);
+      const closestDistance = Math.abs(closest.score - boundaryScore);
+      return distance < closestDistance ||
+        (distance === closestDistance && candidate.order < closest.order)
+        ? candidate
+        : closest;
+    });
+    const closestTo10 = closestTo(highScore);
+    const closestTo30 = closestTo(lowScore);
+    return (boundedRoll < .5 ? closestTo10 : closestTo30).move;
+  }
+
   const targetLoss =
     MASTER_LESS_MIN + (MASTER_LESS_MAX - MASTER_LESS_MIN) * boundedRoll;
   const targetScore = best.score - scale * targetLoss;
 
   if(progress){
-    const strongestProgress = Math.max(...candidateBand.map(c => c.progressScore));
-    const progressPool = candidateBand.filter(c => c.progressScore === strongestProgress);
+    const strongestProgress = Math.max(...exactBand.map(c => c.progressScore));
+    const progressPool = exactBand.filter(c => c.progressScore === strongestProgress);
     return progressPool.sort((a, z) =>
       Math.abs(a.score - targetScore) - Math.abs(z.score - targetScore) ||
       a.order - z.order
     )[0].move;
   }
 
-  return candidateBand.sort((a, z) =>
+  return exactBand.sort((a, z) =>
     Math.abs(a.score - targetScore) - Math.abs(z.score - targetScore) ||
     a.order - z.order
   )[0].move;
