@@ -1424,8 +1424,11 @@ function hasAnyMove(b, side){
                    thấy miếng ăn mà không thấy đòn đáp, nên sập bẫy được;
             master = một lần rút chiến thuật cho mỗi lượt chưa bị khóa:
                    35% đọc 3 nước và giữ chế độ đó trong 3 lượt máy,
-                   28% đọc 2 nước tối ưu, 17% đọc 2 nước nhưng cố ý chọn
-                   phương án kém hơn, 15% đọc 1 nước, 5% đi ngẫu nhiên;
+                   25% đọc 2 nước tối ưu, 20% đọc 2 nước nhưng cố ý chọn
+                   phương án kém 30–50%, 15% đọc 1 nước, 5% đi ngẫu nhiên.
+                   Hai chuỗi khóa độ sâu 3 không thể nối liền nhau. Sau 18
+                   nước liên tiếp của cả hai bên không có quân đổi màu, máy
+                   thử 1–3 nước độ sâu 2 kém tối ưu có kiểm soát để phá thế;
             chal = alpha-beta 5 nước, đánh giá thêm độ cơ động để né vây.
    Chống lặp hai lớp: phạt hoàn tác ngay nước trước (AI_UNDO), và phạt
    quay về thế cờ đã xuất hiện, nặng dần theo số lần lặp (AI_REP × count).
@@ -1438,6 +1441,13 @@ const AI_CARELESS = { hard: 0.08 };  // chance to just play any legal move (hang
 const AI_UNDO = 7;    // anti-shuffle: cost of exactly undoing your last move
 const AI_REP  = 12;   // per prior occurrence of the position a move returns to
 const MASTER_LOCK_MOVES = 3; // triggering move + the next two machine turns
+const MASTER_LESS_MIN = .30;
+const MASTER_LESS_MAX = .50;
+const MASTER_LESS_SCALE_FLOOR = 100; // one material unit in evalBoard()
+const MASTER_FORCED_LOSS = -8000;
+const MASTER_STAGNATION_PLIES = 18; // total moves by both sides, not 18 rounds
+const MASTER_PROGRESS_MIN_TURNS = 1;
+const MASTER_PROGRESS_MAX_TURNS = 3;
 
 function allMoves(b, side){
   const out = [];
@@ -1510,10 +1520,24 @@ function search(b, side, me, depth, alpha, beta, ply){
 // starts a three-machine-turn depth-3 commitment; later committed turns do not
 // roll again. They recalculate from the live board, so a human deviation or a
 // capture can never leave the machine following stale coordinates.
-function masterPolicyForRoll(roll){
+//
+// Immediately after a depth-3 commitment, the next free roll excludes depth 3
+// and renormalizes the remaining 25/20/15/5 weights. This preserves the intended
+// character of the other bands without allowing two locks back-to-back.
+function masterPolicyForRoll(roll, blockDepth3 = false){
+  if(blockDepth3){
+    const nonDepth3Weight = .65;
+    if(roll < .25 / nonDepth3Weight)
+      return { mode:'depth2', depth:2, lessOptimal:false, random:false };
+    if(roll < .45 / nonDepth3Weight)
+      return { mode:'depth2-less', depth:2, lessOptimal:true, random:false };
+    if(roll < .60 / nonDepth3Weight)
+      return { mode:'depth1', depth:1, lessOptimal:false, random:false };
+    return { mode:'random', depth:0, lessOptimal:false, random:true };
+  }
   if(roll < .35)
     return { mode:'depth3-lock', depth:3, lessOptimal:false, random:false };
-  if(roll < .63)
+  if(roll < .60)
     return { mode:'depth2', depth:2, lessOptimal:false, random:false };
   if(roll < .80)
     return { mode:'depth2-less', depth:2, lessOptimal:true, random:false };
@@ -1522,39 +1546,148 @@ function masterPolicyForRoll(roll){
   return { mode:'random', depth:0, lessOptimal:false, random:true };
 }
 
-function nextMasterPolicy(lockRemaining, roll){
+function nextMasterPolicy(lockRemaining, roll, blockDepth3 = false){
   if(lockRemaining > 0){
     return {
       policy: { mode:'depth3-lock', depth:3, lessOptimal:false, random:false },
-      nextLock: lockRemaining - 1
+      nextLock: lockRemaining - 1,
+      nextDepth3Blocked: true
     };
   }
-  const policy = masterPolicyForRoll(roll === undefined ? Math.random() : roll);
+  const policy = masterPolicyForRoll(
+    roll === undefined ? Math.random() : roll,
+    blockDepth3
+  );
   return {
     policy,
-    nextLock: policy.mode === 'depth3-lock' ? MASTER_LOCK_MOVES - 1 : 0
+    nextLock: policy.mode === 'depth3-lock' ? MASTER_LOCK_MOVES - 1 : 0,
+    nextDepth3Blocked: policy.mode === 'depth3-lock'
   };
 }
 
-// Master needs exact root scores so its 17% lapse can choose a genuinely
+function masterProgressTurnsForRoll(roll){
+  const span = MASTER_PROGRESS_MAX_TURNS - MASTER_PROGRESS_MIN_TURNS + 1;
+  const bounded = Math.max(0, Math.min(.999999999, roll));
+  return MASTER_PROGRESS_MIN_TURNS + Math.floor(bounded * span);
+}
+
+function masterProgressPolicy(){
+  return {
+    mode:'depth2-progress',
+    depth:2,
+    lessOptimal:true,
+    progress:true,
+    random:false
+  };
+}
+
+function masterQuietStateAfterMove(state, captureCount){
+  if(captureCount > 0){
+    return {
+      noCapturePly: 0,
+      progressRemaining: 0,
+      nextProgressPly: MASTER_STAGNATION_PLIES
+    };
+  }
+  return {
+    noCapturePly: Math.max(0, state.noCapturePly || 0) + 1,
+    progressRemaining: Math.max(0, state.progressRemaining || 0),
+    nextProgressPly: Number.isFinite(state.nextProgressPly)
+      ? state.nextProgressPly
+      : MASTER_STAGNATION_PLIES
+  };
+}
+
+// Pure state transition used by the live game and the headless tests. A
+// stagnation burst waits for any active depth-3 lock to finish, then attempts
+// one to three controlled depth-2 alternatives. A failed burst is not retried
+// until another 18 capture-free plies have passed.
+function planMasterTurn(state, policyRoll, progressRoll){
+  const lockRemaining = Math.max(0, state.lockRemaining || 0);
+  const progressRemaining = Math.max(0, state.progressRemaining || 0);
+  const noCapturePly = Math.max(0, state.noCapturePly || 0);
+  const nextProgressPly = Number.isFinite(state.nextProgressPly)
+    ? state.nextProgressPly
+    : MASTER_STAGNATION_PLIES;
+
+  if(lockRemaining === 0 &&
+     (progressRemaining > 0 || noCapturePly >= nextProgressPly)){
+    const burst = progressRemaining > 0
+      ? progressRemaining
+      : masterProgressTurnsForRoll(
+          progressRoll === undefined ? Math.random() : progressRoll
+        );
+    return {
+      policy: masterProgressPolicy(),
+      nextLock: 0,
+      nextDepth3Blocked: Boolean(state.depth3Blocked),
+      nextProgressRemaining: burst - 1,
+      nextProgressPly: burst - 1 === 0
+        ? noCapturePly + 1 + MASTER_STAGNATION_PLIES // include this planned attempt
+        : nextProgressPly
+    };
+  }
+
+  const regular = nextMasterPolicy(
+    lockRemaining,
+    policyRoll,
+    Boolean(state.depth3Blocked)
+  );
+  return {
+    ...regular,
+    nextProgressRemaining: progressRemaining,
+    nextProgressPly
+  };
+}
+
+function countPressuredPieces(b, side){
+  let pressured = 0;
+  for(let i = 0; i < SIZE; i++){
+    if(b[i] !== side) continue;
+    let liberties = 0;
+    for(const n of ADJ[i]) if(b[n] === 0) liberties++;
+    if(liberties <= 1) pressured++;
+  }
+  return pressured;
+}
+
+// Master needs exact root scores so its depth-2 lapse can choose a genuinely
 // weaker alternative rather than another move tied for best. Depth is at most
 // three here, so scoring every legal root with a full alpha-beta window stays
 // inexpensive while producing a trustworthy ranking.
 function rankMasterMoves(b, side, depth, lastMove, seen){
   const foe = side === 1 ? 2 : 1;
+  const foeBefore = count(b, foe);
   return allMoves(b, side).map((move, order) => {
     const nb = applyMove(b, move[0], move[1]);
-    let score = search(nb, foe, side, depth - 1, -Infinity, Infinity, 1);
-    if(lastMove && move[0] === lastMove[1] && move[1] === lastMove[0])
-      score -= AI_UNDO;
+    const rawScore = search(nb, foe, side, depth - 1, -Infinity, Infinity, 1);
+    let score = rawScore;
+    const terminalOutcome =
+      Math.abs(rawScore) >= Math.abs(MASTER_FORCED_LOSS);
+    const isUndo = Boolean(
+      lastMove && move[0] === lastMove[1] && move[1] === lastMove[0]
+    );
+    if(isUndo && !terminalOutcome) score -= AI_UNDO;
+    let repeatCount = 0;
     if(seen){
-      const rep = seen[nb.join('')] || 0;
-      if(rep) score -= AI_REP * rep;
+      repeatCount = seen[nb.join('')] || 0;
+      if(repeatCount && !terminalOutcome) score -= AI_REP * repeatCount;
     }
+    const captureCount = foeBefore - count(nb, foe);
     return {
       move,
       score,
+      rawScore,
+      forcedLoss: rawScore <= MASTER_FORCED_LOSS,
       captureLead: count(nb, side) - count(nb, foe),
+      captureCount,
+      repeatCount,
+      isUndo,
+      progressScore:
+        captureCount * 100 +
+        countPressuredPieces(nb, foe) * 8 -
+        repeatCount * AI_REP -
+        (isUndo ? AI_UNDO * 2 : 0),
       order
     };
   }).sort((a, z) =>
@@ -1562,6 +1695,53 @@ function rankMasterMoves(b, side, depth, lastMove, seen){
     z.captureLead - a.captureLead ||
     a.order - z.order
   );
+}
+
+// Aim at a randomly sampled 30–50% score loss. Scores are zero-centred, so
+// balanced positions use one material unit (100 points) as the minimum scale.
+// Legal move scores are discrete: prefer a fresh/non-undo option, then an
+// exact-band move when one exists; otherwise the nearest smaller lapse is
+// allowed, but never anything beyond the 50% cap. If every weaker alternative
+// is unsafe, retain the optimal move.
+function pickMasterLessOptimal(ranked, progress = false, roll){
+  const best = ranked[0];
+  if(!best || best.forcedLoss) return best ? best.move : null;
+
+  const scale = Math.max(MASTER_LESS_SCALE_FLOOR, Math.abs(best.score));
+  const highScore = best.score - scale * MASTER_LESS_MIN;
+  const lowScore = best.score - scale * MASTER_LESS_MAX;
+  const safeCandidates = ranked.slice(1).filter(candidate =>
+    !candidate.forcedLoss &&
+    candidate.score < best.score &&
+    candidate.score >= lowScore
+  );
+  if(!safeCandidates.length) return best.move;
+  const freshBand = safeCandidates.filter(candidate =>
+    !candidate.isUndo && candidate.repeatCount === 0
+  );
+  const freshnessPool = freshBand.length ? freshBand : safeCandidates;
+  const exactBand = freshnessPool.filter(candidate => candidate.score <= highScore);
+  const candidateBand = exactBand.length ? exactBand : freshnessPool;
+
+  const targetRoll = roll === undefined ? Math.random() : roll;
+  const boundedRoll = Math.max(0, Math.min(1, targetRoll));
+  const targetLoss =
+    MASTER_LESS_MIN + (MASTER_LESS_MAX - MASTER_LESS_MIN) * boundedRoll;
+  const targetScore = best.score - scale * targetLoss;
+
+  if(progress){
+    const strongestProgress = Math.max(...candidateBand.map(c => c.progressScore));
+    const progressPool = candidateBand.filter(c => c.progressScore === strongestProgress);
+    return progressPool.sort((a, z) =>
+      Math.abs(a.score - targetScore) - Math.abs(z.score - targetScore) ||
+      a.order - z.order
+    )[0].move;
+  }
+
+  return candidateBand.sort((a, z) =>
+    Math.abs(a.score - targetScore) - Math.abs(z.score - targetScore) ||
+    a.order - z.order
+  )[0].move;
 }
 
 function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
@@ -1584,11 +1764,8 @@ function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
       return moves[(Math.random() * moves.length) | 0];
 
     const ranked = rankMasterMoves(b, side, policy.depth, lastMove, seen);
-    if(policy.lessOptimal){
-      const bestScore = ranked[0].score;
-      const weaker = ranked.find(candidate => candidate.score < bestScore);
-      if(weaker) return weaker.move;
-    }
+    if(policy.lessOptimal)
+      return pickMasterLessOptimal(ranked, Boolean(policy.progress));
     return ranked[0].move;
   }
 
@@ -1651,7 +1828,19 @@ function aiChooseMove(b, side, level, lastMove, seen, masterPolicy){
 	  let aiLastMove = null;    // the machine's previous move (anti-shuffle memory)
 	  let aiSeen = {};          // position -> occurrence count (anti-repetition)
 	  let aiMasterLockRemaining = 0; // future Master turns still locked to depth 3
+	  let aiMasterDepth3Blocked = false; // next free roll after a lock cannot be depth 3
+	  let aiNoCapturePly = 0;   // combined human + machine moves since the last flip
+	  let aiMasterProgressRemaining = 0; // forced safe-less attempts left in this burst
+	  let aiMasterNextProgressPly = MASTER_STAGNATION_PLIES;
 	  let aiPickerPaused = false; // pause a live machine turn while choosing a replay level
+
+	  function resetMasterRuntime(){
+	    aiMasterLockRemaining = 0;
+	    aiMasterDepth3Blocked = false;
+	    aiNoCapturePly = 0;
+	    aiMasterProgressRemaining = 0;
+	    aiMasterNextProgressPly = MASTER_STAGNATION_PLIES;
+	  }
 
 	  /* ---------- BOT PERSONALITY + CHAT ---------- */
 	  const BOT_PROFILES = {
@@ -2496,7 +2685,7 @@ function checkEnd(){
 
 function finish(winner){
   gameOver = true;
-  aiMasterLockRemaining = 0;
+  resetMasterRuntime();
   cancelAIThinking();
   clearBotTimers(true);
   const won = winner === myColor;
@@ -2620,7 +2809,19 @@ function doMove(from, to, broadcast){
       });
     }, 230);
   }
-  if(vsAI){                               // anti-repetition history
+  if(vsAI){
+    // One ply means one completed move by either side. Captures in Cờ Gánh
+    // change colour, so flips is the single source of truth for this counter.
+    const quietState = masterQuietStateAfterMove({
+      noCapturePly: aiNoCapturePly,
+      progressRemaining: aiMasterProgressRemaining,
+      nextProgressPly: aiMasterNextProgressPly
+    }, flips.length);
+    aiNoCapturePly = quietState.noCapturePly;
+    aiMasterProgressRemaining = quietState.progressRemaining;
+    aiMasterNextProgressPly = quietState.nextProgressPly;
+
+    // Anti-repetition history.
     const k = board.join('');
     aiSeen[k] = (aiSeen[k] || 0) + 1;
   }
@@ -2814,7 +3015,13 @@ function finishAIThink(plan, token){
   // Keep the thinking cue visible during the synchronous search; on slower
   // phones this avoids a blank beat before the piece starts moving.
   const masterTurn = aiLevel === 'master'
-    ? nextMasterPolicy(aiMasterLockRemaining)
+    ? planMasterTurn({
+        lockRemaining: aiMasterLockRemaining,
+        depth3Blocked: aiMasterDepth3Blocked,
+        noCapturePly: aiNoCapturePly,
+        progressRemaining: aiMasterProgressRemaining,
+        nextProgressPly: aiMasterNextProgressPly
+      })
     : null;
   const mv = aiChooseMove(
     board,
@@ -2834,11 +3041,16 @@ function finishAIThink(plan, token){
   activeAIThinkPlan = null;
   clearAIThinkingVisual();
   if(mv){
-    if(masterTurn) aiMasterLockRemaining = masterTurn.nextLock;
+    if(masterTurn){
+      aiMasterLockRemaining = masterTurn.nextLock;
+      aiMasterDepth3Blocked = masterTurn.nextDepth3Blocked;
+      aiMasterProgressRemaining = masterTurn.nextProgressRemaining;
+      aiMasterNextProgressPly = masterTurn.nextProgressPly;
+    }
     aiLastMove = mv;
     doMove(mv[0], mv[1], false);
   } else {
-    if(masterTurn) aiMasterLockRemaining = 0;
+    if(masterTurn) resetMasterRuntime();
     updateStatus();
   }
 }
@@ -3051,7 +3263,7 @@ function resetGame(){
   board = initialBoard();
   turn = 1; selected = null; hints = []; gameOver = false;
   aiLastMove = null;
-  aiMasterLockRemaining = 0;
+  resetMasterRuntime();
   aiSeen = { [board.join('')]: 1 };
   document.getElementById('rematchBtn').style.display = 'none';
   if(conn) document.getElementById('drawBtn').style.display = 'block';
@@ -3160,7 +3372,7 @@ if(typeof Peer !== 'undefined'){
 
 function endDraw(){
   gameOver = true;
-  aiMasterLockRemaining = 0;
+  resetMasterRuntime();
   cancelAIThinking();
   clearBotTimers(true);
   koiSound.play('draw');
