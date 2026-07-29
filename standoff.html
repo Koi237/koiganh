@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOI // STANDOFF</title>
+<!--
+  STANDOFF — a two-player card duel over WebRTC. Single file, host anywhere static (GitHub Pages).
+
+  HOW MULTIPLAYER WORKS
+  • Signaling / matchmaking: PeerJS free cloud broker (no server of yours needed).
+  • Media/data relay when direct P2P fails: your metered.ca TURN server.
+
+  SETUP (2 minutes)
+  1. Create a free app at https://www.metered.ca/  → dashboard → "TURN Servers".
+  2. Fill in CFG below: METERED_DOMAIN like "yourapp.metered.live" and your API key,
+     OR paste static TURN credentials into STATIC_ICE.
+  3. Push this file to GitHub Pages. Open it, hit "Create lobby", send the link to a friend.
+
+  Note: exposing the metered API key client-side is the standard static-hosting approach
+  (metered scopes it to credential minting). Rotate it in the dashboard any time.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#070b14; --bg1:#0c1424;
+  --panel:rgba(148,170,200,.055); --panel2:rgba(148,170,200,.09);
+  --line:rgba(150,182,224,.14); --line2:rgba(150,182,224,.28);
+  --ink:#e8eef9; --mut:#8a97ad; --dim:#5a6880;
+  --v:#a78bfa; --c:#67e8f9; --a:#fcd34d;
+  --fire:#ff8a5c; --ice:#8fd8ff; --water:#6d95ff; --mod:#c4b5fd;
+  --bad:#ff6b7a; --good:#5ee6a8;
+  --ribbon:linear-gradient(90deg,var(--v),var(--c) 55%,var(--a));
+  --rad:14px;
+  --shadow:0 12px 34px rgba(2,6,16,.55);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; font-family:'Space Grotesk',system-ui,sans-serif; color:var(--ink);
+  background:
+    radial-gradient(1100px 600px at 70% -10%, rgba(103,232,249,.06), transparent 60%),
+    radial-gradient(900px 700px at 12% 110%, rgba(167,139,250,.07), transparent 60%),
+    linear-gradient(180deg,var(--bg1),var(--bg0) 45%);
+  overflow:hidden; user-select:none;
+}
+.mono{font-family:'Space Mono',monospace;}
+.hidden{display:none !important;}
+button{font-family:inherit;}
+
+/* ---------- shared bits ---------- */
+.eyebrow{font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--dim);}
+.btn{
+  appearance:none; border:1px solid var(--line2); background:var(--panel2); color:var(--ink);
+  padding:12px 22px; border-radius:12px; font-size:15px; font-weight:600; letter-spacing:.02em;
+  cursor:pointer; transition:transform .15s ease, background .2s, border-color .2s, box-shadow .2s;
+}
+.btn:hover{background:rgba(150,182,224,.16); transform:translateY(-1px);}
+.btn:active{transform:translateY(1px) scale(.98);}
+.btn:focus-visible{outline:2px solid var(--c); outline-offset:2px;}
+.btn.primary{
+  border:none; color:#0a0f1a; background:var(--ribbon); background-size:150% 100%;
+  box-shadow:0 6px 24px rgba(120,190,240,.22);
+}
+.btn.primary:hover{background-position:60% 0;}
+.btn.ghost{background:transparent;}
+.btn:disabled{opacity:.38; cursor:default; transform:none;}
+.field{
+  width:100%; background:rgba(4,8,16,.5); border:1px solid var(--line2); color:var(--ink);
+  border-radius:12px; padding:13px 16px; font-size:16px; font-family:inherit;
+}
+.field:focus{outline:none; border-color:var(--c);}
+.chip{
+  display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
+  border:1px solid var(--line); background:var(--panel); font-size:12px; color:var(--mut);
+}
+.prism{width:16px;height:16px;flex:none;}
+
+/* ---------- screens ---------- */
+.screen{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;}
+#scrHome, #scrLobby{padding-top:84px;}
+
+/* ---------- KOI site nav ---------- */
+.sitenav{
+  position:fixed; top:0; left:0; right:0; z-index:30;
+  display:flex; align-items:center; justify-content:space-between; gap:24px;
+  padding:22px clamp(22px,3.6vw,48px);
+  pointer-events:none;
+  transition:opacity .45s ease, transform .45s ease;
+}
+.sitenav .mark{font-size:12.5px; letter-spacing:.42em; font-weight:700; color:#e6eaf6; opacity:.85;}
+.sitenav .links{display:flex; gap:clamp(16px,2.4vw,34px); pointer-events:auto;}
+.sitenav a{
+  position:relative; font-size:10.5px; font-weight:500; letter-spacing:.28em;
+  text-decoration:none; color:rgba(220,226,244,.55); padding:4px 0;
+  transition:color .45s ease; white-space:nowrap;
+}
+.sitenav a:hover{color:#eef1fa;}
+.sitenav a::after{
+  content:""; position:absolute; left:0; bottom:0; width:100%; height:1px;
+  background:linear-gradient(90deg, rgba(150,180,255,.9), rgba(220,160,255,.5));
+  transform:scaleX(0); transform-origin:left;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1);
+}
+.sitenav a:hover::after{transform:scaleX(1);}
+.sitenav a[aria-current="page"]{color:#eef1fa;}
+.sitenav a[aria-current="page"]::after{transform:scaleX(1); opacity:.6;}
+body.in-game .sitenav{opacity:0; transform:translateY(-10px);}
+body.in-game .sitenav .links{pointer-events:none;}
+.panelbox{
+  width:min(430px,94vw); background:rgba(10,16,28,.72); border:1px solid var(--line);
+  border-radius:20px; padding:34px 30px; box-shadow:var(--shadow); backdrop-filter:blur(14px);
+  display:flex; flex-direction:column; gap:16px; animation:popIn .5s cubic-bezier(.2,.9,.25,1.1);
+}
+.logo{display:flex; align-items:center; gap:12px;}
+.logo h1{font-size:30px; margin:0; letter-spacing:.06em; font-weight:700;}
+.logo h1 em{font-style:normal; background:var(--ribbon); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.tag{color:var(--mut); font-size:14px; line-height:1.55; margin:0;}
+.linkbox{
+  display:flex; gap:8px; align-items:center; background:rgba(4,8,16,.55); border:1px dashed var(--line2);
+  border-radius:12px; padding:10px 12px;
+}
+.linkbox input{flex:1; background:none; border:none; color:var(--c); font-family:'Space Mono',monospace; font-size:12px; min-width:0;}
+.linkbox input:focus{outline:none;}
+.waitdots{display:flex; gap:7px; justify-content:center; padding:6px 0;}
+.waitdots i{width:8px;height:8px;border-radius:50%;background:var(--c);opacity:.25;animation:dotpulse 1.2s infinite;}
+.waitdots i:nth-child(2){animation-delay:.2s; background:var(--v);}
+.waitdots i:nth-child(3){animation-delay:.4s; background:var(--a);}
+@keyframes dotpulse{0%,100%{opacity:.2; transform:scale(.8)}50%{opacity:1; transform:scale(1.15)}}
+
+/* ---------- game layout ---------- */
+#scrGame{justify-content:space-between; padding:0; align-items:stretch;}
+#gameHead{display:flex; align-items:center; justify-content:space-between; padding:10px 16px;}
+#gameHead .left{display:flex; align-items:center; gap:10px;}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+  color:var(--mut);display:grid;place-items:center;cursor:pointer;transition:.2s;}
+.iconbtn:hover{color:var(--ink);border-color:var(--line2);}
+
+.duelrow{display:flex; align-items:center; gap:14px; padding:4px 18px;}
+.pcol{display:flex; flex-direction:column; gap:6px; min-width:170px;}
+.pname{font-weight:600; font-size:15px; display:flex; align-items:center; gap:8px;}
+.hpwrap{width:200px; max-width:44vw;}
+.hpbar{height:9px; border-radius:99px; background:rgba(255,255,255,.07); overflow:hidden; border:1px solid var(--line);}
+.hpfill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--good),var(--c));
+  transition:width .7s cubic-bezier(.3,.9,.3,1); box-shadow:0 0 12px rgba(94,230,168,.4);}
+.hpfill.low{background:linear-gradient(90deg,var(--bad),var(--a));}
+.hptxt{font-family:'Space Mono',monospace; font-size:11px; color:var(--mut); margin-top:3px;}
+.stainrow{display:flex; gap:6px; min-height:22px; align-items:center;}
+.stain{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;position:relative;
+  border:1px solid var(--line2); background:rgba(4,8,16,.6); animation:stainSpin 3s linear infinite;}
+.stain svg{width:12px;height:12px; animation:stainSpinRev 3s linear infinite;}
+.stain b{position:absolute; right:-4px; bottom:-4px; font-size:9px; font-family:'Space Mono',monospace;
+  background:var(--bg0); border:1px solid var(--line2); border-radius:50%; width:14px;height:14px; display:grid; place-items:center; animation:stainSpinRev 3s linear infinite;}
+@keyframes stainSpin{to{transform:rotate(360deg)}}
+@keyframes stainSpinRev{to{transform:rotate(-360deg)}}
+
+.avatar{width:52px;height:52px;border-radius:16px;flex:none;position:relative;display:grid;place-items:center;
+  background:linear-gradient(145deg,rgba(167,139,250,.16),rgba(103,232,249,.1)); border:1px solid var(--line2);}
+.avatar svg{width:28px;height:28px;}
+.avatar.idle{animation:bob 3.4s ease-in-out infinite;}
+.avatar .ring{position:absolute; inset:-5px; border-radius:20px; border:1px solid transparent;}
+.avatar.ready .ring{border-color:var(--good); box-shadow:0 0 16px rgba(94,230,168,.35); animation:pulse 1.6s infinite;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* opponent fan + mini slots */
+.oppmid{flex:1; display:flex; align-items:center; justify-content:center; gap:22px; flex-wrap:wrap;}
+.fanback{display:flex; align-items:center; height:64px;}
+.cardback{width:40px;height:56px;border-radius:8px; margin-left:-16px; flex:none;
+  background:linear-gradient(160deg,#141d33,#0b1122); border:1px solid var(--line2);
+  display:grid; place-items:center; box-shadow:0 4px 10px rgba(0,0,0,.4);
+  transition:transform .3s ease, margin .3s ease; animation:bob 4s ease-in-out infinite;}
+.cardback:first-child{margin-left:0;}
+.cardback svg{width:14px;height:14px;opacity:.8;}
+.cardback.locked{filter:grayscale(.6) brightness(.7);}
+.minislots{display:flex; gap:8px;}
+.minislot{width:34px;height:48px;border-radius:8px;border:1px dashed var(--line2);background:rgba(4,8,16,.35);
+  display:grid;place-items:center; transition:.3s;}
+.minislot .fill{width:26px;height:38px;border-radius:6px;background:linear-gradient(160deg,#182242,#0b1122);
+  border:1px solid var(--line2); opacity:0; transform:translateY(-12px) scale(.7); transition:.35s cubic-bezier(.2,.9,.3,1.2);}
+.minislot.on{border-style:solid; border-color:var(--c);}
+.minislot.on .fill{opacity:1; transform:none;}
+.readychip{font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.18em; color:var(--good);
+  border:1px solid rgba(94,230,168,.4); padding:4px 10px; border-radius:99px; opacity:0; transition:.3s;}
+.readychip.on{opacity:1; animation:pulse 1.6s infinite;}
+
+/* ---------- spectral timer ribbon (signature) ---------- */
+#ribbonWrap{padding:0 18px; display:flex; align-items:center; gap:12px;}
+#ribbon{flex:1; height:6px; border-radius:99px; background:rgba(255,255,255,.06); overflow:hidden; position:relative;}
+#ribbonFill{position:absolute; inset:0; background:var(--ribbon); border-radius:99px; transform-origin:left;
+  box-shadow:0 0 18px rgba(140,200,250,.35);}
+#ribbon.urgent #ribbonFill{animation:pulse .5s infinite;}
+#timeTxt{font-family:'Space Mono',monospace; font-size:13px; color:var(--mut); width:34px; text-align:right;}
+#turnTxt{font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.2em; color:var(--dim);}
+
+/* ---------- my board ---------- */
+#myArea{display:flex; flex-direction:column; gap:8px; padding:6px 18px 12px;}
+.slotrow{display:flex; gap:14px; justify-content:center; align-items:flex-end; flex-wrap:wrap;}
+.slot{
+  width:96px; height:132px; border-radius:var(--rad); border:1.5px dashed var(--line2);
+  background:rgba(4,8,16,.3); position:relative; display:grid; place-items:center; transition:border-color .25s, background .25s;
+}
+.slot .slbl{position:absolute; top:-18px; left:50%; transform:translateX(-50%); white-space:nowrap;}
+.slot .hint{color:var(--dim); font-size:10px; text-align:center; line-height:1.4; padding:0 8px;
+  font-family:'Space Mono',monospace; letter-spacing:.06em;}
+.slot.can{border-color:var(--c); background:rgba(103,232,249,.05);}
+.slot.off{opacity:.35;}
+.slot.filled{border-style:solid; border-color:var(--line2);}
+#submitWrap{display:flex; justify-content:center; padding-top:2px;}
+#btnSubmit{min-width:220px;}
+#btnSubmit.armed{animation:pulse 1.8s infinite;}
+
+/* ---------- cards ---------- */
+#hand{display:flex; justify-content:center; align-items:flex-end; min-height:140px; padding:8px 0 4px; perspective:900px;}
+.card{
+  width:88px; height:122px; border-radius:12px; position:relative; flex:none; cursor:pointer;
+  margin-left:-14px; background:linear-gradient(165deg,#131c30,#0a101f);
+  border:1px solid var(--line2); box-shadow:0 8px 18px rgba(0,0,0,.45);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  transition:transform .25s cubic-bezier(.2,.9,.3,1.2), box-shadow .25s, filter .25s;
+  will-change:transform;
+}
+.card:first-child{margin-left:0;}
+#hand .card:hover{transform:translateY(-14px) scale(1.06); z-index:5; box-shadow:0 16px 30px rgba(0,0,0,.6);}
+.card .cicon{width:34px;height:34px; display:grid; place-items:center;}
+.card .cicon svg{width:30px;height:30px;}
+.card .cname{font-size:11px; font-weight:600; letter-spacing:.04em; text-align:center; line-height:1.2; padding:0 4px;}
+.card .ctype{font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.2em; color:var(--dim); text-transform:uppercase;}
+.card::after{content:""; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+  background:linear-gradient(140deg,rgba(255,255,255,.09),transparent 40%);}
+.card.k-shoot{ --tint:var(--a);}   .card.k-shield{--tint:var(--c);}  .card.k-reload{--tint:#b7c4da;}
+.card.k-fire{ --tint:var(--fire);} .card.k-ice{--tint:var(--ice);}  .card.k-water{--tint:var(--water);}
+.card.k-vamp,.card.k-dark,.card.k-arcane,.card.k-silver,.card.k-rainbow,.card.k-lock{--tint:var(--mod);}
+.card{--tint:var(--ink);}
+.card .cicon{color:var(--tint);}
+.card{border-color:color-mix(in srgb, var(--tint) 32%, transparent);}
+.card.k-rainbow .cicon svg{filter:drop-shadow(0 0 4px rgba(167,139,250,.6));}
+.card.inslot{margin-left:0;}
+.card.dealing{animation:dealIn .5s cubic-bezier(.2,.9,.3,1.1) backwards;}
+.card.locked{cursor:not-allowed; filter:grayscale(.75) brightness(.65);}
+.card.locked::before{content:""; position:absolute; inset:0; border-radius:12px; background:rgba(6,10,18,.35); z-index:2;}
+.card .lockicon{position:absolute; top:6px; right:6px; z-index:3; color:var(--bad); width:14px;height:14px; display:none;}
+.card.locked .lockicon{display:block;}
+.card.submitted{cursor:default; filter:saturate(1.1);}
+@keyframes dealIn{from{transform:translateY(60px) rotate(8deg) scale(.6); opacity:0;} to{transform:none; opacity:1;}}
+@keyframes popIn{from{transform:scale(.86); opacity:0;} to{transform:none; opacity:1;}}
+
+/* ---------- showdown stage ---------- */
+#stage{position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; justify-content:space-between;
+  background:rgba(5,8,15,.78); backdrop-filter:blur(10px); animation:fadeIn .4s;}
+#stage::before{content:""; position:absolute; inset:-30%; pointer-events:none; opacity:.16; filter:blur(70px);
+  background:conic-gradient(from 120deg, var(--v), var(--c), var(--a), var(--v)); animation:slowspin 16s linear infinite;}
+@keyframes slowspin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}}
+.pod{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 12px;}
+.pod .podhead{display:flex; align-items:center; gap:12px;}
+.pod .podhp{width:180px;}
+.podcards{display:flex; gap:12px; min-height:118px;}
+.scard{width:84px;height:116px; border-radius:12px; position:relative; transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.3,.8,.3,1.1);}
+.scard .facedown,.scard .faceup{position:absolute; inset:0; border-radius:12px; backface-visibility:hidden; overflow:hidden;}
+.scard .facedown{background:linear-gradient(160deg,#182242,#0b1122); border:1px solid var(--line2);
+  display:grid; place-items:center;}
+.scard .facedown svg{width:22px;height:22px;opacity:.75;}
+.scard.flip{transform:rotateY(180deg);}
+.scard .faceup{transform:rotateY(180deg);}
+.scard.mineup{transform:none;}
+.scard.mineup .faceup{transform:none;}
+.scard.mineup .facedown{display:none;}
+.scard .faceup .card{width:100%;height:100%;margin:0; cursor:default;}
+.scard.ghost{opacity:.28;}
+.scard.ghost .faceup .card{border-style:dashed; background:transparent; box-shadow:none;}
+.scard.zap{animation:zapCard .5s;}
+@keyframes zapCard{0%,100%{transform:rotateY(180deg) scale(1)}50%{transform:rotateY(180deg) scale(1.12); filter:brightness(1.6);}}
+.scard.zapme{animation:zapMine .5s;}
+@keyframes zapMine{0%,100%{transform:scale(1)}50%{transform:scale(1.12); filter:brightness(1.6);}}
+#arena{position:relative; z-index:2; flex:1; display:grid; place-items:center; min-height:90px;}
+.banner{
+  font-weight:700; font-size:clamp(20px,4vw,34px); letter-spacing:.14em; text-transform:uppercase; text-align:center;
+  padding:14px 30px; border-radius:16px; border:1px solid var(--line2); background:rgba(8,12,22,.7);
+  animation:bannerIn .45s cubic-bezier(.2,.9,.3,1.2);
+}
+.banner .sub{display:block; font-size:12px; font-weight:400; letter-spacing:.24em; color:var(--mut); margin-top:6px; font-family:'Space Mono',monospace;}
+.banner.silver{color:#e8eef9; border-color:#cfd8ea; box-shadow:0 0 40px rgba(210,225,250,.25);}
+@keyframes bannerIn{from{transform:scale(.7); opacity:0;} to{transform:none; opacity:1;}}
+.orb{position:fixed; z-index:60; width:26px; height:26px; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--oc,#ffd76b) 45%, transparent 75%);
+  box-shadow:0 0 22px var(--oc,#ffd76b), 0 0 60px color-mix(in srgb,var(--oc,#ffd76b) 55%, transparent);
+  transition:transform var(--fly,.6s) cubic-bezier(.45,.05,.6,1), filter .3s;}
+.orb .trail{position:absolute; inset:-8px; border-radius:50%; border:1px solid var(--oc,#ffd76b); opacity:.4; animation:trail .5s infinite;}
+@keyframes trail{from{transform:scale(.7);opacity:.5}to{transform:scale(1.6);opacity:0}}
+.popnum{position:fixed; z-index:70; font-family:'Space Mono',monospace; font-weight:700; pointer-events:none;
+  font-size:30px; text-shadow:0 2px 14px rgba(0,0,0,.7); animation:rise 1.15s ease-out forwards;}
+.popnum.dmg{color:var(--bad);} .popnum.heal{color:var(--good);} .popnum.info{color:var(--c); font-size:15px;}
+@keyframes rise{0%{transform:translate(-50%,0) scale(.6); opacity:0;} 15%{opacity:1; transform:translate(-50%,-12px) scale(1.15);} 100%{transform:translate(-50%,-70px) scale(1); opacity:0;}}
+.tagchips{position:fixed; z-index:70; display:flex; flex-direction:column; gap:4px; pointer-events:none; transform:translateX(-50%);}
+.tagchips span{font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.08em; padding:3px 9px; border-radius:99px;
+  background:rgba(8,12,22,.85); border:1px solid var(--line2); color:var(--mut); animation:chipIn .4s backwards;}
+@keyframes chipIn{from{transform:translateY(8px); opacity:0;} to{opacity:1;}}
+.shake{animation:shake .45s;}
+@keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-7px,2px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-5px,-2px)}80%{transform:translate(4px,2px)}}
+.shieldflash{position:fixed; z-index:55; width:120px;height:120px; border-radius:50%; pointer-events:none; transform:translate(-50%,-50%);
+  border:3px solid var(--oc,var(--c)); opacity:0; animation:sflash .55s ease-out forwards;
+  box-shadow:0 0 40px color-mix(in srgb,var(--oc,var(--c)) 60%, transparent), inset 0 0 30px color-mix(in srgb,var(--oc,var(--c)) 40%, transparent);}
+@keyframes sflash{0%{opacity:0; scale:.5}25%{opacity:1}100%{opacity:0; scale:1.25}}
+.burst{position:fixed; z-index:56; width:14px;height:14px; border-radius:50%; pointer-events:none; transform:translate(-50%,-50%);
+  background:var(--oc,var(--bad)); animation:burst .6s ease-out forwards;}
+@keyframes burst{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--oc,var(--bad)) 70%, transparent); opacity:1;}
+  100%{box-shadow:0 0 0 70px transparent; opacity:0; scale:2;}}
+
+/* ---------- result ---------- */
+#result{position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+  background:rgba(5,8,15,.82); backdrop-filter:blur(12px); animation:fadeIn .6s;}
+#resWord{font-size:clamp(52px,11vw,110px); font-weight:700; letter-spacing:.1em; margin:0; line-height:1; animation:resIn .8s cubic-bezier(.2,.9,.3,1.15);}
+#resWord.win{background:var(--ribbon); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 34px rgba(140,200,250,.35));}
+#resWord.lose{color:var(--dim); animation:resLose 1s cubic-bezier(.3,.8,.4,1) both;}
+#resWord.draw{color:var(--mut);}
+#resSub{color:var(--mut); font-family:'Space Mono',monospace; font-size:13px; letter-spacing:.24em; text-transform:uppercase; animation:fadeIn 1.4s;}
+@keyframes resIn{0%{transform:scale(2.2); opacity:0; filter:blur(10px);} 60%{filter:blur(0);} 100%{transform:none; opacity:1;}}
+@keyframes resLose{0%{transform:translateY(-60px); opacity:0;} 60%{transform:translateY(8px); opacity:1;} 100%{transform:none;}}
+.confetti{position:absolute; top:-20px; width:8px; height:14px; border-radius:2px; pointer-events:none; animation:confall linear forwards;}
+@keyframes confall{to{transform:translateY(110vh) rotate(720deg); opacity:.7;}}
+#result .btn{z-index:2;}
+
+/* ---------- toast + modal ---------- */
+#toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); z-index:90; opacity:0;
+  background:rgba(10,16,28,.92); border:1px solid var(--line2); border-radius:12px; padding:10px 18px; font-size:13px;
+  transition:.3s; pointer-events:none; max-width:88vw; text-align:center;}
+#toast.show{opacity:1; transform:translateX(-50%);}
+.modal{position:fixed; inset:0; z-index:85; background:rgba(4,7,14,.75); backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center; padding:20px;}
+.modalbox{width:min(560px,94vw); max-height:82vh; overflow:auto; background:rgba(12,19,33,.96); border:1px solid var(--line);
+  border-radius:18px; padding:26px 28px; box-shadow:var(--shadow); animation:popIn .4s; line-height:1.6; font-size:14px; color:var(--mut);}
+.modalbox h2{color:var(--ink); margin:0 0 6px; font-size:20px;}
+.modalbox h3{color:var(--ink); font-size:13px; letter-spacing:.14em; text-transform:uppercase; margin:18px 0 4px; font-family:'Space Mono',monospace;}
+.modalbox b{color:var(--ink); font-weight:600;}
+.modalbox::-webkit-scrollbar{width:8px;} .modalbox::-webkit-scrollbar-thumb{background:var(--line2); border-radius:8px;}
+
+@media (max-width:640px){
+  .sitenav{padding:14px 16px;}
+  .sitenav .mark{display:none;}
+  .sitenav .links{gap:18px; margin-left:auto;}
+  .sitenav a{font-size:9px; letter-spacing:.2em;}
+  #scrHome, #scrLobby{padding-top:66px;}
+  .card{width:74px; height:104px; margin-left:-20px;}
+  .card .cicon svg{width:24px;height:24px;}
+  .slot{width:82px; height:114px;}
+  .hpwrap{width:140px;}
+  .pcol{min-width:120px;}
+  .podcards{gap:8px;} .scard{width:70px;height:98px;}
+  #gameHead{padding:8px 12px;}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01s !important; transition-duration:.05s !important;}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="rib" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/><stop offset=".55" stop-color="#67e8f9"/><stop offset="1" stop-color="#fcd34d"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<nav class="sitenav" id="siteNav">
+  <div class="mark">KOI</div>
+  <div class="links">
+    <a href="./index.html">HOME</a>
+    <a href="./game.html">CHESS</a>
+    <a href="./standoff.html" aria-current="page">STANDOFF</a>
+    <a href="./about.html">ABOUT</a>
+  </div>
+</nav>
+
+<!-- ============ HOME ============ -->
+<div class="screen" id="scrHome">
+  <div class="panelbox">
+    <div class="logo">
+      <svg class="prism" style="width:34px;height:34px" viewBox="0 0 24 24" fill="none"><path d="M12 3 21 20H3L12 3Z" stroke="url(#rib)" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 3v17" stroke="url(#rib)" stroke-width="1" opacity=".55"/></svg>
+      <h1>KOI <em>// STANDOFF</em></h1>
+    </div>
+    <p class="tag">A two-player showdown of bullets, shields and bad decisions. Create a lobby, send the link, and see who blinks first.</p>
+    <input class="field" id="inpName" maxlength="14" placeholder="Your name" autocomplete="off">
+    <div id="joinPanel" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chip" style="align-self:flex-start">Invited to lobby <b class="mono" id="joinCode" style="color:var(--c)"></b></div>
+      <button class="btn primary" id="btnJoin">Join the standoff</button>
+    </div>
+    <button class="btn primary" id="btnCreate">Create lobby</button>
+    <button class="btn ghost" id="btnRules">How to play</button>
+    <div class="eyebrow" id="netStatus" style="text-align:center"></div>
+  </div>
+</div>
+
+<!-- ============ LOBBY ============ -->
+<div class="screen hidden" id="scrLobby">
+  <div class="panelbox">
+    <div class="eyebrow">Lobby open</div>
+    <h2 style="margin:0;font-size:24px">Waiting for your opponent</h2>
+    <p class="tag">Send this link. The duel begins the moment they walk in.</p>
+    <div class="linkbox">
+      <input id="inviteLink" readonly>
+      <button class="btn" id="btnCopy" style="padding:8px 14px;font-size:13px">Copy</button>
+    </div>
+    <div class="waitdots"><i></i><i></i><i></i></div>
+    <button class="btn ghost" id="btnCancelLobby">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ GAME ============ -->
+<div class="screen hidden" id="scrGame">
+  <div id="gameHead">
+    <div class="left">
+      <svg class="prism" viewBox="0 0 24 24" fill="none"><path d="M12 3 21 20H3L12 3Z" stroke="url(#rib)" stroke-width="1.8"/></svg>
+      <span id="turnTxt">TURN 01</span>
+    </div>
+    <div class="left">
+      <span class="chip mono" id="roomChip"></span>
+      <button class="iconbtn" id="btnMute" title="Sound">
+        <svg id="sndOn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+        <svg id="sndOff" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- opponent -->
+  <div class="duelrow" id="oppRow">
+    <div class="avatar idle" id="oppAvatar"><span class="ring"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8fd8ff" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8.2" r="3.6"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg>
+    </div>
+    <div class="pcol">
+      <div class="pname"><span id="oppName">—</span><svg id="oppLockIcon" class="hidden" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--bad)" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <div class="hpwrap"><div class="hpbar"><div class="hpfill" id="oppHpFill"></div></div><div class="hptxt"><span id="oppHpTxt">32</span> / 32</div></div>
+      <div class="stainrow" id="oppStains"></div>
+    </div>
+    <div class="oppmid">
+      <div class="fanback" id="oppFan"></div>
+      <div class="minislots">
+        <div class="minislot" id="ms0"><div class="fill"></div></div>
+        <div class="minislot" id="ms1"><div class="fill"></div></div>
+        <div class="minislot" id="ms2"><div class="fill"></div></div>
+      </div>
+      <span class="readychip" id="oppReady">READY</span>
+    </div>
+  </div>
+
+  <div id="ribbonWrap">
+    <div id="ribbon"><div id="ribbonFill"></div></div>
+    <span id="timeTxt">20</span>
+  </div>
+
+  <!-- me -->
+  <div id="myArea">
+    <div class="duelrow" style="padding:0">
+      <div class="avatar" id="myAvatar"><span class="ring"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8.2" r="3.6"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg>
+      </div>
+      <div class="pcol">
+        <div class="pname" id="myName">You</div>
+        <div class="hpwrap"><div class="hpbar"><div class="hpfill" id="myHpFill"></div></div><div class="hptxt"><span id="myHpTxt">32</span> / 32</div></div>
+        <div class="stainrow" id="myStains"></div>
+      </div>
+    </div>
+    <div class="slotrow" style="padding-top:20px">
+      <div class="slot" id="slotAction"><span class="slbl eyebrow">Action ●</span><span class="hint">shoot / shield<br>/ reload</span></div>
+      <div class="slot" id="slotElem"><span class="slbl eyebrow">Element</span><span class="hint">tint your shot<br>or shield</span></div>
+      <div class="slot" id="slotMod"><span class="slbl eyebrow">Mod</span><span class="hint">bend the<br>rules</span></div>
+    </div>
+    <div id="submitWrap"><button class="btn primary" id="btnSubmit" disabled>Lock it in</button></div>
+    <div id="hand"></div>
+  </div>
+</div>
+
+<!-- ============ STAGE ============ -->
+<div id="stage" class="hidden">
+  <div class="pod" id="podOpp">
+    <div class="podhead"><b id="podOppName"></b><div class="podhp hpbar"><div class="hpfill" id="podOppHp"></div></div><span class="mono" id="podOppHpT" style="font-size:11px;color:var(--mut)"></span></div>
+    <div class="podcards" id="podOppCards"></div>
+  </div>
+  <div id="arena"></div>
+  <div class="pod" id="podMe">
+    <div class="podcards" id="podMeCards"></div>
+    <div class="podhead"><b id="podMeName"></b><div class="podhp hpbar"><div class="hpfill" id="podMeHp"></div></div><span class="mono" id="podMeHpT" style="font-size:11px;color:var(--mut)"></span></div>
+  </div>
+</div>
+
+<!-- ============ RESULT ============ -->
+<div id="result" class="hidden">
+  <h1 id="resWord"></h1>
+  <div id="resSub"></div>
+  <div style="display:flex;gap:12px;z-index:2">
+    <button class="btn primary" id="btnReplay">Rematch</button>
+    <button class="btn ghost" id="btnHome">Leave</button>
+  </div>
+</div>
+
+<!-- ============ DISCONNECT ============ -->
+<div id="dcOverlay" class="modal hidden">
+  <div class="modalbox" style="text-align:center">
+    <h2>Opponent left the standoff</h2>
+    <p>The connection dropped. Create a new lobby to duel again.</p>
+    <button class="btn primary" id="btnDcHome" style="margin-top:10px">Back to start</button>
+  </div>
+</div>
+
+<!-- ============ RULES ============ -->
+<div id="rulesModal" class="modal hidden">
+  <div class="modalbox">
+    <h2>How to play</h2>
+    <p>Both players secretly build a move each turn, then everything resolves at once in the showdown. First to drop the other from <b>32 HP</b> wins.</p>
+    <h3>Each turn</h3>
+    <p>Place one <b>Action</b> (required): <b>Shoot</b> (4 dmg), <b>Shield</b> (−75% damage taken) or <b>Reload</b> (refill to 2 bullets, draw 2 special cards — but +100% damage taken if shot). Optionally add an <b>Element</b> to a shot or shield, and a <b>Mod</b> to anything. You get 20 seconds; going AFK counts as a reload.</p>
+    <h3>Elements</h3>
+    <p><b>Fire &gt; Ice &gt; Water &gt; Fire.</b> Shooting into a shield: +50% if your element beats it, −50% if it loses. Hitting a reloading or shooting player with an elemental shot leaves a <b>stain</b> — it detonates for 4 dmg after two turns unless they play the counter element on a shot or shield first.</p>
+    <h3>Mods</h3>
+    <p><b>Vampiric</b> — next bullet heals you 50% of its damage. <b>Dark Steel</b> — +25% dealt / −25% taken; ±100% if raw. <b>Arcane Eater</b> — strips the element off the enemy's shot this showdown, heal 3 if it eats one. <b>Silver Hand</b> — everyone takes ×2 final damage (stacks ×4). <b>Rainbow</b> — randomizes your element, raw damage (2–8), raw shield (−50…−125%) or reload draws (1–4). <b>Love Lock</b> — locks one random enemy special card next turn.</p>
+    <h3>Cards</h3>
+    <p>One reload and (from turn 2) one shield are re-dealt whenever you're out. Bullets cap at 2. Special cards come from reloading: 75% element, 25% mod.</p>
+    <button class="btn" id="btnRulesClose" style="margin-top:14px">Got it</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script id="logicBlock">
+/* =====================================================================
+   PURE GAME LOGIC — no DOM. Host runs this authoritatively.
+   ===================================================================== */
+const ELEMS = ['fire','ice','water'];
+const BEATS = { fire:'ice', ice:'water', water:'fire' };      // key beats value
+const MODS  = ['vamp','dark','arcane','silver','rainbow','lock'];
+const MAX_HP = 32, BASE_DMG = 4, SHIELD_VAL = -0.75, STAIN_DMG = 4, STAIN_TTL = 2;
+
+const CARD_INFO = {
+  shoot:  {name:'Shoot',        type:'Action'},
+  shield: {name:'Shield',       type:'Action'},
+  reload: {name:'Reload',       type:'Action'},
+  fire:   {name:'Fire',         type:'Element'},
+  ice:    {name:'Ice',          type:'Element'},
+  water:  {name:'Water',        type:'Element'},
+  vamp:   {name:'Vampiric',     type:'Mod'},
+  dark:   {name:'Dark Steel',   type:'Mod'},
+  arcane: {name:'Arcane Eater', type:'Mod'},
+  silver: {name:'Silver Hand',  type:'Mod'},
+  rainbow:{name:'Rainbow',      type:'Mod'},
+  lock:   {name:'Love Lock',    type:'Mod'},
+};
+let _uid = 1;
+function mkCard(kind){
+  return { id:'c'+(_uid++), kind,
+    type:(kind==='shoot'||kind==='shield'||kind==='reload') ? 'action'
+        : ELEMS.includes(kind) ? 'elem' : 'mod' };
+}
+function drawSpecial(rng){
+  return rng() < 0.75 ? mkCard(ELEMS[Math.floor(rng()*3)])
+                      : mkCard(MODS[Math.floor(rng()*MODS.length)]);
+}
+function newGameState(){
+  return {
+    turn:1, hp:[MAX_HP,MAX_HP],
+    hands:[[mkCard('reload')],[mkCard('reload')]],   // turn 1: reload only
+    stains:[[],[]],                                   // {elem, ttl, turn}
+    vampBuff:[false,false], lockNext:[false,false], locked:[null,null],
+    over:null,
+  };
+}
+
+/* Build one player's resolved pick. sel = {action,elem,mod} card ids or null (forced). */
+function buildPick(S, p, sel){
+  const hand = S.hands[p];
+  const take = id => {
+    if (!id || id === S.locked[p]) return null;
+    const c = hand.find(x => x.id === id);
+    return c || null;
+  };
+  let a = sel ? take(sel.action) : null;
+  const forced = !a;
+  if (forced) a = hand.find(c => c.kind==='reload' && c.id !== S.locked[p]) || null;
+  const stance = a ? (a.kind==='shoot' ? 'shoot' : a.kind==='shield' ? 'shield' : 'reload') : 'reload';
+  let e = (!forced && (stance==='shoot' || stance==='shield')) ? take(sel.elem) : null;
+  if (e && e.type !== 'elem') e = null;
+  let m = !forced ? take(sel.mod) : null;
+  if (m && m.type !== 'mod') m = null;
+
+  const consumed = [];
+  for (const c of [a,e,m]) if (c) { hand.splice(hand.indexOf(c),1); consumed.push(c.id); }
+
+  return {
+    p, forced, stance,
+    action:a, hasElem:!!e, elemOrig:e ? e.kind : null, elemFinal:e ? e.kind : null,
+    mod:m ? m.kind : null, consumed,
+    base:BASE_DMG, shieldVal:SHIELD_VAL, rDraw:0, ate:null,
+  };
+}
+
+const pct = v => (v>0?'+':'−') + Math.round(Math.abs(v)*100) + '%';
+
+/* Resolve a full turn. sels[i] may be null (timeout → forced reload). */
+function resolveTurn(S, sels, rng){
+  const P = [buildPick(S,0,sels[0]), buildPick(S,1,sels[1])];
+  const res = {
+    turn:S.turn,
+    picks:P.map(k => ({ stance:k.stance, action:k.action?k.action.kind:null,
+                        elem:k.elemOrig, mod:k.mod, forced:k.forced })),
+    consumed:[P[0].consumed, P[1].consumed],
+    rainbow:[], arcane:[], shots:[], silver:0,
+    cured:[[],[]], applied:[[],[]], detonated:[[],[]],
+    heals:[0,0], dmg:[0,0],
+  };
+
+  /* 1 — Rainbow randomization */
+  for (const k of P){
+    if (k.mod !== 'rainbow') continue;
+    if (k.hasElem){
+      k.elemFinal = ELEMS[Math.floor(rng()*3)];
+      res.rainbow.push({p:k.p, what:'elem', val:k.elemFinal});
+    } else if (k.stance==='shoot'){
+      k.base = [2,4,6,8][Math.floor(rng()*4)];
+      res.rainbow.push({p:k.p, what:'base', val:k.base});
+    } else if (k.stance==='shield'){
+      k.shieldVal = [-0.5,-0.75,-1,-1.25][Math.floor(rng()*4)];
+      res.rainbow.push({p:k.p, what:'shield', val:k.shieldVal});
+    } else {
+      k.rDraw = 1 + Math.floor(rng()*4);
+      res.rainbow.push({p:k.p, what:'draw', val:k.rDraw});
+    }
+  }
+
+  /* 2 — Arcane Eater strips the enemy shot's element */
+  for (const k of P){
+    if (k.mod !== 'arcane') continue;
+    const o = P[1-k.p];
+    if (o.stance==='shoot' && o.elemFinal){
+      k.ate = o.elemFinal; o.elemFinal = null;
+      res.heals[k.p] += 3;
+      res.arcane.push({p:k.p, ate:k.ate});
+    } else {
+      res.arcane.push({p:k.p, ate:null});
+    }
+  }
+
+  /* 3 — Shots */
+  res.silver = P.filter(k => k.mod==='silver').length;
+  const silverMult = Math.pow(2, res.silver);
+  for (const k of P){
+    if (k.stance !== 'shoot' || !k.action) continue;
+    const t = P[1-k.p];
+    let bonus = 0; const tags = [];
+    if (t.stance==='reload'){ bonus += 1; tags.push('caught reloading +100%'); }
+    if (t.stance==='shield'){
+      bonus += t.shieldVal; tags.push('shield '+pct(t.shieldVal));
+      if (k.elemFinal && t.elemFinal){
+        if (BEATS[k.elemFinal]===t.elemFinal){ bonus += .5; tags.push(k.elemFinal+' > '+t.elemFinal+' +50%'); }
+        else if (BEATS[t.elemFinal]===k.elemFinal){ bonus -= .5; tags.push(k.elemFinal+' < '+t.elemFinal+' −50%'); }
+      }
+    }
+    if (k.mod==='dark'){ const b = k.hasElem ? .25 : 1; bonus += b; tags.push('dark steel +'+b*100+'%'); }
+    if (t.stance==='shield' && t.mod==='dark'){ const b = t.hasElem ? .25 : 1; bonus -= b; tags.push('enemy dark steel −'+b*100+'%'); }
+
+    let dmg = Math.max(0, k.base * (1 + bonus));
+    if (res.silver){ dmg *= silverMult; tags.push('silver hand ×'+silverMult); }
+    dmg = Math.round(dmg);
+
+    let vamp = 0;
+    if (k.mod==='vamp' || S.vampBuff[k.p]){ vamp = Math.round(dmg/2); S.vampBuff[k.p] = false; }
+
+    res.dmg[t.p] += dmg;
+    res.heals[k.p] += vamp;
+    res.shots.push({ from:k.p, to:t.p, elem:k.elemFinal, base:k.base, dmg, vamp,
+                     targetStance:t.stance, tags });
+  }
+  /* arm vampiric buff if played without shooting */
+  for (const k of P) if (k.mod==='vamp' && k.stance!=='shoot') S.vampBuff[k.p] = true;
+
+  /* 4 — Stains: cure → tick old → apply new */
+  for (const k of P){
+    if (!k.elemFinal || (k.stance!=='shoot' && k.stance!=='shield')) continue;
+    S.stains[k.p] = S.stains[k.p].filter(st => {
+      if (BEATS[k.elemFinal]===st.elem){ res.cured[k.p].push(st.elem); return false; }
+      return true;
+    });
+  }
+  for (let p=0;p<2;p++){
+    S.stains[p] = S.stains[p].filter(st => {
+      if (st.turn >= S.turn) return true;       // applied this turn — don't tick yet
+      st.ttl--;
+      if (st.ttl <= 0){ res.detonated[p].push({elem:st.elem, dmg:STAIN_DMG}); res.dmg[p] += STAIN_DMG; return false; }
+      return true;
+    });
+  }
+  for (const sh of res.shots){
+    if (sh.elem && (sh.targetStance==='reload' || sh.targetStance==='shoot')){
+      S.stains[sh.to].push({elem:sh.elem, ttl:STAIN_TTL, turn:S.turn});
+      res.applied[sh.to].push(sh.elem);
+    }
+  }
+
+  /* 5 — Apply HP */
+  for (let p=0;p<2;p++)
+    S.hp[p] = Math.max(0, Math.min(MAX_HP, S.hp[p] - res.dmg[p] + res.heals[p]));
+  res.hp = S.hp.slice();
+  res.stains = S.stains.map(a => a.map(s => ({elem:s.elem, ttl:s.ttl})));
+
+  /* 6 — Game over? */
+  if (S.hp[0]<=0 && S.hp[1]<=0) S.over = {draw:true};
+  else if (S.hp[0]<=0) S.over = {winner:1};
+  else if (S.hp[1]<=0) S.over = {winner:0};
+  res.over = S.over;
+
+  /* 7 — Deal next turn */
+  res.dealt = [[],[]]; res.locked = [null,null];
+  if (!S.over){
+    const nextTurn = S.turn + 1;
+    for (const k of P) if (k.mod==='lock') S.lockNext[1-k.p] = true;
+    for (let p=0;p<2;p++){
+      const hand = S.hands[p], drew = res.dealt[p], k = P[p];
+      if (k.stance==='reload' && k.action){                 // real reload (had the card)
+        let bullets = hand.filter(c=>c.kind==='shoot').length;
+        while (bullets < 2){ const c=mkCard('shoot'); hand.push(c); drew.push(c); bullets++; }
+        const n = k.rDraw || 2;
+        for (let i=0;i<n;i++){ const c=drawSpecial(rng); hand.push(c); drew.push(c); }
+      }
+      if (!hand.some(c=>c.kind==='reload')){ const c=mkCard('reload'); hand.push(c); drew.push(c); }
+      if (nextTurn>=2 && !hand.some(c=>c.kind==='shield')){ const c=mkCard('shield'); hand.push(c); drew.push(c); }
+    }
+    for (let p=0;p<2;p++){
+      if (!S.lockNext[p]) continue;
+      S.lockNext[p] = false;
+      const hand = S.hands[p];
+      const specials = hand.filter(c => c.type!=='action');
+      const pool = specials.length ? specials : hand.filter(c => c.kind==='shoot');
+      if (pool.length) res.locked[p] = pool[Math.floor(rng()*pool.length)].id;
+    }
+    S.locked = res.locked.slice();
+    S.turn = nextTurn;
+  }
+  res.handCounts = [S.hands[0].length, S.hands[1].length];
+  return res;
+}
+</script>
+<style>
+.slot.filled .hint, .slot.filled .slbl{display:none;}
+.slot .card{margin:0;}
+#oppFan .fancount{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-left:10px;}
+</style>
+<script id="appBlock">
+/* =====================================================================
+   CONFIG — fill in your metered.ca details (see comment at top of file)
+   ===================================================================== */
+const CFG = {
+  METERED_DOMAIN : "",   // e.g. "yourapp.metered.live"
+  METERED_API_KEY: "",   // metered dashboard → developers → API key
+  STATIC_ICE: [
+    { urls: "stun:stun.relay.metered.ca:80" },
+    { urls: "stun:stun.l.google.com:19302" },
+    // Or paste static TURN credentials here:
+    { urls:"turn:global.relay.metered.ca:80",  username:"ac26e8769c809d07ae519ea6", credential:"WAse66kdxp3VMEA7" },
+    { urls:"turn:global.relay.metered.ca:443", username:"ac26e8769c809d07ae519ea6", credential:"WAse66kdxp3VMEA7" },
+  ],
+};
+
+/* ---------- tiny helpers ---------- */
+const $ = id => document.getElementById(id);
+const RM = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms,90) : ms));
+const rand = a => a[Math.floor(Math.random()*a.length)];
+const ECOLOR = { fire:'#ff8a5c', ice:'#8fd8ff', water:'#6d95ff', raw:'#fcd34d' };
+function toast(msg, ms=2400){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), ms);
+}
+function centerOf(el){ const r = el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+function swapScreen(id){
+  for (const s of ['scrHome','scrLobby','scrGame']) $(s).classList.toggle('hidden', s!==id);
+  document.body.classList.toggle('in-game', id === 'scrGame');
+}
+
+/* ---------- icons ---------- */
+const IC = {
+  shoot :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="5.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2.5 19.5 5.5v5.6c0 4.6-3.1 7.8-7.5 10.4-4.4-2.6-7.5-5.8-7.5-10.4V5.5Z"/><path d="M12 6.5v9" opacity=".5"/></svg>',
+  reload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M17.6 1.9v4.5h4.5" stroke-linejoin="round"/></svg>',
+  fire  :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5c1.2 3.8-3.3 5.6-3.3 9a3.3 3.3 0 0 0 6.6 0c0-1.8-.9-2.9-.9-4.6 2.2 1.2 4.4 3.8 4.4 7A6.8 6.8 0 1 1 5.2 14c0-5.3 5-6.9 6.8-11.5Z"/></svg>',
+  ice   :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17M12 2l-2.4 2.4M12 2l2.4 2.4M12 22l-2.4-2.4M12 22l2.4-2.4"/></svg>',
+  water :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.8c3.9 4.8 6 8 6 11a6 6 0 1 1-12 0c0-3 2.1-6.2 6-11Z"/><path d="M9.5 14a2.6 2.6 0 0 0 2 2.6" stroke-linecap="round" opacity=".6"/></svg>',
+  vamp  :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 20.5S4 15.2 4 9.6A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 8 1.6c0 5.6-8 10.9-8 10.9Z"/><path d="M9.5 8.5l1 2.6 1-2.6M13 8.5l1 2.6 1-2.6" stroke-linecap="round"/></svg>',
+  dark  :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.8 20 9l-8 12L4 9Z"/><path d="M4 9h16M12 2.8 8.5 9l3.5 12M12 2.8 15.5 9 12 21" opacity=".5"/></svg>',
+  arcane:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 12S6.5 5.8 12 5.8 21.5 12 21.5 12 17.5 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6"/><path d="M12 1.8v2M12 20.2v2" stroke-linecap="round" opacity=".6"/></svg>',
+  silver:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 12V6.6a1.3 1.3 0 1 1 2.6 0V11M10.8 11V5.1a1.3 1.3 0 1 1 2.6 0V11M13.4 11V6.4a1.3 1.3 0 1 1 2.6 0v6.8c0 3.9-2 6.3-4.8 6.3s-4.6-1.9-5.6-4.6l-1-2.7a1.3 1.3 0 0 1 2.4-1l1.2 2.2"/></svg>',
+  rainbow:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M3 16a9 9 0 0 1 18 0" stroke="#a78bfa"/><path d="M6.4 16a5.6 5.6 0 0 1 11.2 0" stroke="#67e8f9"/><path d="M9.8 16a2.2 2.2 0 0 1 4.4 0" stroke="#fcd34d"/></svg>',
+  lock  :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 13.7c.8-1 2.4-.4 2.4.8 0 1-1.4 1.9-2.4 2.6-1-.7-2.4-1.6-2.4-2.6 0-1.2 1.6-1.8 2.4-.8Z"/></svg>',
+  back  :'<svg viewBox="0 0 24 24" fill="none"><path d="M12 4 20 19H4L12 4Z" stroke="url(#rib)" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  pad   :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+
+function cardNode(card, small){
+  const d = document.createElement('div');
+  d.className = 'card k-' + card.kind + (small ? ' small' : '');
+  d.dataset.id = card.id;
+  const info = CARD_INFO[card.kind];
+  d.innerHTML = `<span class="lockicon">${IC.pad}</span>
+    <span class="cicon">${IC[card.kind]}</span>
+    <span class="cname">${info.name}</span>
+    <span class="ctype">${info.type}</span>`;
+  return d;
+}
+function elemBadge(elem, ttl){
+  const s = document.createElement('span');
+  s.className = 'stain'; s.style.color = ECOLOR[elem];
+  s.innerHTML = IC[elem] + (ttl != null ? `<b>${ttl}</b>` : '');
+  s.title = elem + ' stain';
+  return s;
+}
+
+/* ---------- FLIP move ---------- */
+function flyTo(node, parent){
+  const r0 = node.getBoundingClientRect();
+  parent.appendChild(node);
+  const r1 = node.getBoundingClientRect();
+  const dx = r0.left - r1.left, dy = r0.top - r1.top;
+  node.style.transition = 'none';
+  node.style.transform = `translate(${dx}px,${dy}px)`;
+  node.getBoundingClientRect();
+  node.style.transition = 'transform .38s cubic-bezier(.22,.9,.28,1.08)';
+  node.style.transform = 'translate(0,0)';
+  clearTimeout(node._flip);
+  node._flip = setTimeout(()=>{ node.style.transition=''; node.style.transform=''; }, 420);
+}
+
+/* ---------- sound ---------- */
+const SND = { ctx:null, muted: localStorage.getItem('standoff-mute')==='1' };
+function actx(){
+  try{
+    if (!SND.ctx) SND.ctx = new (window.AudioContext||window.webkitAudioContext)();
+    if (SND.ctx.state==='suspended') SND.ctx.resume();
+    return SND.ctx;
+  }catch(e){ return null; }
+}
+function tone(f, dur=.12, type='sine', vol=.14, slide){
+  if (SND.muted) return;
+  try{
+    const c = actx(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, c.currentTime);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime+dur);
+    g.gain.setValueAtTime(vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur+.02);
+  }catch(e){}
+}
+function noise(dur=.2, vol=.16){
+  if (SND.muted) return;
+  try{
+    const c = actx(); if (!c) return;
+    const n = c.createBufferSource(), g = c.createGain(),
+          buf = c.createBuffer(1, c.sampleRate*dur, c.sampleRate), ch = buf.getChannelData(0);
+    for (let i=0;i<ch.length;i++) ch[i] = (Math.random()*2-1)*(1-i/ch.length);
+    n.buffer = buf; g.gain.value = vol;
+    const f = c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+    n.connect(f); f.connect(g); g.connect(c.destination); n.start();
+  }catch(e){}
+}
+const sfx = {
+  deal : ()=> tone(620,.07,'sine',.08,880),
+  play : ()=> tone(240,.1,'sine',.1,780),
+  back : ()=> tone(700,.1,'sine',.08,300),
+  lockin:()=>{ tone(520,.09,'triangle',.12); setTimeout(()=>tone(780,.14,'triangle',.12),90); },
+  flip : ()=> tone(500,.05,'square',.05,650),
+  shot : ()=> { tone(950,.2,'sawtooth',.09,180); noise(.12,.08); },
+  hit  : ()=> { tone(95,.22,'sine',.22,55); noise(.18,.2); },
+  ping : ()=> { tone(1250,.12,'triangle',.1); setTimeout(()=>tone(1660,.16,'triangle',.08),60); },
+  heal : ()=> { tone(660,.1,'sine',.1); setTimeout(()=>tone(880,.14,'sine',.1),90); },
+  stain: ()=> tone(300,.3,'sawtooth',.07,180),
+  boom : ()=> { tone(60,.4,'sine',.26); noise(.35,.24); },
+  shimmer:()=>{ [740,932,1108].forEach((f,i)=>setTimeout(()=>tone(f,.12,'sine',.07),i*70)); },
+  win  : ()=> { [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.22,'triangle',.12),i*130)); },
+  lose : ()=> { [392,330,262,196].forEach((f,i)=>setTimeout(()=>tone(f,.26,'sine',.12),i*160)); },
+  tick : ()=> tone(1000,.03,'square',.04),
+};
+$('btnMute').onclick = () => {
+  SND.muted = !SND.muted;
+  localStorage.setItem('standoff-mute', SND.muted?'1':'0');
+  $('sndOn').classList.toggle('hidden', SND.muted);
+  $('sndOff').classList.toggle('hidden', !SND.muted);
+};
+if (SND.muted){ $('sndOn').classList.add('hidden'); $('sndOff').classList.remove('hidden'); }
+
+/* =====================================================================
+   NETWORK — PeerJS signaling + metered.ca TURN relay
+   ===================================================================== */
+const NET = { peer:null, conn:null, isHost:false, code:'', ended:false };
+const ROOM_PREFIX = 'koi-standoff-';
+
+async function getIceServers(){
+  if (CFG.METERED_DOMAIN && CFG.METERED_API_KEY){
+    try{
+      const r = await fetch(`https://${CFG.METERED_DOMAIN}/api/v1/turn/credentials?apiKey=${CFG.METERED_API_KEY}`);
+      if (r.ok){
+        const ice = await r.json();
+        $('netStatus').textContent = 'TURN relay ready';
+        return ice;
+      }
+    }catch(e){}
+    toast('Could not reach metered.ca — falling back to STUN only');
+  }
+  return CFG.STATIC_ICE;
+}
+function roomCode(){
+  const abc = 'abcdefghjkmnpqrstuvwxyz23456789'; let s='';
+  for (let i=0;i<6;i++) s += rand(abc);
+  return s;
+}
+function myName(){
+  return ($('inpName').value.trim() || 'Player').slice(0,14);
+}
+async function makePeer(id){
+  const iceServers = await getIceServers();
+  return new Peer(id, { config:{ iceServers }, debug:1 });
+}
+function send(o){ if (NET.conn && NET.conn.open) NET.conn.send(o); }
+
+async function createLobby(){
+  localStorage.setItem('standoff-name', myName());
+  $('btnCreate').disabled = true; $('netStatus').textContent = 'opening lobby…';
+  NET.isHost = true; NET.code = roomCode();
+  NET.peer = await makePeer(ROOM_PREFIX + NET.code);
+  NET.peer.on('open', () => {
+    const link = location.origin + location.pathname + '?room=' + NET.code;
+    $('inviteLink').value = link;
+    $('roomChip').textContent = NET.code;
+    swapScreen('scrLobby');
+  });
+  NET.peer.on('connection', conn => {
+    if (NET.conn){ conn.close(); return; }        // lobby is 1v1
+    NET.conn = conn;
+    wireConn();
+  });
+  NET.peer.on('error', err => {
+    if (err.type === 'unavailable-id'){ NET.peer.destroy(); createLobby(); return; }
+    $('btnCreate').disabled = false;
+    $('netStatus').textContent = '';
+    toast('Network error: ' + err.type);
+  });
+}
+async function joinLobby(code){
+  localStorage.setItem('standoff-name', myName());
+  $('btnJoin').disabled = true; $('netStatus').textContent = 'joining lobby…';
+  NET.isHost = false; NET.code = code;
+  NET.peer = await makePeer(undefined);
+  NET.peer.on('open', () => {
+    NET.conn = NET.peer.connect(ROOM_PREFIX + code, { reliable:true });
+    $('roomChip').textContent = code;
+    wireConn();
+    NET.conn.on('open', () => send({ t:'hello', name: myName() }));
+  });
+  NET.peer.on('error', err => {
+    $('btnJoin').disabled = false;
+    $('netStatus').textContent = '';
+    toast(err.type === 'peer-unavailable' ? 'Lobby not found — maybe it closed?' : 'Network error: ' + err.type);
+  });
+}
+function wireConn(){
+  NET.conn.on('data', onMsg);
+  const drop = () => {
+    if (NET.ended) return;
+    NET.ended = true;
+    $('dcOverlay').classList.remove('hidden');
+  };
+  NET.conn.on('close', drop);
+  NET.conn.on('error', drop);
+}
+
+/* =====================================================================
+   CLIENT GAME STATE + UI
+   ===================================================================== */
+const G = {
+  myIdx:0, oppIdx:1, names:['You','Opponent'],
+  hand:[], nodes:new Map(),
+  slots:{ action:null, elem:null, mod:null },
+  submitted:false, uiLocked:true, inShowdown:false,
+  hp:[MAX_HP,MAX_HP], stains:[[],[]],
+  oppCount:0, locked:null, oppLocked:false, turn:1,
+  rafTimer:0, timerEnd:0,
+  // host-only:
+  S:null, hostSel:undefined, guestSel:undefined, hostDone:false, guestDone:false,
+  graceT:0, resolving:false,
+  meRematch:false, oppRematch:false,
+};
+
+function onMsg(m){
+  switch (m.t){
+    case 'hello':
+      if (!NET.isHost) return;
+      G.names = [myName(), (''+(m.name||'Player')).slice(0,14)];
+      startNewGame();
+      break;
+    case 'start': guestReceiveStart(m.d); break;
+    case 'slots': setOppSlots(m.d); break;
+    case 'ready': setOppReady(true); break;
+    case 'pick':
+      if (!NET.isHost || G.guestDone) return;
+      if (m.turn !== undefined && m.turn !== G.turn) return;
+      G.guestSel = m.sel || null; G.guestDone = true;
+      setOppReady(true);
+      hostMaybeResolve();
+      break;
+    case 'res': applyRes(m.res); break;
+    case 're':
+      G.oppRematch = true;
+      maybeRematch();
+      break;
+  }
+}
+
+/* ---------- game start ---------- */
+function startNewGame(){                        // host only
+  G.S = newGameState();
+  const d = {
+    names: G.names,
+    hands: [G.S.hands[0], G.S.hands[1]],
+    turn: 1,
+  };
+  send({ t:'start', d });
+  initGameUI(0, d);
+}
+function guestReceiveStart(d){
+  G.names = d.names;
+  initGameUI(1, d);
+}
+function initGameUI(myIdx, d){
+  G.myIdx = myIdx; G.oppIdx = 1 - myIdx;
+  G.hp = [MAX_HP, MAX_HP]; G.stains = [[],[]];
+  G.turn = d.turn; G.locked = null; G.oppLocked = false;
+  G.submitted = false; G.uiLocked = false; G.inShowdown = false;
+  G.slots = { action:null, elem:null, mod:null };
+  G.hostSel = undefined; G.guestSel = undefined;
+  G.hostDone = false; G.guestDone = false; G.resolving = false;
+  G.meRematch = false; G.oppRematch = false;
+  G.hand = d.hands[myIdx].map(c => ({...c}));
+  G.oppCount = d.hands[G.oppIdx].length;
+
+  $('result').classList.add('hidden');
+  $('stage').classList.add('hidden');
+  $('myName').textContent = G.names[G.myIdx] + ' (you)';
+  $('oppName').textContent = G.names[G.oppIdx];
+  $('btnSubmit').disabled = true; $('btnSubmit').textContent = 'Lock it in';
+  $('btnSubmit').classList.remove('armed');
+  setOppReady(false); setOppSlots({a:false,e:false,m:false});
+  $('myAvatar').classList.remove('ready');
+
+  // rebuild hand DOM
+  $('hand').innerHTML = ''; G.nodes.clear();
+  for (const s of ['slotAction','slotElem','slotMod']){
+    $(s).classList.remove('filled');
+    [...$(s).querySelectorAll('.card')].forEach(n => n.remove());
+  }
+  G.pendingPick = undefined;
+  dealCards(G.hand, false);
+  renderHp(); renderStains(); renderOppFan();
+  updateTurnLabel();
+  afterSlotChange();
+  swapScreen('scrGame');
+  beginThinking();
+}
+function updateTurnLabel(){
+  $('turnTxt').textContent = 'TURN ' + String(G.turn).padStart(2,'0');
+}
+
+/* ---------- rendering ---------- */
+function renderHp(){
+  const mine = G.hp[G.myIdx], opp = G.hp[G.oppIdx];
+  setBar($('myHpFill'), $('myHpTxt'), mine);
+  setBar($('oppHpFill'), $('oppHpTxt'), opp);
+}
+function setBar(fill, txt, v){
+  fill.style.width = (v/MAX_HP*100) + '%';
+  fill.classList.toggle('low', v <= MAX_HP*.3);
+  if (txt) txt.textContent = v;
+}
+function renderStains(){
+  fillStains($('myStains'), G.stains[G.myIdx]);
+  fillStains($('oppStains'), G.stains[G.oppIdx]);
+}
+function fillStains(box, arr){
+  box.innerHTML = '';
+  for (const st of arr) box.appendChild(elemBadge(st.elem, st.ttl));
+}
+function renderOppFan(){
+  const fan = $('oppFan'); fan.innerHTML = '';
+  const n = Math.min(G.oppCount, 9);
+  for (let i=0;i<n;i++){
+    const b = document.createElement('div');
+    b.className = 'cardback' + (G.oppLocked && i===n-1 ? ' locked' : '');
+    b.style.animationDelay = (i*.25)+'s';
+    b.innerHTML = IC.back;
+    fan.appendChild(b);
+  }
+  const c = document.createElement('span');
+  c.className = 'fancount'; c.textContent = '×' + G.oppCount;
+  fan.appendChild(c);
+  $('oppLockIcon').classList.toggle('hidden', !G.oppLocked);
+}
+function layoutHand(){
+  const hand = $('hand'), cards = [...hand.children];
+  const n = cards.length; if (!n) return;
+  const w = cards[0].getBoundingClientRect().width || 88;
+  const avail = Math.max(120, hand.clientWidth - 24);
+  let ml = -14;
+  if (n > 1 && w > 0){
+    const need = (avail - w) / (n - 1) - w;
+    ml = Math.max(Math.min(-14, need), -w * .8);
+  }
+  cards.forEach((c,i)=>{ c.style.marginLeft = i ? ml+'px' : '0px'; });
+}
+window.addEventListener('resize', layoutHand);
+
+function dealCards(cards, animate=true){
+  cards.forEach((card, i) => {
+    const node = cardNode(card);
+    if (animate){ node.classList.add('dealing'); node.style.animationDelay = (i*.09)+'s'; setTimeout(()=>sfx.deal(), i*90); }
+    node.addEventListener('click', () => onCardClick(card.id));
+    G.nodes.set(card.id, node);
+    $('hand').appendChild(node);
+  });
+  markLocked();
+  layoutHand();
+}
+function markLocked(){
+  for (const [id,node] of G.nodes) node.classList.toggle('locked', id === G.locked);
+}
+
+/* ---------- slot interactions ---------- */
+function slotFor(card){
+  return card.type==='action' ? 'action' : card.type==='elem' ? 'elem' : 'mod';
+}
+const SLOT_EL = { action:'slotAction', elem:'slotElem', mod:'slotMod' };
+
+function onCardClick(id){
+  if (G.uiLocked || G.submitted || G.inShowdown) return;
+  const card = G.hand.find(c => c.id === id);
+  if (!card) return;
+  const node = G.nodes.get(id);
+  if (id === G.locked){ shake(node); toast('Love-locked — this card is sealed for the turn'); return; }
+
+  const inSlotKey = Object.keys(G.slots).find(k => G.slots[k] === id);
+  if (inSlotKey){ returnToHand(inSlotKey); afterSlotChange(); return; }
+
+  const key = slotFor(card);
+  if (key === 'elem'){
+    const a = G.slots.action ? G.hand.find(c => c.id===G.slots.action) : null;
+    if (!a || a.kind === 'reload'){
+      shake(node); toast('Elements only attach to a Shoot or Shield'); return;
+    }
+  }
+  if (G.slots[key]) returnToHand(key);
+  G.slots[key] = id;
+  const slotEl = $(SLOT_EL[key]);
+  slotEl.classList.add('filled');
+  node.classList.add('inslot');
+  node.style.marginLeft = '0px';
+  flyTo(node, slotEl);
+  sfx.play();
+  afterSlotChange();
+}
+function returnToHand(key){
+  const id = G.slots[key]; if (!id) return;
+  G.slots[key] = null;
+  const node = G.nodes.get(id);
+  $(SLOT_EL[key]).classList.remove('filled');
+  node.classList.remove('inslot');
+  flyTo(node, $('hand'));
+  sfx.back();
+}
+function afterSlotChange(){
+  // element slot is only valid on shoot / shield
+  const a = G.slots.action ? G.hand.find(c => c.id===G.slots.action) : null;
+  if (G.slots.elem && (!a || a.kind==='reload')) returnToHand('elem');
+  $('slotElem').classList.toggle('off', !a || a.kind==='reload');
+  const ok = !!G.slots.action;
+  $('btnSubmit').disabled = !ok;
+  $('btnSubmit').classList.toggle('armed', ok);
+  send({ t:'slots', d:{ a:!!G.slots.action, e:!!G.slots.elem, m:!!G.slots.mod } });
+  layoutHand();
+}
+function shake(node){
+  node.classList.remove('shake'); node.getBoundingClientRect(); node.classList.add('shake');
+}
+
+function setOppSlots(d){
+  $('ms0').classList.toggle('on', !!d.a);
+  $('ms1').classList.toggle('on', !!d.e);
+  $('ms2').classList.toggle('on', !!d.m);
+}
+function setOppReady(on){
+  $('oppReady').classList.toggle('on', on);
+  $('oppAvatar').classList.toggle('ready', on);
+}
+
+/* ---------- submitting ---------- */
+$('btnSubmit').onclick = () => {
+  if (G.submitted || G.uiLocked || !G.slots.action) return;
+  actx();
+  submitTurn({ action:G.slots.action, elem:G.slots.elem, mod:G.slots.mod });
+};
+function submitTurn(sel){
+  G.submitted = true;
+  $('btnSubmit').disabled = true;
+  $('btnSubmit').textContent = sel ? 'Locked' : 'Reloading…';
+  $('btnSubmit').classList.remove('armed');
+  $('myAvatar').classList.add('ready');
+  for (const k of Object.keys(G.slots))
+    if (G.slots[k]) G.nodes.get(G.slots[k]).classList.add('submitted');
+  sfx.lockin();
+  send({ t:'ready' });
+  if (NET.isHost){
+    G.hostSel = sel; G.hostDone = true;
+    hostMaybeResolve();
+  } else {
+    send({ t:'pick', turn:G.turn, sel });
+  }
+}
+function forceSubmit(){
+  for (const k of ['action','elem','mod']) returnToHand(k);
+  toast("Time's up — you brace and reload");
+  submitTurn(null);
+}
+
+/* ---------- timer ---------- */
+function beginThinking(){
+  G.uiLocked = false; G.submitted = false;
+  G.timerEnd = performance.now() + 20000;
+  $('ribbon').classList.remove('urgent');
+  cancelAnimationFrame(G.rafTimer);
+  const step = () => {
+    const left = Math.max(0, G.timerEnd - performance.now());
+    $('ribbonFill').style.transform = `scaleX(${left/20000})`;
+    const s = Math.ceil(left/1000);
+    if ($('timeTxt').textContent != s){
+      $('timeTxt').textContent = s;
+      if (s<=5 && s>0 && !G.submitted) sfx.tick();
+    }
+    $('ribbon').classList.toggle('urgent', left < 5000 && !G.submitted);
+    if (left <= 0){
+      if (!G.submitted) forceSubmit();
+      return;
+    }
+    G.rafTimer = requestAnimationFrame(step);
+  };
+  step();
+  if (NET.isHost){
+    clearTimeout(G.graceT);
+    G.graceT = setTimeout(() => {
+      if (G.resolving) return;
+      if (!G.hostDone){ G.hostSel = null; G.hostDone = true; }
+      if (!G.guestDone){ G.guestSel = null; G.guestDone = true; }
+      hostMaybeResolve();
+    }, 27000);
+  }
+}
+
+/* ---------- host resolution ---------- */
+function hostMaybeResolve(){
+  if (!NET.isHost || G.resolving) return;
+  if (!G.hostDone || !G.guestDone) return;
+  G.resolving = true;
+  clearTimeout(G.graceT);
+  const res = resolveTurn(G.S, [G.hostSel, G.guestSel], Math.random);
+  send({ t:'res', res });
+  applyRes(res);
+}
+
+/* =====================================================================
+   SHOWDOWN — cinematic resolution
+   ===================================================================== */
+function podOf(idx){ return idx===G.myIdx ? $('podMe') : $('podOpp'); }
+function popNum(el, txt, cls, color){
+  const p = document.createElement('div');
+  p.className = 'popnum ' + (cls||'info');
+  if (color) p.style.color = color;
+  p.textContent = txt;
+  const c = centerOf(el);
+  p.style.left = c.x+'px'; p.style.top = (c.y-24)+'px';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(), 1250);
+}
+function chips(el, tags){
+  if (!tags || !tags.length) return;
+  const d = document.createElement('div'); d.className = 'tagchips';
+  tags.forEach((t,i)=>{ const s=document.createElement('span'); s.textContent=t; s.style.animationDelay=(i*.12)+'s'; d.appendChild(s); });
+  const c = centerOf(el);
+  d.style.left = c.x+'px';
+  d.style.top = Math.min(c.y+40, (window.innerHeight||800)-160)+'px';
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(), 2100);
+}
+function burstAt(el, color){
+  const b = document.createElement('div'); b.className='burst'; b.style.setProperty('--oc', color||'var(--bad)');
+  const c = centerOf(el); b.style.left=c.x+'px'; b.style.top=c.y+'px';
+  document.body.appendChild(b); setTimeout(()=>b.remove(), 700);
+}
+function shieldAt(el, color){
+  const s = document.createElement('div'); s.className='shieldflash'; s.style.setProperty('--oc', color||'var(--c)');
+  const c = centerOf(el); s.style.left=c.x+'px'; s.style.top=c.y+'px';
+  document.body.appendChild(s); setTimeout(()=>s.remove(), 650);
+}
+function flyOrb(fromEl, toEl, color, ms, onMid){
+  return new Promise(done=>{
+    const o = document.createElement('div'); o.className='orb';
+    o.style.setProperty('--oc', color); o.style.setProperty('--fly', ms+'ms');
+    const a = centerOf(fromEl), b = centerOf(toEl);
+    o.style.left=(a.x-13)+'px'; o.style.top=(a.y-13)+'px';
+    o.innerHTML = '<span class="trail"></span>';
+    document.body.appendChild(o);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ o.style.transform = `translate(${b.x-a.x}px,${b.y-a.y}px)`; }));
+    if (onMid) setTimeout(onMid, ms*.45);
+    setTimeout(()=>{ o.remove(); done(); }, ms+40);
+  });
+}
+async function showBanner(txt, sub, cls, ms=1000){
+  const b = document.createElement('div');
+  b.className = 'banner ' + (cls||'');
+  b.innerHTML = txt + (sub ? `<span class="sub">${sub}</span>` : '');
+  $('arena').appendChild(b);
+  await sleep(ms); b.remove();
+}
+function zapCard(w){
+  if (!w) return;
+  const mine = w.classList.contains('mineup');
+  const cls = mine ? 'zapme' : 'zap';
+  w.classList.remove(cls); w.getBoundingClientRect(); w.classList.add(cls);
+}
+
+async function playShowdown(res){
+  const my = G.myIdx, op = G.oppIdx;
+  $('podOppName').textContent = G.names[op];
+  $('podMeName').textContent = G.names[my];
+  const stHp = G.hp.slice();
+  const setPodHp = () => {
+    setBar($('podOppHp'), null, Math.max(0, Math.min(MAX_HP, stHp[op]))); $('podOppHpT').textContent = Math.max(0, stHp[op]);
+    setBar($('podMeHp'),  null, Math.max(0, Math.min(MAX_HP, stHp[my]))); $('podMeHpT').textContent = Math.max(0, stHp[my]);
+  };
+  setPodHp();
+
+  const buildCards = (idx, container, faceup) => {
+    container.innerHTML = '';
+    const pick = res.picks[idx], out = {};
+    const mk = (kind, ghost) => {
+      const w = document.createElement('div');
+      w.className = 'scard' + (faceup?' mineup':'') + (ghost?' ghost':'');
+      w.innerHTML = `<div class="facedown">${IC.back}</div><div class="faceup"></div>`;
+      w.querySelector('.faceup').appendChild(cardNode({ id:'x', kind }));
+      w.style.animation = 'popIn .4s backwards';
+      container.appendChild(w);
+      return w;
+    };
+    out.action = mk(pick.action || 'reload', !pick.action);
+    if (pick.elem) out.elem = mk(pick.elem);
+    if (pick.mod)  out.mod  = mk(pick.mod);
+    return out;
+  };
+  const cardsOf = idx => idx===G.myIdx ? myCards : oppCards;
+  const oppCards = buildCards(op, $('podOppCards'), false);
+  const myCards  = buildCards(my, $('podMeCards'), true);
+  $('stage').classList.remove('hidden');
+  await sleep(650);
+
+  /* reveal opponent */
+  for (const k of ['action','elem','mod']){
+    const w = oppCards[k]; if (!w) continue;
+    w.classList.add('flip'); sfx.flip();
+    await sleep(260);
+  }
+  for (const idx of [0,1]) if (res.picks[idx].forced) popNum(podOf(idx), 'AFK · RELOAD', 'info');
+  await sleep(450);
+
+  /* rainbow rolls */
+  for (const r of res.rainbow){
+    const cs = cardsOf(r.p);
+    sfx.shimmer();
+    if (r.what==='elem'){
+      zapCard(cs.elem);
+      await sleep(260);
+      if (cs.elem){
+        const f = cs.elem.querySelector('.faceup'); f.innerHTML=''; f.appendChild(cardNode({id:'x',kind:r.val}));
+      }
+      popNum(podOf(r.p), '→ '+r.val.toUpperCase(), 'info', ECOLOR[r.val]);
+    } else if (r.what==='base'){ zapCard(cs.action); popNum(podOf(r.p), 'DMG → '+r.val, 'info'); }
+    else if (r.what==='shield'){ zapCard(cs.action); popNum(podOf(r.p), 'SHIELD → '+Math.round(r.val*-100)+'%', 'info'); }
+    else { zapCard(cs.action); popNum(podOf(r.p), 'DRAW → '+r.val, 'info'); }
+    await sleep(650);
+  }
+
+  /* silver hand */
+  if (res.silver){
+    sfx.boom();
+    await showBanner('SILVER HAND', '×'+Math.pow(2,res.silver)+' FINAL DAMAGE', 'silver', 1150);
+  }
+
+  /* shots */
+  for (const shot of res.shots){
+    const fromPod = podOf(shot.from), toPod = podOf(shot.to);
+    const arc = res.arcane.find(a => a.p===shot.to && a.ate);
+    const startElem = shot.elem || (arc ? arc.ate : null);
+    sfx.shot();
+    await flyOrb(fromPod.querySelector('.podcards'), toPod.querySelector('.podcards'),
+      ECOLOR[startElem||'raw'], 640,
+      arc ? () => {
+        zapCard(cardsOf(shot.to).mod);
+        sfx.shimmer();
+        popNum(podOf(shot.to), 'ELEMENT EATEN +3', 'heal');
+        stHp[shot.to] += 3; setPodHp();
+        document.querySelectorAll('.orb').forEach(o => o.style.setProperty('--oc', ECOLOR.raw));
+      } : null);
+    if (shot.targetStance==='shield'){
+      const defElem = res.picks[shot.to].elem;
+      shieldAt(toPod, defElem ? ECOLOR[defElem] : 'var(--c)');
+      shot.dmg > 0 ? sfx.hit() : sfx.ping();
+      if (shot.dmg === 0) popNum(toPod, 'BLOCKED', 'info');
+    } else {
+      burstAt(toPod, ECOLOR[shot.elem||'raw']);
+      sfx.hit();
+    }
+    toPod.classList.add('shake'); setTimeout(()=>toPod.classList.remove('shake'), 500);
+    if (shot.dmg > 0){ popNum(toPod, '−'+shot.dmg, 'dmg'); stHp[shot.to] -= shot.dmg; setPodHp(); }
+    chips(toPod, shot.tags);
+    if (shot.vamp){ await sleep(300); sfx.heal(); popNum(fromPod, '+'+shot.vamp, 'heal'); stHp[shot.from] += shot.vamp; setPodHp(); }
+    await sleep(950);
+  }
+  /* arcane that ate nothing still glints */
+  for (const a of res.arcane){
+    if (a.ate) continue;
+    const w = cardsOf(a.p).mod;
+    if (w){ zapCard(w); popNum(podOf(a.p), 'NOTHING TO EAT', 'info'); await sleep(400); }
+  }
+
+  /* stains: cure → detonate → apply */
+  for (let p=0;p<2;p++) for (const e of res.cured[p]){
+    sfx.shimmer(); popNum(podOf(p), e.toUpperCase()+' STAIN CLEANSED', 'info', ECOLOR[e]);
+    await sleep(520);
+  }
+  for (let p=0;p<2;p++) for (const d of res.detonated[p]){
+    sfx.boom(); burstAt(podOf(p), ECOLOR[d.elem]);
+    podOf(p).classList.add('shake'); setTimeout(()=>podOf(p).classList.remove('shake'), 500);
+    popNum(podOf(p), '−'+d.dmg+' '+d.elem.toUpperCase()+' BURST', 'dmg');
+    stHp[p] -= d.dmg; setPodHp();
+    await sleep(750);
+  }
+  for (let p=0;p<2;p++) for (const e of res.applied[p]){
+    sfx.stain(); popNum(podOf(p), '● '+e.toUpperCase()+' STAIN', 'info', ECOLOR[e]);
+    await sleep(480);
+  }
+
+  /* settle */
+  stHp[0] = res.hp[0]; stHp[1] = res.hp[1]; setPodHp();
+  await sleep(450);
+  if (!res.over){
+    const dealt = res.dmg[op], taken = res.dmg[my];
+    await showBanner(
+      dealt || taken ? `${dealt} DEALT` : 'QUIET TURN',
+      dealt || taken ? `${taken} taken` : 'everyone lives — for now',
+      '', 950);
+  }
+  $('stage').classList.add('hidden');
+}
+
+/* =====================================================================
+   APPLY RESULT + NEXT TURN
+   ===================================================================== */
+async function applyRes(res){
+  cancelAnimationFrame(G.rafTimer);
+  clearTimeout(G.graceT);
+  G.uiLocked = true; G.inShowdown = true;
+  setOppReady(true);
+  await playShowdown(res);
+
+  /* reconcile my hand */
+  for (const id of res.consumed[G.myIdx]){
+    const i = G.hand.findIndex(c => c.id===id);
+    if (i>=0) G.hand.splice(i,1);
+    const n = G.nodes.get(id);
+    if (n) n.remove();
+    G.nodes.delete(id);
+  }
+  for (const k of ['action','elem','mod']){
+    if (G.slots[k] && G.nodes.has(G.slots[k])) returnToHand(k);
+    else { G.slots[k] = null; $(SLOT_EL[k]).classList.remove('filled'); }
+  }
+  document.querySelectorAll('#scrGame .card.submitted').forEach(n => n.classList.remove('submitted'));
+  const dealt = res.dealt[G.myIdx].map(c => ({...c}));
+  G.hand.push(...dealt);
+  dealCards(dealt, true);
+
+  G.hp = res.hp.slice();
+  G.stains = res.stains.map(a => a.map(s => ({...s})));
+  G.oppCount = res.handCounts[G.oppIdx];
+  G.locked = res.locked[G.myIdx];
+  G.oppLocked = !!res.locked[G.oppIdx];
+  renderHp(); renderStains(); renderOppFan(); markLocked();
+  if (G.locked) toast('Love Lock — one of your cards is sealed this turn');
+
+  if (res.over){ G.inShowdown = false; showResult(res.over); return; }
+
+  G.turn = res.turn + 1;
+  updateTurnLabel();
+  G.submitted = false; G.inShowdown = false;
+  G.hostDone = false; G.guestDone = false; G.resolving = false;
+  G.hostSel = undefined; G.guestSel = undefined;
+  setOppReady(false); setOppSlots({a:false,e:false,m:false});
+  $('myAvatar').classList.remove('ready');
+  $('btnSubmit').textContent = 'Lock it in'; $('btnSubmit').disabled = true;
+  afterSlotChange();
+  beginThinking();
+
+  if (NET.isHost && G.pendingPick !== undefined){
+    const pp = G.pendingPick; G.pendingPick = undefined;
+    if (pp && (pp.turn === undefined || pp.turn === G.turn)){
+      G.guestSel = pp.sel; G.guestDone = true;
+      setOppReady(true); hostMaybeResolve();
+    }
+  }
+}
+
+/* =====================================================================
+   RESULT + REMATCH
+   ===================================================================== */
+function showResult(over){
+  const draw = !!over.draw;
+  const win = !draw && over.winner === G.myIdx;
+  const w = $('resWord');
+  w.className = draw ? 'draw' : win ? 'win' : 'lose';
+  w.textContent = draw ? 'DRAW' : win ? 'VICTORY' : 'DEFEAT';
+  $('resSub').textContent = draw ? 'you took each other down'
+    : win ? G.names[G.oppIdx] + ' never saw it coming'
+          : G.names[G.oppIdx] + ' read you like a book';
+  $('btnReplay').disabled = false;
+  $('result').classList.remove('hidden');
+  if (draw) sfx.stain(); else win ? sfx.win() : sfx.lose();
+  if (win && !RM){
+    const colors = ['#a78bfa','#67e8f9','#fcd34d','#ff8a5c','#5ee6a8'];
+    for (let i=0;i<90;i++){
+      const c = document.createElement('div'); c.className='confetti';
+      c.style.left = Math.random()*100+'vw';
+      c.style.background = rand(colors);
+      c.style.animationDuration = (2.4+Math.random()*2.2)+'s';
+      c.style.animationDelay = Math.random()*0.9+'s';
+      $('result').appendChild(c);
+      setTimeout(()=>c.remove(), 6200);
+    }
+  }
+}
+function maybeRematch(){
+  if (!(G.meRematch && G.oppRematch)) return;
+  document.querySelectorAll('.confetti').forEach(n=>n.remove());
+  if (NET.isHost) startNewGame();     // guest waits for the fresh 'start'
+}
+$('btnReplay').onclick = () => {
+  if (G.meRematch) return;
+  G.meRematch = true;
+  $('btnReplay').disabled = true;
+  $('resSub').textContent = G.oppRematch ? 'dealing…' : 'waiting for ' + G.names[G.oppIdx] + '…';
+  send({ t:'re' });
+  maybeRematch();
+};
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+const goHome = () => location.replace(location.pathname);
+$('btnHome').onclick = goHome;
+$('btnDcHome').onclick = goHome;
+$('btnCancelLobby').onclick = goHome;
+$('btnRules').onclick = () => $('rulesModal').classList.remove('hidden');
+$('btnRulesClose').onclick = () => $('rulesModal').classList.add('hidden');
+$('rulesModal').addEventListener('click', e => { if (e.target === $('rulesModal')) $('rulesModal').classList.add('hidden'); });
+$('btnCopy').onclick = async () => {
+  const link = $('inviteLink').value;
+  try { await navigator.clipboard.writeText(link); toast('Invite link copied'); }
+  catch(e){ $('inviteLink').select(); document.execCommand('copy'); toast('Invite link copied'); }
+};
+
+$('inpName').value = localStorage.getItem('standoff-name') || '';
+const roomParam = new URLSearchParams(location.search).get('room');
+if (roomParam){
+  $('joinPanel').classList.remove('hidden');
+  $('joinCode').textContent = roomParam;
+  $('btnCreate').classList.add('hidden');
+  $('btnJoin').onclick = () => { actx(); joinLobby(roomParam.toLowerCase()); };
+}
+$('btnCreate').onclick = () => { actx(); createLobby(); };
+if (typeof Peer === 'undefined'){
+  $('netStatus').textContent = 'PeerJS failed to load — check your connection';
+  $('btnCreate').disabled = true;
+}
+/* queue picks that arrive while the host is mid-showdown */
+const _origOnMsg = onMsg;
+onMsg = function(m){
+  if (m.t==='pick' && NET.isHost && G.inShowdown){ G.pendingPick = { sel:m.sel||null, turn:m.turn }; return; }
+  _origOnMsg(m);
+};
+</script>
+</body>
+</html>
