@@ -2026,13 +2026,11 @@
       visibility: hidden;
       place-items: center;
       overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 52%, rgba(121, 224, 194, .11), transparent 28%),
-        rgba(5, 8, 12, .86);
+      background: rgba(5, 8, 12, .48);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .24s ease, visibility .24s ease;
-      backdrop-filter: blur(8px);
+      transition: opacity .2s ease, visibility .2s ease;
+      backdrop-filter: blur(2px);
     }
 
     .opening-deal.active {
@@ -2041,37 +2039,8 @@
       pointer-events: auto;
     }
 
-    .opening-deal-copy {
-      position: absolute;
-      top: clamp(74px, 13vh, 118px);
-      left: 50%;
-      display: grid;
-      width: min(420px, calc(100% - 32px));
-      gap: 5px;
-      text-align: center;
-      transform: translateX(-50%);
-    }
-
-    .opening-deal-copy small {
-      color: var(--mint);
-      font-size: 8px;
-      font-weight: 900;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-    }
-
-    .opening-deal-copy strong {
-      font-family: var(--display);
-      font-size: clamp(21px, 3vw, 31px);
-      font-weight: 620;
-      letter-spacing: -.03em;
-    }
-
-    .opening-deal-copy span {
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 650;
-      letter-spacing: .04em;
+    .opening-deal.finishing {
+      opacity: 0;
     }
 
     .opening-deal-stage {
@@ -2084,18 +2053,19 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 78px;
-      height: 112px;
+      width: 74px;
+      height: 106px;
       opacity: 0;
-      transform: translate(-50%, calc(-50% + 18px)) scale(.9);
+      transform: translate(-50%, calc(-50% + 10px)) scale(.96);
+      will-change: transform, opacity;
     }
 
     .opening-deal.active .opening-deck {
-      animation: opening-deck-arrive .34s var(--ease-out) forwards;
+      animation: opening-deck-arrive .22s cubic-bezier(.22, 1, .36, 1) forwards;
     }
 
     .opening-deal.dealing .opening-deck {
-      animation: opening-deck-settle .46s ease forwards;
+      animation: opening-deck-settle .13s ease-out forwards;
     }
 
     .opening-deck-card {
@@ -2103,20 +2073,21 @@
       --deck-y: 0px;
       position: absolute;
       inset: 0;
-      border: 1px solid rgba(255, 255, 255, .19);
-      border-radius: 11px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
       background:
-        linear-gradient(135deg, transparent 46%, rgba(121, 224, 194, .13) 47% 53%, transparent 54%),
-        linear-gradient(155deg, #222b36, #11171f 62%);
-      box-shadow: 0 14px 32px rgba(0, 0, 0, .42);
+        linear-gradient(135deg, transparent 47%, rgba(121, 224, 194, .09) 48% 52%, transparent 53%),
+        #151c24;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .34);
       transform: translate(var(--deck-x), var(--deck-y));
+      transition: opacity .12s ease;
     }
 
     .opening-deck-card::before {
       position: absolute;
-      inset: 22px 15px;
-      border: 1px solid rgba(121, 224, 194, .38);
-      border-radius: 8px;
+      inset: 21px 15px;
+      border: 1px solid rgba(121, 224, 194, .25);
+      border-radius: 7px;
       content: "";
       transform: rotate(45deg);
     }
@@ -2127,27 +2098,19 @@
       display: grid;
       place-items: center;
       content: "32";
-      color: var(--mint);
+      color: rgba(121, 224, 194, .82);
       font-family: var(--display);
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 650;
       letter-spacing: -.05em;
     }
 
-    .opening-deck-card:nth-child(1) { --deck-x: -5px; --deck-y: 6px; }
-    .opening-deck-card:nth-child(2) { --deck-x: -3px; --deck-y: 4px; }
-    .opening-deck-card:nth-child(3) { --deck-x: -1px; --deck-y: 2px; }
+    .opening-deck-card:nth-child(1) { --deck-x: -4px; --deck-y: 6px; }
+    .opening-deck-card:nth-child(2) { --deck-x: -2px; --deck-y: 3px; }
 
-    .opening-deal.shuffling .opening-deck-card:nth-child(2) {
-      animation: opening-shuffle-left .27s var(--ease-out) 2;
-    }
-
-    .opening-deal.shuffling .opening-deck-card:nth-child(3) {
-      animation: opening-shuffle-right .27s var(--ease-out) .04s 2;
-    }
-
-    .opening-deal.shuffling .opening-deck-card:nth-child(4) {
-      animation: opening-shuffle-top .27s var(--ease-out) .08s 2;
+    .opening-deal.dealt-opponent .opening-deck-card:nth-child(3),
+    .opening-deal.dealt-player .opening-deck-card:nth-child(2) {
+      opacity: 0;
     }
 
     .opening-deal-flight-layer {
@@ -2165,13 +2128,17 @@
       margin: 0;
       opacity: 0;
       pointer-events: none;
-      will-change: top, left, transform, opacity;
+      transform-origin: center;
+      will-change: transform, opacity;
     }
 
-    #gameScreen.opening-deal-active #playerHand,
-    #gameScreen.opening-deal-active #opponentHand {
-      opacity: .12;
-      transition: opacity .2s ease;
+    #gameScreen.opening-deal-active .card-back-mini,
+    #gameScreen.opening-deal-active #playerHand .game-card {
+      transition: opacity .05s ease-out;
+    }
+
+    .opening-deal-pending {
+      opacity: 0 !important;
     }
 
     .opening-guide-prompt {
@@ -2217,7 +2184,7 @@
       z-index: 9;
       outline: 2px solid var(--mint);
       outline-offset: 3px;
-      animation: opening-guide-pulse 1.15s ease-in-out infinite;
+      animation: opening-guide-arrive .28s cubic-bezier(.22, 1, .36, 1) both;
     }
 
     @keyframes opening-deck-arrive {
@@ -2226,30 +2193,18 @@
 
     @keyframes opening-deck-settle {
       from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      to { opacity: .2; transform: translate(-50%, calc(-50% + 8px)) scale(.88); filter: blur(1px); }
+      to { opacity: 0; transform: translate(-50%, calc(-50% + 3px)) scale(.98); }
     }
 
-    @keyframes opening-shuffle-left {
-      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
-      42% { transform: translate(calc(var(--deck-x) - 50px), calc(var(--deck-y) - 3px)) rotate(-7deg); }
-      70% { transform: translate(calc(var(--deck-x) + 3px), var(--deck-y)) rotate(1deg); }
-    }
-
-    @keyframes opening-shuffle-right {
-      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
-      42% { transform: translate(calc(var(--deck-x) + 50px), calc(var(--deck-y) + 3px)) rotate(7deg); }
-      70% { transform: translate(calc(var(--deck-x) - 3px), var(--deck-y)) rotate(-1deg); }
-    }
-
-    @keyframes opening-shuffle-top {
-      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
-      45% { transform: translate(var(--deck-x), calc(var(--deck-y) - 19px)) rotate(3deg); }
-      72% { transform: translate(var(--deck-x), calc(var(--deck-y) + 3px)); }
-    }
-
-    @keyframes opening-guide-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(121, 224, 194, .12), 0 14px 28px rgba(0, 0, 0, .28); }
-      50% { box-shadow: 0 0 0 7px rgba(121, 224, 194, 0), 0 16px 34px rgba(0, 0, 0, .36); }
+    @keyframes opening-guide-arrive {
+      from {
+        outline-color: transparent;
+        box-shadow: 0 0 0 0 rgba(121, 224, 194, 0);
+      }
+      to {
+        outline-color: var(--mint);
+        box-shadow: 0 0 0 4px rgba(121, 224, 194, .08);
+      }
     }
 
     .empty-hand {
@@ -3437,10 +3392,6 @@
         min-height: 580px;
       }
 
-      .opening-deal-copy {
-        top: 64px;
-      }
-
       .opening-guide-prompt {
         bottom: 126px;
       }
@@ -3948,10 +3899,6 @@
         min-height: 540px;
       }
 
-      .opening-deal-copy {
-        top: 56px;
-      }
-
       .opening-deck {
         width: 68px;
         height: 98px;
@@ -4194,14 +4141,8 @@
       </header>
 
       <div id="openingDeal" class="opening-deal" aria-hidden="true">
-        <div class="opening-deal-copy" aria-hidden="true">
-          <small>Turn 01 · Opening draw</small>
-          <strong id="openingDealTitle">Deck online</strong>
-          <span id="openingDealSubtitle">Preparing one action for each duelist</span>
-        </div>
         <div class="opening-deal-stage" aria-hidden="true">
           <div id="openingDealDeck" class="opening-deck">
-            <span class="opening-deck-card"></span>
             <span class="opening-deck-card"></span>
             <span class="opening-deck-card"></span>
             <span class="opening-deck-card"></span>
@@ -4522,7 +4463,7 @@
       protocolVersion: 1
     });
 
-    const OPENING_DEAL_DURATION_MS = 1850;
+    const OPENING_DEAL_DURATION_MS = 1480;
     const ELEMENTS = Object.freeze(["fire", "ice", "water"]);
     const MODS = Object.freeze([
       "vampiric",
@@ -5228,8 +5169,6 @@
       soundBtn: $("#soundBtn"),
       logBtn: $("#logBtn"),
       openingDeal: $("#openingDeal"),
-      openingDealTitle: $("#openingDealTitle"),
-      openingDealSubtitle: $("#openingDealSubtitle"),
       openingDealDeck: $("#openingDealDeck"),
       openingDealFlightLayer: $("#openingDealFlightLayer"),
       openingGuidePrompt: $("#openingGuidePrompt"),
@@ -5327,7 +5266,9 @@
         guide: null,
         timers: [],
         animations: [],
-        resizeHandler: null
+        resizeHandler: null,
+        opponentRevealed: true,
+        playerRevealed: true
       },
       timerAnnouncements: new Set(),
       seenCards: new Set(),
@@ -5493,6 +5434,37 @@
       return timerId;
     }
 
+    function openingTargetForSide(side) {
+      if (side === "opponent") {
+        return ui.opponentHand.querySelector(".card-back-mini") || ui.opponentHand;
+      }
+      return ui.playerHand.querySelector('[data-card-value="reload"]');
+    }
+
+    function syncOpeningDealTargets() {
+      ui.opponentHand.classList.remove("opening-deal-pending");
+      ui.opponentHand.querySelectorAll(".opening-deal-pending").forEach(target => {
+        target.classList.remove("opening-deal-pending");
+      });
+      ui.playerHand.querySelectorAll(".opening-deal-pending").forEach(target => {
+        target.classList.remove("opening-deal-pending");
+      });
+      if (!app.openingDeal.active) return;
+      if (!app.openingDeal.opponentRevealed) {
+        openingTargetForSide("opponent")?.classList.add("opening-deal-pending");
+      }
+      if (!app.openingDeal.playerRevealed) {
+        openingTargetForSide("player")?.classList.add("opening-deal-pending");
+      }
+    }
+
+    function revealOpeningTarget(side) {
+      if (!app.openingDeal.active) return;
+      if (side === "opponent") app.openingDeal.opponentRevealed = true;
+      else app.openingDeal.playerRevealed = true;
+      syncOpeningDealTargets();
+    }
+
     function clearOpeningDealMotion() {
       const deal = app.openingDeal;
       deal.timers.forEach(clearTimeout);
@@ -5510,7 +5482,10 @@
         deal.resizeHandler = null;
       }
       deal.active = false;
-      ui.openingDeal.classList.remove("active", "shuffling", "dealing");
+      deal.opponentRevealed = true;
+      deal.playerRevealed = true;
+      syncOpeningDealTargets();
+      ui.openingDeal.classList.remove("active", "dealt-opponent", "dealt-player", "dealing", "finishing");
       ui.openingDeal.setAttribute("aria-hidden", "true");
       ui.openingDealFlightLayer.innerHTML = "";
       ui.gameScreen.classList.remove("opening-deal-active");
@@ -5589,7 +5564,7 @@
       announce("Opening draw. Both duelists receive Reload. Select Reload, then lock your turn.");
     }
 
-    function createOpeningFlight(target, side, delay = 0) {
+    function createOpeningFlight(target, side) {
       if (!target || !app.openingDeal.active) return;
       const sourceRect = ui.openingDealDeck.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
@@ -5599,70 +5574,53 @@
       const sourceY = sourceRect.top + sourceRect.height / 2;
       const targetX = targetRect.left + targetRect.width / 2;
       const targetY = targetRect.top + targetRect.height / 2;
+      const sourceScale = clamp(Math.min(sourceRect.width / 92, sourceRect.height / 132), .65, .94);
       const targetScale = clamp(Math.min(targetRect.width / 92, targetRect.height / 132), .48, 1);
-      const verticalDirection = side === "opponent" ? -1 : 1;
-      const rotation = side === "opponent" ? -350 : 390;
+      const startRotation = side === "opponent" ? -4 : 4;
       const clone = document.createElement("div");
       clone.className = `game-card card-family-action card-reload opening-deal-flight ${side}`;
       clone.innerHTML = cardContent({ value: "reload" });
       clone.setAttribute("aria-hidden", "true");
-      clone.style.left = `${sourceX}px`;
-      clone.style.top = `${sourceY}px`;
+      clone.style.left = `${sourceX - 46}px`;
+      clone.style.top = `${sourceY - 66}px`;
       ui.openingDealFlightLayer.appendChild(clone);
 
       if (typeof clone.animate !== "function") return;
       const deltaX = targetX - sourceX;
       const deltaY = targetY - sourceY;
+      const middleScale = sourceScale + (targetScale - sourceScale) * .62;
       const animation = clone.animate([
         {
-          left: `${sourceX}px`,
-          top: `${sourceY}px`,
-          opacity: .15,
-          transform: `translate(-50%, -50%) rotate(${verticalDirection * 7}deg) scale(.72)`
+          opacity: .9,
+          transform: `translate3d(0, 0, 0) rotate(${startRotation}deg) scale(${sourceScale})`
         },
         {
-          offset: .22,
-          left: `${sourceX + deltaX * .12}px`,
-          top: `${sourceY - 34}px`,
+          offset: .58,
           opacity: 1,
-          transform: `translate(-50%, -50%) rotate(${verticalDirection * 68}deg) scale(.9)`
+          transform: `translate3d(${deltaX * .62}px, ${deltaY * .58 - 10}px, 0) rotate(${startRotation * .4}deg) scale(${middleScale})`
         },
         {
-          offset: .78,
-          left: `${sourceX + deltaX * .88}px`,
-          top: `${sourceY + deltaY * .82 - verticalDirection * 12}px`,
+          offset: .9,
           opacity: 1,
-          transform: `translate(-50%, -50%) rotate(${rotation * .82}deg) scale(${Math.max(targetScale, .72)})`
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(${targetScale})`
         },
         {
-          offset: .92,
-          left: `${targetX}px`,
-          top: `${targetY}px`,
-          opacity: 1,
-          transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${targetScale})`
-        },
-        {
-          left: `${targetX}px`,
-          top: `${targetY}px`,
           opacity: 0,
-          transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${targetScale * .98})`
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(${targetScale})`
         }
       ], {
-        duration: side === "opponent" ? 760 : 820,
-        delay,
-        easing: "cubic-bezier(.18,.74,.2,1)",
+        duration: side === "opponent" ? 440 : 470,
+        easing: "cubic-bezier(.25,.8,.25,1)",
         fill: "forwards"
       });
       app.openingDeal.animations.push(animation);
     }
 
-    function launchOpeningFlights() {
+    function launchOpeningCard(side) {
       if (!app.openingDeal.active) return;
-      const opponentTarget = ui.opponentHand.querySelector(".card-back-mini") || ui.opponentHand;
-      const playerTarget = ui.playerHand.querySelector('[data-card-value="reload"]');
-      createOpeningFlight(opponentTarget, "opponent", 0);
-      createOpeningFlight(playerTarget, "player", 90);
-      playSound("reveal");
+      ui.openingDeal.classList.add(side === "opponent" ? "dealt-opponent" : "dealt-player");
+      createOpeningFlight(openingTargetForSide(side), side);
+      playSound("select");
     }
 
     function shouldRunOpeningDeal({ resume = false } = {}) {
@@ -5677,8 +5635,8 @@
       clearOpeningDeal();
       app.openingDeal.matchId = app.state.id;
       app.openingDeal.active = true;
-      ui.openingDealTitle.textContent = "Deck online";
-      ui.openingDealSubtitle.textContent = "Preparing one action for each duelist";
+      app.openingDeal.opponentRevealed = false;
+      app.openingDeal.playerRevealed = false;
 
       const reducedMotion = typeof window.matchMedia === "function" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -5696,19 +5654,12 @@
       renderGame();
       void ui.openingDeal.offsetWidth;
 
-      queueOpeningDeal(() => {
-        ui.openingDeal.classList.add("shuffling");
-        ui.openingDealTitle.textContent = "Shuffling";
-        ui.openingDealSubtitle.textContent = "Building the opening draw";
-      }, 190);
-
-      queueOpeningDeal(() => {
-        ui.openingDeal.classList.remove("shuffling");
-        ui.openingDeal.classList.add("dealing");
-        ui.openingDealTitle.textContent = "Reload dealt";
-        ui.openingDealSubtitle.textContent = "One Reload to each duelist";
-        launchOpeningFlights();
-      }, 850);
+      queueOpeningDeal(() => launchOpeningCard("opponent"), 300);
+      queueOpeningDeal(() => revealOpeningTarget("opponent"), 696);
+      queueOpeningDeal(() => launchOpeningCard("player"), 760);
+      queueOpeningDeal(() => revealOpeningTarget("player"), 1183);
+      queueOpeningDeal(() => ui.openingDeal.classList.add("dealing"), 1230);
+      queueOpeningDeal(() => ui.openingDeal.classList.add("finishing"), 1280);
 
       queueOpeningDeal(finishOpeningDeal, OPENING_DEAL_DURATION_MS);
       app.openingDeal.resizeHandler = finishOpeningDeal;
@@ -6009,6 +5960,7 @@
       ui.lockTurnBtn.classList.toggle("locked", myReady);
       ui.lockTurnBtn.textContent = myReady ? "Locked · Waiting" : "Lock turn";
       syncOpeningGuide();
+      syncOpeningDealTargets();
 
       if (turnChanged && app.state.turn > 1) {
         announce(`Turn ${app.state.turn}. New cards dealt. ${Math.round((app.deadline - Date.now()) / 1000) || GAME_CONFIG.turnSeconds} seconds.`);
