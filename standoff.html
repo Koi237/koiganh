@@ -28,7 +28,8 @@
       --mint: #79e0c2;
       --mint-dark: #173c35;
       --danger: #ff6577;
-      --action: #ff6577;
+      --action: #7f2437;
+      --action-on-dark: #d56578;
       --element: #69cfe9;
       --fire: #ff715f;
       --ice: #9ee9ff;
@@ -1369,6 +1370,132 @@
       transform: rotate(180deg);
     }
 
+    .element-guide {
+      position: relative;
+      width: clamp(82px, 9vw, 108px);
+      height: 98px;
+      color: var(--muted);
+      filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .28));
+    }
+
+    .element-guide::before {
+      position: absolute;
+      inset: 23px 16px 9px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 50%;
+      content: "";
+      background: radial-gradient(circle, rgba(255, 255, 255, .025), transparent 66%);
+    }
+
+    .element-guide-title {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      color: var(--faint);
+      font-size: 6px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    .element-guide-center {
+      position: absolute;
+      top: 53px;
+      left: 50%;
+      display: grid;
+      width: 29px;
+      height: 29px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--faint);
+      font-size: 5px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+    }
+
+    .element-guide-node {
+      position: absolute;
+      z-index: 2;
+      display: inline-flex;
+      min-width: 39px;
+      min-height: 20px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      border: 1px solid currentColor;
+      border-radius: 99px;
+      background: var(--surface);
+      font-size: 6px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .element-guide-node.fire {
+      top: 14px;
+      left: 50%;
+      color: var(--fire);
+      transform: translateX(-50%);
+    }
+
+    .element-guide-node.ice {
+      right: 0;
+      bottom: 1px;
+      color: var(--ice);
+    }
+
+    .element-guide-node.water {
+      bottom: 1px;
+      left: 0;
+      color: var(--water);
+    }
+
+    .element-guide-node.return {
+      display: none;
+    }
+
+    .element-guide-flow {
+      position: absolute;
+      z-index: 3;
+      display: grid;
+      width: 15px;
+      height: 15px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--ink);
+      font-size: 12px;
+      font-style: normal;
+      line-height: 1;
+    }
+
+    .element-guide-flow.fire-ice {
+      top: 35px;
+      right: 13px;
+      color: color-mix(in srgb, var(--fire) 62%, var(--ice));
+      transform: rotate(55deg);
+    }
+
+    .element-guide-flow.ice-water {
+      right: calc(50% - 8px);
+      bottom: 1px;
+      color: color-mix(in srgb, var(--ice) 62%, var(--water));
+      transform: rotate(180deg);
+    }
+
+    .element-guide-flow.water-fire {
+      top: 35px;
+      left: 13px;
+      color: color-mix(in srgb, var(--water) 62%, var(--fire));
+      transform: rotate(-55deg);
+    }
+
     .self-strip {
       align-self: end;
     }
@@ -1646,7 +1773,7 @@
       text-transform: uppercase;
     }
 
-    .card-family-action .card-type { color: #c73d50; }
+    .card-family-action .card-type { color: #751f31; }
     .card-family-element .card-type { color: #237c96; }
     .card-family-mod .card-type { color: #d9c7ff; }
 
@@ -1702,7 +1829,7 @@
     .card-ice { --card-accent: #59bdd8; }
     .card-water { --card-accent: var(--water); }
     .card-mod { --card-accent: #8a63da; }
-    .card-shoot { --card-accent: #d65665; }
+    .card-shoot { --card-accent: #922b3f; }
     .card-shield { --card-accent: #347c70; }
     .card-reload { --card-accent: #63707d; }
 
@@ -1764,7 +1891,7 @@
       text-transform: uppercase;
     }
 
-    .hover-tip-category.action { color: var(--action); }
+    .hover-tip-category.action { color: var(--action-on-dark); }
     .hover-tip-category.element { color: var(--element); }
     .hover-tip-category.mod { color: var(--mod); }
     .hover-tip-category.fire { color: var(--fire); }
@@ -1837,7 +1964,7 @@
 
     .showdown-grid {
       display: grid;
-      grid-template-columns: 1fr 100px 1fr;
+      grid-template-columns: 1fr 180px 1fr;
       align-items: center;
       gap: 20px;
       margin-top: clamp(22px, 4vh, 38px);
@@ -1904,68 +2031,415 @@
     .reveal-card .card-effect { font-size: 6px; }
 
     .impact-stage {
+      --shot-color: var(--ink);
       position: relative;
-      display: grid;
-      width: 100px;
-      height: 100px;
-      place-items: center;
+      width: 180px;
+      height: 128px;
+      overflow: visible;
     }
 
     .impact-core {
-      position: relative;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: grid;
       width: 36px;
       height: 36px;
+      place-items: center;
       border: 1px solid var(--line-strong);
       border-radius: 50%;
       background: var(--surface-2);
+      color: var(--faint);
+      transform: translate(-50%, -50%);
+      transition: border-color .25s ease, box-shadow .25s ease, color .25s ease;
     }
 
-    .impact-core::before,
-    .impact-core::after {
-      position: absolute;
-      top: 50%;
-      width: 64px;
-      height: 2px;
-      content: "";
-      background: var(--projectile, var(--mint));
-      opacity: 0;
-      box-shadow: 0 0 14px currentColor;
+    .impact-core span {
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .08em;
     }
 
     .impact-core::before {
-      right: 50%;
-      --projectile: var(--left-projectile, var(--mint));
-      transform-origin: right;
+      position: absolute;
+      inset: -9px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 50%;
+      content: "";
+      opacity: 0;
     }
 
-    .impact-core::after {
+    .shot-lane {
+      --shot-color: var(--ink);
+      --shot-glow: rgba(244, 246, 248, .42);
+      --shot-start: 47px;
+      position: absolute;
+      right: -13px;
+      left: -13px;
+      height: 38px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity .28s ease, visibility .28s ease;
+    }
+
+    .shot-lane.left { top: 17px; }
+    .shot-lane.right { bottom: 17px; }
+
+    .showdown-panel.aim .shot-lane[data-active="true"],
+    .showdown-panel.firing .shot-lane[data-active="true"],
+    .showdown-panel.intercept .shot-lane[data-active="true"],
+    .showdown-panel.hit .shot-lane[data-active="true"],
+    .showdown-panel.aftermath .shot-lane[data-active="true"],
+    .showdown-panel.recap .shot-lane[data-active="true"] {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .shot-lane[data-element="fire"] {
+      --shot-color: var(--fire);
+      --shot-glow: rgba(255, 113, 95, .7);
+    }
+
+    .shot-lane[data-element="ice"] {
+      --shot-color: var(--ice);
+      --shot-glow: rgba(158, 233, 255, .72);
+    }
+
+    .shot-lane[data-element="water"] {
+      --shot-color: var(--water);
+      --shot-glow: rgba(110, 157, 255, .72);
+    }
+
+    .showdown-gun {
+      position: absolute;
+      top: 13px;
+      width: 30px;
+      height: 10px;
+      border: 1px solid rgba(255, 255, 255, .34);
+      border-radius: 3px 7px 3px 3px;
+      background: linear-gradient(#788491, #303945);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .2), 0 5px 12px rgba(0, 0, 0, .32);
+    }
+
+    .shot-lane.left .showdown-gun { left: 3px; }
+    .shot-lane.right .showdown-gun {
+      right: 3px;
+      transform: scaleX(-1);
+    }
+
+    .showdown-gun::before {
+      position: absolute;
+      top: 2px;
+      right: -10px;
+      width: 13px;
+      height: 4px;
+      border-radius: 0 3px 3px 0;
+      content: "";
+      background: #9aa4ad;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .28);
+    }
+
+    .showdown-gun::after {
+      position: absolute;
+      top: 8px;
+      left: 7px;
+      width: 8px;
+      height: 10px;
+      border-radius: 1px 1px 4px 4px;
+      content: "";
+      background: linear-gradient(115deg, #46515d, #202731);
+      transform: skewX(-12deg);
+    }
+
+    .showdown-gun i {
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 4px;
+      height: 4px;
+      border: 1px solid rgba(255, 255, 255, .35);
+      border-radius: 50%;
+    }
+
+    .muzzle-flash {
+      position: absolute;
+      top: 8px;
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #fff 0 9%, #ffe08a 10% 25%, color-mix(in srgb, var(--shot-color) 72%, transparent) 26% 48%, transparent 70%);
+      filter: drop-shadow(0 0 8px var(--shot-color));
+      opacity: 0;
+    }
+
+    .shot-lane.left .muzzle-flash { left: 36px; }
+    .shot-lane.right .muzzle-flash { right: 36px; }
+
+    .shot-projectile {
+      position: absolute;
+      top: 15px;
+      width: 15px;
+      height: 7px;
+      border: 1px solid color-mix(in srgb, var(--shot-color) 65%, white);
+      border-radius: 99px;
+      background: var(--shot-color);
+      box-shadow: 0 0 7px var(--shot-color), 0 0 17px var(--shot-glow);
+      opacity: 0;
+    }
+
+    .shot-lane.left .shot-projectile { left: var(--shot-start); }
+    .shot-lane.right .shot-projectile { right: var(--shot-start); }
+
+    .shot-projectile::before {
+      position: absolute;
+      top: 1px;
+      right: 100%;
+      width: 31px;
+      height: 3px;
+      content: "";
+      background: linear-gradient(90deg, transparent, var(--shot-color));
+      filter: blur(.5px);
+    }
+
+    .shot-lane.right .shot-projectile::before {
+      right: auto;
+      left: 100%;
+      background: linear-gradient(90deg, var(--shot-color), transparent);
+    }
+
+    .shot-projectile::after {
+      position: absolute;
+      top: -13px;
       left: 50%;
-      --projectile: var(--right-projectile, var(--mint));
-      transform-origin: left;
+      content: attr(data-mod-symbol);
+      color: var(--mod);
+      font-size: 10px;
+      font-weight: 900;
+      text-shadow: 0 0 8px currentColor;
+      transform: translateX(-50%);
     }
 
-    .showdown-panel.impact .impact-core {
-      animation: impact-core .55s var(--ease-snap);
+    .shot-lane[data-element="fire"] .shot-projectile {
+      border-radius: 70% 20% 70% 20%;
+      animation-timing-function: cubic-bezier(.2, .7, .25, 1);
     }
 
-    .showdown-panel.impact .impact-core::before,
-    .showdown-panel.impact .impact-core::after {
-      animation: projectile .48s var(--ease-out);
+    .shot-lane[data-element="fire"] .shot-projectile::before {
+      height: 5px;
+      background: linear-gradient(90deg, transparent, #ffcf6d, var(--fire));
+      animation: flame-trail .16s steps(2) infinite alternate;
+    }
+
+    .shot-lane[data-element="ice"] .shot-projectile {
+      width: 11px;
+      height: 11px;
+      border-radius: 2px;
+      background: linear-gradient(135deg, white, var(--ice) 48%, #5eb1d2);
+      transform: rotate(45deg);
+    }
+
+    .shot-lane[data-element="water"] .shot-projectile {
+      width: 12px;
+      height: 12px;
+      border-radius: 70% 50% 70% 30%;
+      background: radial-gradient(circle at 35% 25%, white, var(--water) 38%, #315ec7);
+    }
+
+    .shot-lane[data-mod="dark_steel"] .shot-projectile {
+      border: 2px solid #e5e9ee;
+      background: #58636f;
+      box-shadow: 0 0 0 2px rgba(220, 228, 236, .15), 0 0 16px var(--shot-glow);
+    }
+
+    .shot-lane[data-mod="rainbow"] .shot-projectile {
+      background: conic-gradient(var(--fire), var(--ice), var(--water), var(--fire));
+      border-color: white;
+    }
+
+    .shot-lane[data-mod="vampiric"] .shot-projectile::after {
+      color: #ff6f9b;
+    }
+
+    .impact-flare,
+    .ward-burst {
+      position: absolute;
+      top: 2px;
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      opacity: 0;
+    }
+
+    .shot-lane.left .impact-flare,
+    .shot-lane.left .ward-burst { right: 0; }
+    .shot-lane.right .impact-flare,
+    .shot-lane.right .ward-burst { left: 0; }
+
+    .impact-flare {
+      border: 1px solid var(--shot-color);
+      background: radial-gradient(circle, white 0 5%, var(--shot-color) 7% 18%, transparent 62%);
+      box-shadow: 0 0 22px var(--shot-glow);
+    }
+
+    .ward-burst {
+      border: 1px solid var(--mod);
+      background: radial-gradient(circle, rgba(193, 164, 255, .22), transparent 65%);
+      color: #e6d9ff;
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(193, 164, 255, .3);
+    }
+
+    .mod-sigil {
+      position: absolute;
+      top: -3px;
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(193, 164, 255, .32);
+      border-radius: 9px;
+      background: rgba(33, 27, 49, .94);
+      color: var(--mod);
+      font-size: 13px;
+      opacity: 0;
+      box-shadow: 0 9px 20px rgba(0, 0, 0, .28);
+    }
+
+    .mod-sigil.left { left: 35px; }
+    .mod-sigil.right { right: 35px; }
+
+    .showdown-panel.modifier .mod-sigil[data-active="true"] {
+      animation: mod-sigil-in 1.05s var(--ease-snap) both;
+    }
+
+    .mod-sigil[data-mod="silver_hand"] { color: var(--gold); border-color: rgba(233, 203, 125, .4); }
+    .mod-sigil[data-mod="vampiric"] { color: #ff6f9b; border-color: rgba(255, 111, 155, .4); }
+    .mod-sigil[data-mod="dark_steel"] { color: #d7e0e8; border-color: rgba(215, 224, 232, .4); }
+
+    .silver-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      padding: 4px 7px;
+      border: 1px solid rgba(233, 203, 125, .4);
+      border-radius: 99px;
+      background: #262111;
+      color: var(--gold);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      opacity: 0;
+      transform: translate(-50%, 28px);
+      white-space: nowrap;
+    }
+
+    .showdown-panel.modifier .silver-badge:not(:empty) {
+      animation: silver-field 1.2s var(--ease-out) both;
+    }
+
+    .showdown-panel.firing .shot-lane.left[data-active="true"] .showdown-gun {
+      animation: gun-recoil-left .42s var(--ease-out);
+    }
+
+    .showdown-panel.firing .shot-lane.right[data-active="true"] .showdown-gun {
+      animation: gun-recoil-right .42s var(--ease-out);
+    }
+
+    .showdown-panel.firing .shot-lane[data-active="true"] .muzzle-flash {
+      animation: muzzle-flash .34s .06s ease-out both;
+    }
+
+    .showdown-panel.firing .shot-lane.left[data-active="true"] .shot-projectile {
+      animation: shot-left-to-right .92s .14s cubic-bezier(.16, .75, .25, 1) both;
+    }
+
+    .showdown-panel.firing .shot-lane.right[data-active="true"] .shot-projectile {
+      animation: shot-right-to-left .92s .14s cubic-bezier(.16, .75, .25, 1) both;
+    }
+
+    .showdown-panel.intercept .shot-lane[data-intercept="true"] .ward-burst {
+      animation: ward-intercept .72s var(--ease-out) both;
+    }
+
+    .showdown-panel.intercept .shot-lane[data-intercept="true"] .shot-projectile {
+      filter: saturate(0) brightness(1.7);
+    }
+
+    .showdown-panel.hit .shot-lane[data-active="true"] .impact-flare {
+      animation: impact-flare .72s var(--ease-snap) both;
+    }
+
+    .showdown-panel.hit .impact-core {
+      animation: impact-core .72s var(--ease-snap);
+    }
+
+    .showdown-panel.hit .impact-core::before {
+      animation: impact-ring .9s var(--ease-out);
     }
 
     .showdown-panel.arcane .impact-core {
       border-color: var(--mod);
+      color: var(--mod);
       box-shadow: 0 0 26px rgba(193, 164, 255, .18);
-    }
-
-    .showdown-panel.arcane .impact-core::before,
-    .showdown-panel.arcane .impact-core::after {
-      filter: saturate(0) brightness(1.8);
-      transition: filter .45s ease;
     }
 
     .showdown-panel.rainbow.reveal .reveal-card.card-mod {
       animation: rainbow-shuffle .72s .48s var(--ease-snap);
+    }
+
+    .damage-burst,
+    .aftermath-burst {
+      position: absolute;
+      z-index: 5;
+      top: 50%;
+      min-width: 72px;
+      text-align: center;
+      opacity: 0;
+      white-space: nowrap;
+    }
+
+    .damage-burst {
+      color: var(--danger);
+      font-size: 25px;
+      font-weight: 950;
+      text-shadow: 0 0 18px rgba(255, 101, 119, .34);
+    }
+
+    .damage-burst.left,
+    .aftermath-burst.left { right: calc(100% + 8px); }
+    .damage-burst.right,
+    .aftermath-burst.right { left: calc(100% + 8px); }
+
+    .damage-burst[data-kind="blocked"] {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-shadow: none;
+    }
+
+    .damage-burst[data-kind="heal"] {
+      color: var(--mint);
+      text-shadow: 0 0 18px rgba(121, 224, 194, .34);
+    }
+
+    .showdown-panel.hit .damage-burst:not(:empty) {
+      animation: damage-settle .72s .18s var(--ease-snap) both;
+    }
+
+    .aftermath-burst {
+      top: calc(50% + 29px);
+      color: var(--gold);
+      font-size: 8px;
+      font-weight: 850;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .showdown-panel.aftermath .aftermath-burst:not(:empty) {
+      animation: aftermath-settle .62s .12s var(--ease-out) both;
     }
 
     @keyframes rainbow-shuffle {
@@ -1973,36 +2447,83 @@
       68% { transform: translateY(2px) rotate(-4deg) scale(.98); }
     }
 
-    @keyframes projectile {
-      0% { opacity: 0; transform: scaleX(0); }
-      40% { opacity: 1; }
-      100% { opacity: 0; transform: scaleX(1); }
+    @keyframes flame-trail {
+      to { transform: translateY(2px) scaleX(.84); opacity: .72; }
+    }
+
+    @keyframes mod-sigil-in {
+      0% { opacity: 0; transform: translateY(9px) scale(.65) rotate(-10deg); }
+      55% { opacity: 1; transform: translateY(-3px) scale(1.08) rotate(3deg); }
+      100% { opacity: .78; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes silver-field {
+      0% { opacity: 0; transform: translate(-50%, 28px) scale(.7); box-shadow: 0 0 0 rgba(233, 203, 125, 0); }
+      45% { opacity: 1; transform: translate(-50%, 28px) scale(1.08); box-shadow: 0 0 28px rgba(233, 203, 125, .25); }
+      100% { opacity: .9; transform: translate(-50%, 28px) scale(1); }
+    }
+
+    @keyframes gun-recoil-left {
+      28% { transform: translateX(-8px) rotate(-4deg); }
+      100% { transform: translateX(0) rotate(0); }
+    }
+
+    @keyframes gun-recoil-right {
+      28% { transform: scaleX(-1) translateX(-8px) rotate(-4deg); }
+      100% { transform: scaleX(-1) translateX(0) rotate(0); }
+    }
+
+    @keyframes muzzle-flash {
+      0% { opacity: 0; transform: scale(.2) rotate(0); }
+      24% { opacity: 1; transform: scale(1.25) rotate(24deg); }
+      100% { opacity: 0; transform: scale(.55) rotate(58deg); }
+    }
+
+    @keyframes shot-left-to-right {
+      0% { left: var(--shot-start); opacity: 0; }
+      9% { opacity: 1; }
+      86% { opacity: 1; }
+      100% { left: calc(100% - var(--shot-start)); opacity: 0; }
+    }
+
+    @keyframes shot-right-to-left {
+      0% { right: var(--shot-start); opacity: 0; }
+      9% { opacity: 1; }
+      86% { opacity: 1; }
+      100% { right: calc(100% - var(--shot-start)); opacity: 0; }
+    }
+
+    @keyframes ward-intercept {
+      0% { opacity: 0; transform: scale(.4) rotate(-45deg); }
+      45% { opacity: 1; transform: scale(1.24) rotate(12deg); }
+      100% { opacity: .3; transform: scale(.9) rotate(0); }
+    }
+
+    @keyframes impact-flare {
+      0% { opacity: 0; transform: scale(.25); }
+      30% { opacity: 1; transform: scale(1.35); }
+      100% { opacity: 0; transform: scale(2); }
+    }
+
+    @keyframes impact-ring {
+      0% { opacity: 0; transform: scale(.4); }
+      35% { opacity: 1; }
+      100% { opacity: 0; transform: scale(2.25); }
     }
 
     @keyframes impact-core {
-      50% { transform: scale(1.45); border-color: var(--mint); box-shadow: 0 0 34px rgba(121, 224, 194, .28); }
+      50% { transform: translate(-50%, -50%) scale(1.45); border-color: var(--mint); box-shadow: 0 0 34px rgba(121, 224, 194, .28); }
     }
 
-    .damage-burst {
-      position: absolute;
-      top: 50%;
-      color: var(--danger);
-      font-size: 17px;
-      font-weight: 900;
-      opacity: 0;
+    @keyframes damage-settle {
+      0% { opacity: 0; transform: translateY(8px) scale(.45); }
+      55% { opacity: 1; transform: translateY(-9px) scale(1.18); }
+      100% { opacity: 1; transform: translateY(-6px) scale(1); }
     }
 
-    .damage-burst.left { right: calc(100% + 7px); }
-    .damage-burst.right { left: calc(100% + 7px); }
-
-    .showdown-panel.impact .damage-burst {
-      animation: damage-pop .8s .2s var(--ease-out) both;
-    }
-
-    @keyframes damage-pop {
-      0% { opacity: 0; transform: translateY(10px) scale(.5); }
-      35% { opacity: 1; transform: translateY(-8px) scale(1.15); }
-      100% { opacity: 0; transform: translateY(-25px) scale(1); }
+    @keyframes aftermath-settle {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .resolution-title {
@@ -2026,6 +2547,16 @@
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-top: 18px;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .34s ease, transform .34s var(--ease-out), visibility .34s ease;
+    }
+
+    .showdown-panel.recap .receipts {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .receipt {
@@ -2573,12 +3104,55 @@
 
       .arena {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 31px 1fr;
+        grid-template-rows: 1fr 38px 1fr;
         gap: 0;
       }
 
       .duel-axis {
-        transform: rotate(90deg);
+        transform: none;
+      }
+
+      .element-guide {
+        display: flex;
+        width: min(282px, 100%);
+        height: 30px;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        filter: none;
+      }
+
+      .element-guide::before,
+      .element-guide-title,
+      .element-guide-center {
+        display: none;
+      }
+
+      .element-guide-node,
+      .element-guide-node.fire,
+      .element-guide-node.ice,
+      .element-guide-node.water,
+      .element-guide-flow {
+        position: static;
+        width: auto;
+        height: 21px;
+        min-width: 34px;
+        min-height: 21px;
+        padding-inline: 5px;
+        font-size: 5.5px;
+        transform: none;
+      }
+
+      .element-guide-node.return {
+        display: inline-flex;
+      }
+
+      .element-guide-flow {
+        min-width: 12px;
+        padding: 0;
+        border-radius: 50%;
+        background: transparent;
+        font-size: 10px;
       }
 
       .axis-mark {
@@ -2718,12 +3292,40 @@
       }
 
       .showdown-grid {
-        grid-template-columns: 1fr 56px 1fr;
+        grid-template-columns: minmax(0, 1fr) 104px minmax(0, 1fr);
         gap: 4px;
       }
 
       .impact-stage {
-        width: 56px;
+        width: 104px;
+        height: 112px;
+      }
+
+      .shot-lane {
+        --shot-start: 40px;
+        right: -7px;
+        left: -7px;
+      }
+
+      .shot-lane.left { top: 11px; }
+      .shot-lane.right { bottom: 11px; }
+
+      .mod-sigil.left { left: 11px; }
+      .mod-sigil.right { right: 11px; }
+
+      .damage-burst {
+        min-width: 58px;
+        font-size: 20px;
+      }
+
+      .damage-burst.left,
+      .aftermath-burst.left { right: calc(100% + 1px); }
+      .damage-burst.right,
+      .aftermath-burst.right { left: calc(100% + 1px); }
+
+      .aftermath-burst {
+        min-width: 60px;
+        font-size: 6.5px;
       }
 
       .reveal-card {
@@ -2988,7 +3590,6 @@
           <div class="nav-actions">
             <nav class="koi-nav" aria-label="KOI site">
               <a href="./index.html">HOME</a>
-              <a href="./game.html">CHESS</a>
               <a href="./standoff.html" aria-current="page">STANDOFF</a>
               <a href="./about.html">ABOUT</a>
             </nav>
@@ -3157,8 +3758,18 @@
             </div>
           </div>
 
-          <div class="duel-axis" aria-hidden="true">
-            <div class="axis-mark">VS</div>
+          <div class="duel-axis">
+            <div class="element-guide" role="img" aria-label="Element advantage cycle: Fire beats Ice, Ice beats Water, and Water beats Fire.">
+              <span class="element-guide-title" aria-hidden="true">Element edge</span>
+              <span class="element-guide-node fire" aria-hidden="true">Fire</span>
+              <i class="element-guide-flow fire-ice" aria-hidden="true">›</i>
+              <span class="element-guide-node ice" aria-hidden="true">Ice</span>
+              <i class="element-guide-flow ice-water" aria-hidden="true">›</i>
+              <span class="element-guide-node water" aria-hidden="true">Water</span>
+              <i class="element-guide-flow water-fire" aria-hidden="true">›</i>
+              <span class="element-guide-node fire return" aria-hidden="true">Fire</span>
+              <span class="element-guide-center" aria-hidden="true">beats</span>
+            </div>
           </div>
 
           <div class="commitment">
@@ -3232,10 +3843,29 @@
           <div id="revealLeftName" class="reveal-name">You</div>
           <div id="revealLeft" class="reveal-stack"></div>
         </div>
-        <div class="impact-stage" aria-hidden="true">
+        <div id="impactStage" class="impact-stage" aria-hidden="true">
           <span id="leftDamageBurst" class="damage-burst left"></span>
-          <div class="impact-core"></div>
           <span id="rightDamageBurst" class="damage-burst right"></span>
+          <span id="leftAftermathBurst" class="aftermath-burst left"></span>
+          <span id="rightAftermathBurst" class="aftermath-burst right"></span>
+          <span id="leftModSigil" class="mod-sigil left"></span>
+          <span id="rightModSigil" class="mod-sigil right"></span>
+          <div id="leftShotLane" class="shot-lane left" data-active="false" data-element="raw" data-mod="none">
+            <span class="showdown-gun"><i></i></span>
+            <span class="muzzle-flash"></span>
+            <span class="shot-projectile"></span>
+            <span class="impact-flare"></span>
+            <span class="ward-burst">◌</span>
+          </div>
+          <div id="rightShotLane" class="shot-lane right" data-active="false" data-element="raw" data-mod="none">
+            <span class="showdown-gun"><i></i></span>
+            <span class="muzzle-flash"></span>
+            <span class="shot-projectile"></span>
+            <span class="impact-flare"></span>
+            <span class="ward-burst">◌</span>
+          </div>
+          <div class="impact-core"><span>VS</span></div>
+          <span id="silverBadge" class="silver-badge"></span>
         </div>
         <div class="reveal-side">
           <div id="revealRightName" class="reveal-name">Rival</div>
@@ -3389,13 +4019,16 @@
       meteredTurnHost: "global.relay.metered.ca",
       channelPrefix: "triad32-",
       turnSeconds: 45,
-      showdownMs: 8500,
+      showdownMs: 11000,
       showdownTimeline: Object.freeze({
         reveal: 650,
-        inspect: 2200,
-        rainbow: 1900,
-        arcane: 3150,
-        impact: 4700
+        modifier: 2200,
+        aim: 3400,
+        fire: 4300,
+        intercept: 5050,
+        hit: 5450,
+        aftermath: 6300,
+        recap: 7350
       }),
       protocolVersion: 1
     });
@@ -4136,8 +4769,16 @@
       revealRightName: $("#revealRightName"),
       revealLeft: $("#revealLeft"),
       revealRight: $("#revealRight"),
+      impactStage: $("#impactStage"),
       leftDamageBurst: $("#leftDamageBurst"),
       rightDamageBurst: $("#rightDamageBurst"),
+      leftAftermathBurst: $("#leftAftermathBurst"),
+      rightAftermathBurst: $("#rightAftermathBurst"),
+      leftModSigil: $("#leftModSigil"),
+      rightModSigil: $("#rightModSigil"),
+      leftShotLane: $("#leftShotLane"),
+      rightShotLane: $("#rightShotLane"),
+      silverBadge: $("#silverBadge"),
       resolutionTitle: $("#resolutionTitle"),
       resolutionSubtitle: $("#resolutionSubtitle"),
       resolutionReceipts: $("#resolutionReceipts"),
@@ -4307,16 +4948,17 @@
         select: [410, .05, .045],
         lock: [220, .13, .07],
         reveal: [520, .17, .055],
+        shot: [210, .11, .085],
         hit: [105, .2, .11],
         heal: [650, .24, .045],
         win: [460, .45, .06],
         lose: [155, .42, .07]
       }[kind] || [280, .04, .03];
-      oscillator.type = kind === "hit" || kind === "lose" ? "sawtooth" : "sine";
+      oscillator.type = kind === "shot" ? "square" : kind === "hit" || kind === "lose" ? "sawtooth" : "sine";
       oscillator.frequency.setValueAtTime(settings[0], now);
       if (kind === "reveal" || kind === "win") {
         oscillator.frequency.exponentialRampToValueAtTime(settings[0] * 1.5, now + settings[1]);
-      } else if (kind === "hit") {
+      } else if (kind === "hit" || kind === "shot") {
         oscillator.frequency.exponentialRampToValueAtTime(55, now + settings[1]);
       }
       gain.gain.setValueAtTime(0, now);
@@ -4745,7 +5387,7 @@
       clearTurnTimers();
       clearShowdownTimers();
       ui.showdownOverlay.classList.remove("visible");
-      ui.showdownPanel.classList.remove("reveal", "impact", "arcane", "rainbow");
+      resetShowdownVisuals();
       ui.appRoot.inert = false;
       app.resolving = false;
       app.state.phase = "planning";
@@ -4909,6 +5551,69 @@
       return `<article class="reveal-card ${cardCssClass(card)}" tabindex="0" role="group" data-card-value="${escapeHtml(card.value)}" data-card-family="${escapeHtml(card.family)}" aria-label="${escapeHtml(`${copy.type}. ${copy.name}. ${copy.detail}`)}">${cardContent(card)}</article>`;
     }
 
+    const SHOWDOWN_VISUAL_CLASSES = Object.freeze([
+      "reveal",
+      "modifier",
+      "aim",
+      "firing",
+      "intercept",
+      "hit",
+      "aftermath",
+      "recap",
+      "arcane",
+      "rainbow"
+    ]);
+
+    function resetShowdownVisuals() {
+      ui.showdownPanel.classList.remove(...SHOWDOWN_VISUAL_CLASSES);
+    }
+
+    function configureShotLane(lane, play, targetSeat, result) {
+      const isShot = play.actionValue === "shoot";
+      const interceptedElement = result.arcaneEaten?.[targetSeat] || null;
+      const element = interceptedElement || play.resolvedElement || "raw";
+      const mod = play.modValue || "none";
+      lane.dataset.active = String(isShot);
+      lane.dataset.element = element;
+      lane.dataset.mod = mod;
+      lane.dataset.intercept = String(Boolean(interceptedElement));
+      const projectile = lane.querySelector(".shot-projectile");
+      if (projectile) projectile.dataset.modSymbol = mod === "none" ? "" : CARD_COPY[mod]?.symbol || "";
+    }
+
+    function configureModSigil(node, modValue) {
+      const mod = modValue || "none";
+      node.dataset.active = String(mod !== "none");
+      node.dataset.mod = mod;
+      node.textContent = mod === "none" ? "" : CARD_COPY[mod]?.symbol || "";
+      node.setAttribute("aria-label", mod === "none" ? "" : CARD_COPY[mod]?.name || "");
+    }
+
+    function setDamageBurst(node, damage, hasIncomingShot) {
+      if (damage > 0) {
+        node.textContent = `−${formatHp(damage)}`;
+        node.dataset.kind = "damage";
+      } else if (hasIncomingShot) {
+        node.textContent = "BLOCK";
+        node.dataset.kind = "blocked";
+      } else {
+        node.textContent = "";
+        node.dataset.kind = "none";
+      }
+    }
+
+    function aftermathCopy(result, seat) {
+      const parts = [];
+      if (result.stainDamage?.[seat]) parts.push(`Stain −${formatHp(result.stainDamage[seat])}`);
+      if (result.healing?.[seat]) parts.push(`Heal +${formatHp(result.healing[seat])}`);
+      if (result.cleansed?.[seat]?.length) parts.push(`Cleansed ×${result.cleansed[seat].length}`);
+      if (result.newStains?.[seat]?.length) {
+        const names = [...new Set(result.newStains[seat].map(stain => CARD_COPY[stain.element]?.name).filter(Boolean))];
+        parts.push(`${names.join("/")} stain`);
+      }
+      return parts.join(" · ");
+    }
+
     function clearShowdownTimers() {
       app.showdownTimers.forEach(clearTimeout);
       app.showdownTimers = [];
@@ -4923,38 +5628,30 @@
       const opponentSeat = 1 - meSeat;
       const myPlay = result.plays[meSeat];
       const opponentPlay = result.plays[opponentSeat];
-      const projectileColors = {
-        fire: "var(--fire)",
-        ice: "var(--ice)",
-        water: "var(--water)"
-      };
-      const leftProjectileElement = result.arcaneEaten?.[opponentSeat] || myPlay.resolvedElement;
-      const rightProjectileElement = result.arcaneEaten?.[meSeat] || opponentPlay.resolvedElement;
+      const players = app.state.players;
       const hasRainbow = result.plays.some(play => play.modValue === "rainbow");
       const hasArcane = result.arcaneEaten?.some(Boolean);
       const timeline = GAME_CONFIG.showdownTimeline;
-      ui.showdownPanel.classList.remove("reveal", "impact", "arcane", "rainbow");
+      const shotCount = result.plays.filter(play => play.actionValue === "shoot").length;
+      resetShowdownVisuals();
       ui.showdownPanel.classList.toggle("rainbow", hasRainbow);
-      ui.showdownPanel.style.setProperty(
-        "--left-projectile",
-        myPlay.actionValue === "shoot" ? projectileColors[leftProjectileElement] || "var(--ink)" : "var(--faint)"
-      );
-      ui.showdownPanel.style.setProperty(
-        "--right-projectile",
-        opponentPlay.actionValue === "shoot" ? projectileColors[rightProjectileElement] || "var(--ink)" : "var(--faint)"
-      );
+      configureShotLane(ui.leftShotLane, myPlay, opponentSeat, result);
+      configureShotLane(ui.rightShotLane, opponentPlay, meSeat, result);
+      configureModSigil(ui.leftModSigil, myPlay.modValue);
+      configureModSigil(ui.rightModSigil, opponentPlay.modValue);
+      ui.silverBadge.textContent = result.silverFactor > 1 ? `SILVER ×${result.silverFactor}` : "";
       ui.showdownPhase.textContent = "Commitments verified";
       ui.showdownTurn.textContent = `Turn ${String(result.turn).padStart(2, "0")}`;
-      ui.revealLeftName.textContent = app.state.players[meSeat].name;
-      ui.revealRightName.textContent = app.state.players[opponentSeat].name;
+      ui.revealLeftName.textContent = players[meSeat].name;
+      ui.revealRightName.textContent = players[opponentSeat].name;
       ui.revealLeft.innerHTML = [myPlay.action, myPlay.element, myPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       ui.revealRight.innerHTML = [opponentPlay.action, opponentPlay.element, opponentPlay.mod].filter(Boolean).map(revealCardHtml).join("");
-      const myDamage = result.totalDamage[meSeat];
-      const opponentDamage = result.totalDamage[opponentSeat];
-      ui.leftDamageBurst.textContent = myDamage ? `−${myDamage}` : result.healing[meSeat] ? `+${result.healing[meSeat]}` : "0";
-      ui.rightDamageBurst.textContent = opponentDamage ? `−${opponentDamage}` : result.healing[opponentSeat] ? `+${result.healing[opponentSeat]}` : "0";
+      setDamageBurst(ui.leftDamageBurst, result.directDamage[meSeat], opponentPlay.actionValue === "shoot");
+      setDamageBurst(ui.rightDamageBurst, result.directDamage[opponentSeat], myPlay.actionValue === "shoot");
+      ui.leftAftermathBurst.textContent = aftermathCopy(result, meSeat);
+      ui.rightAftermathBurst.textContent = aftermathCopy(result, opponentSeat);
       ui.resolutionTitle.textContent = "Cards on the table";
-      ui.resolutionSubtitle.textContent = "Resolving modifiers, elements, and stance.";
+      ui.resolutionSubtitle.textContent = "The result remains hidden until weapons and effects resolve.";
       const orderedReceipts = [...result.receipts].sort((a, b) => (
         (a.seat === meSeat ? 0 : 1) - (b.seat === meSeat ? 0 : 1)
       ));
@@ -4973,7 +5670,7 @@
           : "");
       ui.showdownOverlay.classList.add("visible");
       ui.showdownPanel.tabIndex = -1;
-      setTimeout(() => ui.showdownPanel.focus({ preventScroll: true }), 40);
+      app.showdownTimers.push(setTimeout(() => ui.showdownPanel.focus({ preventScroll: true }), 40));
 
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("reveal");
@@ -4981,52 +5678,118 @@
         ui.resolutionSubtitle.textContent = "Hover or focus either player's cards to review their effects.";
         playSound("reveal");
       }, timeline.reveal));
-      if (hasRainbow) {
-        app.showdownTimers.push(setTimeout(() => {
-          const shifts = result.plays.map((play, index) => {
-            if (play.modValue !== "rainbow") return null;
-            const name = app.state.players[index].name;
-            if (play.element && play.resolvedElement) {
-              return `${name}: ${CARD_COPY[play.element.value].name} → ${CARD_COPY[play.resolvedElement].name}`;
-            }
-            return `${name}'s Rainbow chooses its outcome`;
-          }).filter(Boolean);
-          ui.showdownPhase.textContent = "Rainbow randomizes";
-          ui.resolutionSubtitle.textContent = shifts.join(" · ");
-        }, timeline.rainbow));
-      }
-      if (!hasRainbow) {
-        app.showdownTimers.push(setTimeout(() => {
-          ui.showdownPhase.textContent = "Reading matchups";
-          ui.resolutionSubtitle.textContent = "Comparing actions, elements, and modifiers before impact.";
-        }, timeline.inspect));
-      }
-      if (hasArcane) {
-        app.showdownTimers.push(setTimeout(() => {
-          ui.showdownPanel.classList.add("arcane");
-          const eaterSeat = result.arcaneEaten.findIndex(Boolean);
-          const eaten = result.arcaneEaten[eaterSeat];
-          ui.showdownPhase.textContent = "Arcane Eater intercepts";
-          ui.resolutionSubtitle.textContent = `${app.state.players[eaterSeat].name} strips ${CARD_COPY[eaten].name} from the incoming shot.`;
-          playSound("heal");
-        }, timeline.arcane));
-      }
+
       app.showdownTimers.push(setTimeout(() => {
-        ui.showdownPanel.classList.add("impact");
-        ui.showdownPhase.textContent = result.silverFactor > 1 ? `Silver amplification ×${result.silverFactor}` : "Impact resolved";
+        ui.showdownPanel.classList.add("modifier");
+        const modifierNotes = result.plays.map((play, index) => {
+          if (!play.modValue) return null;
+          if (play.modValue === "rainbow" && play.element && play.resolvedElement) {
+            return `${players[index].name}: ${CARD_COPY[play.element.value].name} → ${CARD_COPY[play.resolvedElement].name}`;
+          }
+          return `${players[index].name}: ${CARD_COPY[play.modValue].name}`;
+        }).filter(Boolean);
+        if (result.silverFactor > 1) modifierNotes.push(`All damage ×${result.silverFactor}`);
+        ui.showdownPhase.textContent = modifierNotes.length ? "Modifiers charge" : "Stances locked";
+        ui.resolutionSubtitle.textContent = modifierNotes.length
+          ? modifierNotes.join(" · ")
+          : "No modifier cards are active this showdown.";
+      }, timeline.modifier));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("aim");
+        const shooterNames = result.plays
+          .map((play, index) => play.actionValue === "shoot" ? players[index].name : null)
+          .filter(Boolean);
+        ui.showdownPhase.textContent = shooterNames.length ? "Targets acquired" : "Actions committed";
+        ui.resolutionSubtitle.textContent = shooterNames.length === 2
+          ? "Both players take aim."
+          : shooterNames.length === 1
+            ? `${shooterNames[0]} lines up a shot.`
+            : "No Shoot card was played; shields, reloads, and modifiers still resolve.";
+      }, timeline.aim));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("firing");
+        const shotNotes = result.plays.map((play, index) => {
+          if (play.actionValue !== "shoot") return null;
+          const targetSeat = 1 - index;
+          const shellElement = result.arcaneEaten?.[targetSeat] || play.resolvedElement;
+          const payload = shellElement ? CARD_COPY[shellElement].name : "raw";
+          return `${players[index].name} fires ${payload}${play.modValue ? ` with ${CARD_COPY[play.modValue].name}` : ""}`;
+        }).filter(Boolean);
+        ui.showdownPhase.textContent = shotNotes.length ? "Weapons fire" : "Actions resolve";
+        ui.resolutionTitle.textContent = shotNotes.length ? "Rounds away" : "No gunfire";
+        ui.resolutionSubtitle.textContent = shotNotes.length ? shotNotes.join(" · ") : "The committed actions resolve without a shot.";
+        if (shotNotes.length) {
+          playSound("shot");
+          announce("Weapons fire.");
+        }
+      }, timeline.fire));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("intercept");
+        if (hasArcane) {
+          ui.showdownPanel.classList.add("arcane");
+          const interceptNotes = result.arcaneEaten.map((element, defenderSeat) => (
+            element
+              ? `${players[defenderSeat].name}'s Arcane Eater consumes ${CARD_COPY[element].name}`
+              : null
+          )).filter(Boolean);
+          ui.showdownPhase.textContent = "Arcane interception";
+          ui.resolutionSubtitle.textContent = interceptNotes.join(" · ");
+          playSound("heal");
+        } else {
+          ui.showdownPhase.textContent = shotCount ? "Rounds in flight" : "Actions resolving";
+          ui.resolutionSubtitle.textContent = shotCount
+            ? "Elemental and modifier trails carry toward their targets."
+            : "Resolving shields, reloads, and delayed effects.";
+        }
+      }, timeline.intercept));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("hit");
+        const directNotes = [];
+        if (opponentPlay.actionValue === "shoot") {
+          directNotes.push(`${players[meSeat].name}: ${formatHp(result.directDamage[meSeat])} direct damage`);
+        }
+        if (myPlay.actionValue === "shoot") {
+          directNotes.push(`${players[opponentSeat].name}: ${formatHp(result.directDamage[opponentSeat])} direct damage`);
+        }
+        ui.showdownPhase.textContent = shotCount ? "Impact confirmed" : "Actions resolved";
+        ui.resolutionTitle.textContent = shotCount ? "Rounds connect" : "Actions settle";
+        ui.resolutionSubtitle.textContent = directNotes.length ? directNotes.join(" · ") : "No direct shot damage.";
+        if (shotCount) playSound("hit");
+        announce(directNotes.length ? directNotes.join(". ") : "No direct shot damage.");
+      }, timeline.hit));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("aftermath");
+        const afterNotes = [ui.leftAftermathBurst.textContent, ui.rightAftermathBurst.textContent].filter(Boolean);
+        ui.showdownPhase.textContent = "Aftereffects resolve";
+        ui.resolutionTitle.textContent = afterNotes.length ? "Stains and recovery" : "No delayed effects";
+        ui.resolutionSubtitle.textContent = afterNotes.length
+          ? afterNotes.join(" · ")
+          : "No stain damage, cleansing, healing, or new stains this turn.";
+        if (result.healing.some(Boolean)) playSound("heal");
+      }, timeline.aftermath));
+
+      app.showdownTimers.push(setTimeout(() => {
+        ui.showdownPanel.classList.add("recap");
+        ui.showdownPhase.textContent = result.silverFactor > 1
+          ? `Showdown resolved · Silver ×${result.silverFactor}`
+          : "Showdown resolved";
         ui.resolutionTitle.textContent = result.headline;
         ui.resolutionSubtitle.textContent = result.summary;
-        if (myDamage || opponentDamage) playSound("hit");
-        else if (result.healing.some(Boolean)) playSound("heal");
         announce(`${result.headline}. ${result.summary}`);
-      }, timeline.impact));
+      }, timeline.recap));
+
       app.showdownTimers.push(setTimeout(() => finishShowdown(result), GAME_CONFIG.showdownMs));
     }
 
     function finishShowdown(result) {
       hideHoverTooltip();
       ui.showdownOverlay.classList.remove("visible");
-      ui.showdownPanel.classList.remove("reveal", "impact", "arcane", "rainbow");
+      resetShowdownVisuals();
       clearShowdownTimers();
       if (result.winner !== null) {
         showEndScreen(result.winner, result.turn);
