@@ -998,9 +998,14 @@
 
     .lobby-actions {
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 9px;
       margin-top: 22px;
+    }
+
+    .lobby-actions [hidden] {
+      display: none;
     }
 
     /* Game shell */
@@ -3823,10 +3828,10 @@
           <div class="join-hub">
             <label for="joinRoomCodeInput">Join with room code</label>
             <div class="join-hub-row">
-              <input id="joinRoomCodeInput" class="text-input room-code-input" type="text" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="ABC234" aria-describedby="joinRoomHint">
+              <input id="joinRoomCodeInput" class="text-input room-code-input" type="text" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" enterkeyhint="go" pattern="[A-Za-z0-9]{6}" placeholder="ABC123" aria-describedby="joinRoomHint">
               <button id="joinRoomBtn" class="primary-btn" type="button">Join room</button>
             </div>
-            <small id="joinRoomHint">Paste the host's six-character code. A complete pasted code joins automatically.</small>
+            <small id="joinRoomHint">Use any six letters or numbers. A complete pasted code joins automatically.</small>
           </div>
 
           <p class="panel-footnote">
@@ -3890,6 +3895,7 @@
         <p id="lobbyNote" class="lobby-note">Keep this page open. The duel begins automatically when both players connect.</p>
 
         <div class="lobby-actions">
+          <button id="retryLobbyBtn" class="soft-btn" type="button" hidden>Try again</button>
           <button id="leaveLobbyBtn" class="ghost-btn" type="button">Leave room</button>
           <button class="ghost-btn" type="button" data-open-rules>View rules</button>
           <a class="lobby-site-link" href="./index.html">KOI HOME</a>
@@ -4927,6 +4933,7 @@
       guestSeatAvatar: $("#guestSeatAvatar"),
       guestSeatName: $("#guestSeatName"),
       lobbyNote: $("#lobbyNote"),
+      retryLobbyBtn: $("#retryLobbyBtn"),
       leaveLobbyBtn: $("#leaveLobbyBtn"),
       roundLabel: $("#roundLabel"),
       connectionState: $("#connectionState"),
@@ -6123,10 +6130,18 @@
     }
 
     function createRoomCode() {
-      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      const bytes = new Uint8Array(6);
-      crypto.getRandomValues(bytes);
-      return [...bytes].map(byte => alphabet[byte % alphabet.length]).join("");
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      const bytes = new Uint8Array(12);
+      while (code.length < 6) {
+        crypto.getRandomValues(bytes);
+        for (const byte of bytes) {
+          if (byte >= 252) continue;
+          code += alphabet[byte % alphabet.length];
+          if (code.length === 6) break;
+        }
+      }
+      return code;
     }
 
     function createInviteToken() {
@@ -6135,13 +6150,12 @@
       return [...bytes].map(value => value.toString(16).padStart(2, "0")).join("");
     }
 
-    const ROOM_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+    const ROOM_CODE_PATTERN = /^[A-Z0-9]{6}$/;
 
     function normalizeRoomCode(value) {
       return String(value || "")
         .toUpperCase()
-        .replace(/[^A-Z2-9]/g, "")
-        .replace(/[ILO01]/g, "")
+        .replace(/[^A-Z0-9]/g, "")
         .slice(0, 6);
     }
 
@@ -6512,6 +6526,8 @@
       if (!network) return;
       if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
       network.negotiationTimer = null;
+      if (network.authTimer) clearTimeout(network.authTimer);
+      network.authTimer = null;
       try {
         if (network.dc) {
           network.dc.onopen = null;
@@ -6548,11 +6564,19 @@
       if (!network || network.manualClose) return;
       if (network.transport === "manual" || network.transport === "peerjs") {
         network.authenticated = false;
+        network.dc = null;
+        network.pc = null;
+        network.signalVerified = false;
+        if (network.matchStartAckTimer) clearTimeout(network.matchStartAckTimer);
+        network.matchStartAckTimer = null;
         setConnectionStatus("Connection ended", "offline");
         setLobbyStatus("Connection ended", "error");
         ui.lobbyNote.textContent = network.transport === "peerjs"
           ? "The peer connection closed. Return home and join the room again."
           : "Manual pairing cannot reconnect silently. Leave the room and exchange fresh codes.";
+        if (network.transport === "peerjs") {
+          setLobbyRecovery(true, app.role === "host" ? "Create new room" : "Try room again");
+        }
         toast("The peer connection closed.", "error");
         return;
       }
@@ -6584,12 +6608,27 @@
 
     async function beginPeerChannelAuthentication(network, isCurrent) {
       network.reconnectAttempts = 0;
-      if (network.peerRetryTimer) clearTimeout(network.peerRetryTimer);
-      network.peerRetryTimer = null;
+      if (network.roomRetryTimer) clearTimeout(network.roomRetryTimer);
+      network.roomRetryTimer = null;
       if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
       network.negotiationTimer = null;
+      if (network.authTimer) clearTimeout(network.authTimer);
+      network.authTimer = setTimeout(() => {
+        network.authTimer = null;
+        if (!isCurrent() || network.authenticated) return;
+        setConnectionStatus("Room verification retry", "reconnecting");
+        setLobbyStatus("Verification timed out", "error");
+        ui.lobbyNote.textContent = "The peer link opened, but room verification did not finish. Retrying…";
+        try {
+          network.dc?.close();
+        } catch {
+          if (app.role === "guest") scheduleGuestPeerRetry(network);
+          else networkError("Room verification timed out. Create a fresh room and try again.");
+        }
+      }, 9000);
       setConnectionStatus("Peer link ready");
       setLobbyStatus("Peer link ready", "connected");
+      setLobbyRecovery(false);
       ui.lobbyNote.textContent = network.transport === "peerjs"
         ? "Encrypted peer link established. Verifying the room…"
         : "Encrypted peer link established. Verifying the one-time pairing code…";
@@ -6684,6 +6723,8 @@
           network.dc !== channel ||
           network.manualClose
         ) return;
+        if (network.authTimer) clearTimeout(network.authTimer);
+        network.authTimer = null;
         if (network.transport === "manual") {
           restartPeerHandshake();
           return;
@@ -6692,6 +6733,7 @@
           network.dc = null;
           network.pc = null;
           network.signalVerified = false;
+          const brokerDisconnected = Boolean(network.peer?.disconnected);
           if (app.role === "guest") {
             scheduleGuestPeerRetry(network);
           } else {
@@ -6705,6 +6747,7 @@
             ui.lobbyTitle.textContent = "Waiting for a rival";
             ui.lobbyNote.textContent = "Room is still open. Send the six-character code to one friend.";
           }
+          if (brokerDisconnected) schedulePeerBrokerReconnect(network, network.peer);
           return;
         }
         setConnectionStatus("Reconnecting", "reconnecting");
@@ -7195,10 +7238,33 @@
       }
     }
 
+    function setLobbyRecovery(visible, label = "Try again") {
+      ui.retryLobbyBtn.hidden = !visible;
+      ui.retryLobbyBtn.textContent = label;
+    }
+
     function networkError(message) {
+      const network = app.network;
+      if (app.matchStartTimerId) clearTimeout(app.matchStartTimerId);
+      app.matchStartTimerId = null;
+      if (network?.peerOpenTimer) clearTimeout(network.peerOpenTimer);
+      if (network?.authTimer) clearTimeout(network.authTimer);
+      if (network?.matchStartAckTimer) clearTimeout(network.matchStartAckTimer);
+      if (network) {
+        network.peerOpenTimer = null;
+        network.authTimer = null;
+        network.matchStartAckTimer = null;
+      }
       setLobbyStatus("Connection issue", "error");
       setConnectionStatus("Connection issue", "offline");
       ui.lobbyNote.textContent = message;
+      if (app.role === "host" || app.role === "guest") {
+        setLobbyRecovery(true, app.role === "host" ? "Create new room" : "Try room again");
+      }
+      if (app.role === "host" && !network?.authenticated) {
+        ui.copyRoomCodeBtn.disabled = true;
+        ui.copyRoomLinkBtn.disabled = true;
+      }
       toast(message, "error");
     }
 
@@ -7368,8 +7434,16 @@
       network.transport = "peerjs";
       network.peer = null;
       network.pendingPeerConnections = new Set();
-      network.peerRetryTimer = null;
+      network.roomRetryTimer = null;
+      network.brokerReconnectTimer = null;
+      network.peerOpenTimer = null;
+      network.authTimer = null;
+      network.matchStartAckTimer = null;
+      network.matchStartConfirmed = false;
+      network.matchStartAttempts = 0;
       network.peerConnectAttempts = 0;
+      network.dialGeneration = 0;
+      network.peerReady = false;
       network.generation += 1;
       network.exchangeId = null;
       return network;
@@ -7377,10 +7451,6 @@
 
     function peerJsOptions() {
       return {
-        host: "0.peerjs.com",
-        port: 443,
-        path: "/",
-        secure: true,
         debug: 0,
         config: {
           iceServers: configuredIceServers(),
@@ -7435,7 +7505,8 @@
         app.network !== network ||
         network.manualClose ||
         app.role !== "guest" ||
-        network.peerRetryTimer
+        network.roomRetryTimer ||
+        isDataLinkOpen(network.dc)
       ) return;
       if (network.peerConnectAttempts >= 3) {
         networkError("No open room was found for that code. Check the code or ask the host to create a new room.");
@@ -7444,20 +7515,25 @@
       setLobbyStatus("Retrying room", "connecting");
       ui.lobbyNote.textContent = "The host may still be opening the room. Trying again…";
       const delay = 650 * network.peerConnectAttempts;
-      network.peerRetryTimer = setTimeout(() => {
+      network.roomRetryTimer = setTimeout(() => {
+        network.roomRetryTimer = null;
         if (app.network !== network || network.manualClose) return;
-        network.peerRetryTimer = null;
         dialPeerJsRoom(network);
       }, delay);
     }
 
     function wirePeerJsConnection(network, connection) {
       if (
+        !connection ||
         app.network !== network ||
         network.manualClose ||
         network.transport !== "peerjs"
       ) {
-        connection.close();
+        try {
+          connection?.close();
+        } catch {
+          // No usable connection was created.
+        }
         return;
       }
       if (network.dc && network.dc !== connection) {
@@ -7554,7 +7630,11 @@
       if (!network) return;
       network.manualClose = true;
       if (network.reconnectTimer) clearTimeout(network.reconnectTimer);
-      if (network.peerRetryTimer) clearTimeout(network.peerRetryTimer);
+      if (network.roomRetryTimer) clearTimeout(network.roomRetryTimer);
+      if (network.brokerReconnectTimer) clearTimeout(network.brokerReconnectTimer);
+      if (network.peerOpenTimer) clearTimeout(network.peerOpenTimer);
+      if (network.authTimer) clearTimeout(network.authTimer);
+      if (network.matchStartAckTimer) clearTimeout(network.matchStartAckTimer);
       try {
         network.ws?.close(1000, "leaving");
       } catch {
@@ -7693,6 +7773,9 @@
         network.remoteResumeSecret = message.resumeSecret;
         network.resumeEstablished = true;
         network.authenticated = true;
+        setLobbyRecovery(false);
+        if (network.authTimer) clearTimeout(network.authTimer);
+        network.authTimer = null;
         if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
         network.negotiationTimer = null;
         const remoteName = cleanName(message.name);
@@ -7823,6 +7906,9 @@
         network.remoteResumeSecret = message.resumeSecret;
         network.resumeEstablished = true;
         network.authenticated = true;
+        setLobbyRecovery(false);
+        if (network.authTimer) clearTimeout(network.authTimer);
+        network.authTimer = null;
         if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
         network.negotiationTimer = null;
         network.hostName = cleanName(message.name);
@@ -7868,6 +7954,60 @@
       app.state.turnStart = localDeadline - total;
     }
 
+    function enterHostedMatch(network) {
+      if (
+        app.network !== network ||
+        app.role !== "host" ||
+        !network.authenticated ||
+        network.matchStartConfirmed
+      ) return;
+      network.matchStartConfirmed = true;
+      if (network.matchStartAckTimer) clearTimeout(network.matchStartAckTimer);
+      network.matchStartAckTimer = null;
+      setLobbyRecovery(false);
+      showScreen(ui.gameScreen);
+      setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
+      beginPlanning({ preserveDeadline: true });
+    }
+
+    function sendHostedMatchStart(network, attempt = 0) {
+      if (
+        app.network !== network ||
+        app.role !== "host" ||
+        !network.authenticated ||
+        !app.state ||
+        network.matchStartConfirmed
+      ) return;
+      network.matchStartAttempts = attempt + 1;
+      app.state.turnStart = Date.now();
+      const sent = sendGameMessage({
+        type: "match-start",
+        state: stateForSeat(app.state, 1),
+        remainingMs: GAME_CONFIG.turnSeconds * 1000,
+        deadlineAt: app.state.turnStart + GAME_CONFIG.turnSeconds * 1000
+      });
+      if (!sent) {
+        networkError("The opening hand could not be delivered. Try the room again.");
+        return;
+      }
+      setLobbyStatus("Starting duel", "connected");
+      ui.lobbyNote.textContent = "Opening hand sent. Waiting for the rival to confirm…";
+      if (network.matchStartAckTimer) clearTimeout(network.matchStartAckTimer);
+      network.matchStartAckTimer = setTimeout(() => {
+        network.matchStartAckTimer = null;
+        if (
+          app.network !== network ||
+          !network.authenticated ||
+          network.matchStartConfirmed
+        ) return;
+        if (attempt < 2) {
+          sendHostedMatchStart(network, attempt + 1);
+        } else {
+          networkError("The rival did not confirm the opening hand. Try the room again.");
+        }
+      }, 2500);
+    }
+
     function startHostedMatch() {
       if (app.role !== "host" || !app.network?.authenticated) return;
       if (app.state?.phase === "planning" || app.state?.phase === "showdown") return;
@@ -7877,6 +8017,8 @@
       app.state = createMatchState([hostName, guestName]);
       app.seat = 0;
       app.seenCards.clear();
+      network.matchStartConfirmed = false;
+      network.matchStartAttempts = 0;
       setLobbyStatus("Connected", "connected");
       ui.lobbyTitle.textContent = "Duel ready";
       ui.lobbyNote.textContent = network.hasTurn
@@ -7890,16 +8032,7 @@
           app.role !== "host" ||
           !network.authenticated
         ) return;
-        app.state.turnStart = Date.now();
-        sendGameMessage({
-          type: "match-start",
-          state: stateForSeat(app.state, 1),
-          remainingMs: GAME_CONFIG.turnSeconds * 1000,
-          deadlineAt: app.state.turnStart + GAME_CONFIG.turnSeconds * 1000
-        });
-        showScreen(ui.gameScreen);
-        setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
-        beginPlanning({ preserveDeadline: true });
+        sendHostedMatchStart(network);
       }, 900);
     }
 
@@ -7927,11 +8060,22 @@
         return;
       }
 
+      if (message.type === "match-start-ack" && app.role === "host") {
+        if (!app.state || message.matchId !== app.state.id) return;
+        enterHostedMatch(app.network);
+        return;
+      }
+
       if (message.type === "match-start" && app.role === "guest") {
+        if (!message.state?.id) return;
+        const alreadyStarted = app.state?.id === message.state.id &&
+          ui.gameScreen.classList.contains("active");
         app.state = message.state;
         applyHostTiming(message);
         app.seat = 1;
         app.mode = "guest";
+        sendGameMessage({ type: "match-start-ack", matchId: app.state.id });
+        if (alreadyStarted) return;
         app.seenCards.clear();
         ui.endOverlay.classList.remove("visible");
         showScreen(ui.gameScreen);
@@ -8168,18 +8312,49 @@
       return messages[error?.type] || "The online room could not be opened.";
     }
 
+    function clearPeerOpenWatchdog(network) {
+      if (network?.peerOpenTimer) clearTimeout(network.peerOpenTimer);
+      if (network) network.peerOpenTimer = null;
+    }
+
+    function armPeerOpenWatchdog(network, peer) {
+      clearPeerOpenWatchdog(network);
+      network.peerOpenTimer = setTimeout(() => {
+        network.peerOpenTimer = null;
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          network.peerReady
+        ) return;
+        network.peer = null;
+        try {
+          peer.destroy();
+        } catch {
+          // Already closed.
+        }
+        networkError(
+          app.role === "host"
+            ? "The room service did not respond. Create a new room and try again."
+            : "The room service did not respond. Check your connection and try the room again."
+        );
+      }, 15000);
+    }
+
     function schedulePeerBrokerReconnect(network, peer) {
       if (
         app.network !== network ||
         network.manualClose ||
-        network.peerRetryTimer ||
+        !peer ||
+        network.brokerReconnectTimer ||
         peer.destroyed ||
         !peer.disconnected
       ) return;
       if (isDataLinkOpen(network.dc)) return;
       setLobbyStatus("Room service retry", "connecting");
       ui.lobbyNote.textContent = "The room service disconnected. Trying to restore the room address…";
-      network.peerRetryTimer = setTimeout(() => {
+      network.brokerReconnectTimer = setTimeout(() => {
+        network.brokerReconnectTimer = null;
         if (
           app.network !== network ||
           network.manualClose ||
@@ -8187,7 +8362,6 @@
           peer.destroyed ||
           !peer.disconnected
         ) return;
-        network.peerRetryTimer = null;
         try {
           peer.reconnect();
         } catch {
@@ -8211,6 +8385,7 @@
       network.authorizedPeerId = null;
       network.signalVerified = false;
       network.peerReady = false;
+      setLobbyRecovery(false);
       ui.roomSharePanel.hidden = true;
       ui.copyRoomCodeBtn.disabled = true;
       ui.copyRoomLinkBtn.disabled = true;
@@ -8226,6 +8401,7 @@
         return;
       }
       network.peer = peer;
+      armPeerOpenWatchdog(network, peer);
 
       peer.on("open", id => {
         if (
@@ -8234,8 +8410,14 @@
           network.peer !== peer ||
           network.generation !== generation
         ) return;
+        const reopened = network.peerReady;
+        clearPeerOpenWatchdog(network);
+        if (network.brokerReconnectTimer) clearTimeout(network.brokerReconnectTimer);
+        network.brokerReconnectTimer = null;
         network.peerReady = true;
         network.localPeerId = id;
+        setLobbyRecovery(false);
+        if (reopened && (network.dc || network.authenticated)) return;
         populateLobby({ hostName: currentName() });
         ui.roomSharePanel.hidden = false;
         ui.copyRoomCodeBtn.disabled = false;
@@ -8265,6 +8447,7 @@
       });
 
       peer.on("close", () => {
+        clearPeerOpenWatchdog(network);
         if (
           app.network !== network ||
           network.manualClose ||
@@ -8282,6 +8465,7 @@
           !network.dc &&
           collisionAttempt < 5
         ) {
+          clearPeerOpenWatchdog(network);
           network.peer = null;
           try {
             peer.destroy();
@@ -8290,14 +8474,15 @@
           }
           setLobbyStatus("Code collision", "connecting");
           ui.lobbyNote.textContent = "That code was already in use. Generating another…";
-          network.peerRetryTimer = setTimeout(() => {
+          network.roomRetryTimer = setTimeout(() => {
+            network.roomRetryTimer = null;
             if (app.network !== network || network.manualClose) return;
-            network.peerRetryTimer = null;
             registerPeerJsHost(network, collisionAttempt + 1);
           }, 250 + Math.random() * 350);
           return;
         }
         if (isDataLinkOpen(network.dc)) return;
+        clearPeerOpenWatchdog(network);
         networkError(peerJsErrorMessage(error));
       });
     }
@@ -8309,6 +8494,11 @@
         app.role !== "guest" ||
         !network.peer?.id
       ) return;
+      if (!network.peerReady || network.peer.disconnected) {
+        schedulePeerBrokerReconnect(network, network.peer);
+        return;
+      }
+      const dialGeneration = ++network.dialGeneration;
       network.peerConnectAttempts += 1;
       const hostPeerId = peerIdForRoom(app.room);
       network.remotePeerId = hostPeerId;
@@ -8323,12 +8513,15 @@
         network.sessionId,
         network.authNonce
       );
-      if (app.network !== network || network.manualClose) return;
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        network.dialGeneration !== dialGeneration
+      ) return;
       let connection;
       try {
         connection = network.peer.connect(hostPeerId, {
           label: "triad32-state",
-          serialization: "none",
           reliable: true,
           metadata: {
             scope: "triad32-peerjs",
@@ -8342,9 +8535,16 @@
           }
         });
       } catch (error) {
+        if (network.dialGeneration !== dialGeneration) return;
         scheduleGuestPeerRetry(network);
         return;
       }
+      if (!connection) {
+        if (network.peer?.disconnected) schedulePeerBrokerReconnect(network, network.peer);
+        else scheduleGuestPeerRetry(network);
+        return;
+      }
+      connection.triadDialGeneration = dialGeneration;
       wirePeerJsConnection(network, connection);
       setLobbyStatus("Finding host", "connecting");
       ui.lobbyNote.textContent = "Room found in the join hub. Opening an encrypted peer route…";
@@ -8353,6 +8553,7 @@
         if (
           app.network !== network ||
           network.manualClose ||
+          network.dialGeneration !== dialGeneration ||
           network.dc !== connection ||
           isDataLinkOpen(connection)
         ) return;
@@ -8375,6 +8576,7 @@
       app.room = null;
       app.roomLink = "";
       app.inviteToken = null;
+      setLobbyRecovery(false);
       const cleanUrl = new URL(location.href);
       cleanUrl.searchParams.delete("room");
       cleanUrl.hash = "";
@@ -8413,6 +8615,7 @@
       app.room = room;
       app.roomLink = buildRoomLink(room);
       app.inviteToken = null;
+      setLobbyRecovery(false);
       ui.joinRoomCodeInput.removeAttribute("aria-invalid");
       history.replaceState(null, "", app.roomLink);
       const network = connectPeerNetwork();
@@ -8431,9 +8634,18 @@
         return;
       }
       network.peer = peer;
+      network.peerReady = false;
+      armPeerOpenWatchdog(network, peer);
       peer.on("open", id => {
         if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        const reopened = network.peerReady;
+        clearPeerOpenWatchdog(network);
+        if (network.brokerReconnectTimer) clearTimeout(network.brokerReconnectTimer);
+        network.brokerReconnectTimer = null;
+        network.peerReady = true;
         network.localPeerId = id;
+        setLobbyRecovery(false);
+        if (reopened && (network.dc || network.authenticated)) return;
         dialPeerJsRoom(network);
       });
       peer.on("connection", connection => connection.close());
@@ -8442,6 +8654,7 @@
         schedulePeerBrokerReconnect(network, peer);
       });
       peer.on("close", () => {
+        clearPeerOpenWatchdog(network);
         if (
           app.network !== network ||
           network.manualClose ||
@@ -8453,6 +8666,7 @@
       peer.on("error", error => {
         if (app.network !== network || network.manualClose || network.peer !== peer) return;
         if (error?.type === "peer-unavailable" && !network.authenticated) {
+          if (isDataLinkOpen(network.dc)) return;
           if (network.dc) {
             const staleConnection = network.dc;
             network.dc = null;
@@ -8467,6 +8681,7 @@
           return;
         }
         if (isDataLinkOpen(network.dc)) return;
+        clearPeerOpenWatchdog(network);
         networkError(peerJsErrorMessage(error));
       });
     }
@@ -8636,6 +8851,7 @@
       ui.endOverlay.classList.remove("visible");
       ui.appRoot.inert = false;
       ui.roomSharePanel.hidden = true;
+      setLobbyRecovery(false);
       ui.copyRoomCodeBtn.disabled = false;
       ui.copyRoomLinkBtn.disabled = false;
       ui.joinRoomCodeInput.value = "";
@@ -8678,6 +8894,19 @@
       return copyRoomValue(app.roomLink, ui.copyRoomLinkBtn, "Invite link copied.");
     }
 
+    function retryOnlineLobby() {
+      const role = app.role;
+      const room = app.room;
+      setLobbyRecovery(false);
+      if (role === "guest" && validRoomCode(room)) {
+        startOnlineGuest(room);
+      } else if (role === "host") {
+        startOnlineHost();
+      } else {
+        goHome({ force: true });
+      }
+    }
+
     // UI event wiring
     ui.practiceBtn.addEventListener("click", startPractice);
     ui.hostBtn.addEventListener("click", startOnlineHost);
@@ -8704,6 +8933,7 @@
     });
     ui.copyRoomCodeBtn.addEventListener("click", copyRoomCode);
     ui.copyRoomLinkBtn.addEventListener("click", copyRoomLink);
+    ui.retryLobbyBtn.addEventListener("click", retryOnlineLobby);
     ui.leaveLobbyBtn.addEventListener("click", () => goHome({ force: true }));
     ui.lockTurnBtn.addEventListener("click", submitLocalTurn);
     ui.rematchBtn.addEventListener("click", requestRematch);
