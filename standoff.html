@@ -610,6 +610,43 @@
       box-shadow: 0 0 0 4px rgba(121, 224, 194, .07);
     }
 
+    .join-hub {
+      display: grid;
+      gap: 9px;
+      margin-top: 10px;
+      padding: 16px;
+      border: 1px solid rgba(121, 224, 194, .2);
+      border-radius: 17px;
+      background: rgba(121, 224, 194, .045);
+    }
+
+    .join-hub label {
+      color: var(--mint);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .join-hub-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .room-code-input {
+      text-align: center;
+      font: 800 18px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .join-hub small {
+      color: var(--faint);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+
     .landing-footer {
       display: flex;
       min-height: 74px;
@@ -853,6 +890,34 @@
       color: var(--faint);
       font-size: 9px;
       line-height: 1.5;
+    }
+
+    .room-share-panel {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 26px;
+      padding: 16px;
+      border: 1px solid rgba(121, 224, 194, .2);
+      border-radius: 17px;
+      background: rgba(121, 224, 194, .045);
+      text-align: center;
+    }
+
+    .room-share-panel[hidden] {
+      display: none;
+    }
+
+    .room-share-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .room-share-actions {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
     }
 
     .seats {
@@ -3541,6 +3606,14 @@
         grid-column: auto;
       }
 
+      .join-hub-row {
+        grid-template-columns: 1fr;
+      }
+
+      .join-hub-row .primary-btn {
+        width: 100%;
+      }
+
       .mode-card {
         display: grid;
         grid-template-columns: 38px 1fr;
@@ -3590,6 +3663,10 @@
       .pairing-button-row .primary-btn,
       .pairing-button-row .soft-btn {
         width: 100%;
+      }
+
+      .room-share-actions {
+        display: grid;
       }
 
       .seats {
@@ -3731,7 +3808,7 @@
           <input id="playerNameInput" class="text-input" type="text" maxlength="18" autocomplete="nickname" placeholder="Enter a name" value="Player">
 
           <div class="mode-grid">
-            <button id="practiceBtn" class="mode-card mode-card-practice" type="button">
+            <button id="practiceBtn" class="mode-card" type="button">
               <span class="mode-icon" aria-hidden="true">◎</span>
               <strong>Practice duel</strong>
               <small>Learn the system against a tactical bot. No setup needed.</small>
@@ -3739,24 +3816,28 @@
             <button id="hostBtn" class="mode-card" type="button">
               <span class="mode-icon" aria-hidden="true">↗</span>
               <strong>Host online</strong>
-              <small>Create an offer code and send it privately to one rival.</small>
+              <small>Create a six-character room code for one rival.</small>
             </button>
-            <button id="joinBtn" class="mode-card" type="button">
-              <span class="mode-icon" aria-hidden="true">↘</span>
-              <strong>Join online</strong>
-              <small>Paste the host's offer, then send your answer code back.</small>
-            </button>
+          </div>
+
+          <div class="join-hub">
+            <label for="joinRoomCodeInput">Join with room code</label>
+            <div class="join-hub-row">
+              <input id="joinRoomCodeInput" class="text-input room-code-input" type="text" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="ABC234" aria-describedby="joinRoomHint">
+              <button id="joinRoomBtn" class="primary-btn" type="button">Join room</button>
+            </div>
+            <small id="joinRoomHint">Paste the host's six-character code. A complete pasted code joins automatically.</small>
           </div>
 
           <p class="panel-footnote">
             <span class="dot" aria-hidden="true"></span>
-            <span>Online moves use an encrypted peer connection. Your configured TURN service relays the match when a direct route is blocked. No signaling key or player account is needed.</span>
+            <span>PeerJS introduces the two browsers. Your configured TURN service relays the encrypted match only when a direct route is blocked.</span>
           </p>
         </div>
       </div>
 
       <footer class="shell landing-footer">
-        <span>One file · No player sign-in · Manual private pairing</span>
+        <span>One file · No player sign-in · Six-character friend rooms</span>
         <div class="legend" aria-label="Element cycle">
           <span><i class="fire-dot"></i>Fire</span>
           <span><i class="ice-dot"></i>Ice</span>
@@ -3780,30 +3861,12 @@
           <strong id="roomCodeText">———</strong>
         </div>
 
-        <div id="pairingPanel" class="pairing-panel">
-          <div class="pairing-head">
-            <span id="pairingKicker" class="pairing-kicker">Step 1 of 2</span>
-            <strong id="pairingTitle">Preparing a private offer</strong>
-            <p id="pairingHelp">Keep this page open while the browser gathers connection routes.</p>
+        <div id="roomSharePanel" class="room-share-panel">
+          <p>Send this room code to one friend. They can paste it into the join hub on the STANDOFF page.</p>
+          <div class="room-share-actions">
+            <button id="copyRoomCodeBtn" class="primary-btn" type="button">Copy room code</button>
+            <button id="copyRoomLinkBtn" class="soft-btn" type="button">Copy invite link</button>
           </div>
-
-          <div id="pairingOutputGroup" class="pairing-field">
-            <label id="pairingOutputLabel" for="pairingOutput">Host offer code</label>
-            <textarea id="pairingOutput" class="pairing-code" rows="4" readonly spellcheck="false" autocapitalize="off" aria-describedby="pairingPrivacy" placeholder="Gathering connection routes…"></textarea>
-            <div class="pairing-button-row">
-              <button id="copyPairingBtn" class="soft-btn" type="button" disabled>Copy offer</button>
-            </div>
-          </div>
-
-          <div id="pairingInputGroup" class="pairing-field">
-            <label id="pairingInputLabel" for="pairingInput">Rival's answer code</label>
-            <textarea id="pairingInput" class="pairing-code" rows="4" maxlength="131072" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste the answer code here" disabled></textarea>
-            <div class="pairing-button-row">
-              <button id="applyPairingBtn" class="primary-btn" type="button" disabled>Finish connection</button>
-            </div>
-          </div>
-
-          <p id="pairingPrivacy" class="pairing-privacy">Pairing codes are single-use connection details. Send them privately; they never contain your TURN credential.</p>
         </div>
 
         <div class="seats" aria-label="Lobby players">
@@ -4133,15 +4196,16 @@
   </div>
   <div id="liveRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script>
     "use strict";
 
     /* TRIAD // 32 — ONLINE CONNECTION SETTINGS
        Type your Metered TURN username and credential here before publishing.
 
-       No publishable signaling key is needed. Players pair manually by exchanging
-       a one-time offer and answer code; those codes never contain the TURN
-       credential.
+       No publishable signaling key is needed. Players meet by exchanging a short
+       room code through PeerJS Cloud; the room code never contains the
+       TURN credential.
 
        Never place a Metered account secret key (sk_… / secretKey) in this file.
        Every value in a public GitHub Pages HTML file can be read by visitors, so
@@ -4150,6 +4214,7 @@
       meteredTurnUsername: "ac26e8769c809d07ae519ea6",
       meteredTurnCredential: "WAse66kdxp3VMEA7",
       meteredTurnHost: "global.relay.metered.ca",
+      peerIdPrefix: "koi-standoff-",
       channelPrefix: "triad32-",
       turnSeconds: 45,
       showdownMs: 11000,
@@ -4847,22 +4912,14 @@
       playerNameInput: $("#playerNameInput"),
       practiceBtn: $("#practiceBtn"),
       hostBtn: $("#hostBtn"),
-      joinBtn: $("#joinBtn"),
+      joinRoomCodeInput: $("#joinRoomCodeInput"),
+      joinRoomBtn: $("#joinRoomBtn"),
       lobbyTitle: $("#lobbyTitle"),
       lobbyStatus: $("#lobbyStatus"),
       roomCodeText: $("#roomCodeText"),
-      pairingPanel: $("#pairingPanel"),
-      pairingKicker: $("#pairingKicker"),
-      pairingTitle: $("#pairingTitle"),
-      pairingHelp: $("#pairingHelp"),
-      pairingOutputGroup: $("#pairingOutputGroup"),
-      pairingOutputLabel: $("#pairingOutputLabel"),
-      pairingOutput: $("#pairingOutput"),
-      copyPairingBtn: $("#copyPairingBtn"),
-      pairingInputGroup: $("#pairingInputGroup"),
-      pairingInputLabel: $("#pairingInputLabel"),
-      pairingInput: $("#pairingInput"),
-      applyPairingBtn: $("#applyPairingBtn"),
+      roomSharePanel: $("#roomSharePanel"),
+      copyRoomCodeBtn: $("#copyRoomCodeBtn"),
+      copyRoomLinkBtn: $("#copyRoomLinkBtn"),
       hostSeat: $("#hostSeat"),
       hostSeatAvatar: $("#hostSeatAvatar"),
       hostSeatName: $("#hostSeatName"),
@@ -4952,6 +5009,7 @@
       state: null,
       room: null,
       inviteToken: null,
+      roomLink: "",
       selection: { actionId: null, elementId: null, modId: null },
       submitted: false,
       deadline: 0,
@@ -4959,6 +5017,7 @@
       aiTimerId: null,
       graceTimerId: null,
       resolutionTimerId: null,
+      matchStartTimerId: null,
       showdownTimers: [],
       timerAnnouncements: new Set(),
       seenCards: new Set(),
@@ -5015,7 +5074,7 @@
       return value;
     }
 
-    function configuredManualIceServers() {
+    function configuredIceServers() {
       const username = String(GAME_CONFIG.meteredTurnUsername || "").trim();
       const credential = String(GAME_CONFIG.meteredTurnCredential || "").trim();
       const host = String(GAME_CONFIG.meteredTurnHost || "global.relay.metered.ca").trim();
@@ -5030,6 +5089,7 @@
       ) return [];
       return [
         { urls: "stun:stun.relay.metered.ca:80" },
+        { urls: "stun:stun.l.google.com:19302" },
         { urls: `turn:${host}:80`, username, credential },
         { urls: `turn:${host}:80?transport=tcp`, username, credential },
         { urls: `turn:${host}:443`, username, credential },
@@ -6064,7 +6124,7 @@
 
     function createRoomCode() {
       const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      const bytes = new Uint8Array(8);
+      const bytes = new Uint8Array(6);
       crypto.getRandomValues(bytes);
       return [...bytes].map(byte => alphabet[byte % alphabet.length]).join("");
     }
@@ -6073,6 +6133,40 @@
       const bytes = new Uint8Array(24);
       crypto.getRandomValues(bytes);
       return [...bytes].map(value => value.toString(16).padStart(2, "0")).join("");
+    }
+
+    const ROOM_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+
+    function normalizeRoomCode(value) {
+      return String(value || "")
+        .toUpperCase()
+        .replace(/[^A-Z2-9]/g, "")
+        .replace(/[ILO01]/g, "")
+        .slice(0, 6);
+    }
+
+    function validRoomCode(value) {
+      return ROOM_CODE_PATTERN.test(normalizeRoomCode(value));
+    }
+
+    function peerIdForRoom(room) {
+      return `${GAME_CONFIG.peerIdPrefix}${normalizeRoomCode(room)}`;
+    }
+
+    function buildRoomLink(room) {
+      const url = new URL(location.href);
+      url.search = "";
+      url.hash = "";
+      url.searchParams.set("room", normalizeRoomCode(room));
+      return url.href;
+    }
+
+    function roomCodeFromLocation() {
+      try {
+        return normalizeRoomCode(new URL(location.href).searchParams.get("room"));
+      } catch {
+        return "";
+      }
     }
 
     const PAIRING_CODE_LIMIT = 131072;
@@ -6213,6 +6307,39 @@
         network.exchangeId,
         role,
         sessionId
+      ].join("|"));
+    }
+
+    async function peerJsIntroProof(room, guestPeerId, hostPeerId, sessionId, nonce) {
+      return hmacHex(normalizeRoomCode(room), [
+        "triad32-peerjs-intro",
+        GAME_CONFIG.protocolVersion,
+        normalizeRoomCode(room),
+        guestPeerId,
+        hostPeerId,
+        sessionId,
+        nonce,
+        "guest"
+      ].join("|"));
+    }
+
+    async function peerJsChannelProof(
+      type,
+      role,
+      sessionId,
+      nonce,
+      senderPeerId,
+      receiverPeerId
+    ) {
+      return hmacHex(normalizeRoomCode(app.room), [
+        `triad32-peerjs-${type}`,
+        GAME_CONFIG.protocolVersion,
+        normalizeRoomCode(app.room),
+        role,
+        sessionId,
+        nonce,
+        senderPeerId,
+        receiverPeerId
       ].join("|"));
     }
 
@@ -6396,7 +6523,7 @@
         // Already closed.
       }
       try {
-        if (network.pc) network.pc.close();
+        if (network.pc && network.transport !== "peerjs") network.pc.close();
       } catch {
         // Already closed.
       }
@@ -6419,12 +6546,14 @@
     function restartPeerHandshake() {
       const network = app.network;
       if (!network || network.manualClose) return;
-      if (network.transport === "manual") {
+      if (network.transport === "manual" || network.transport === "peerjs") {
         network.authenticated = false;
-        setConnectionStatus("Pairing ended", "offline");
-        setLobbyStatus("Pairing ended", "error");
-        ui.lobbyNote.textContent = "Manual pairing cannot reconnect silently. Leave the room and exchange fresh codes.";
-        toast("Peer link closed. Exchange fresh pairing codes to reconnect.", "error");
+        setConnectionStatus("Connection ended", "offline");
+        setLobbyStatus("Connection ended", "error");
+        ui.lobbyNote.textContent = network.transport === "peerjs"
+          ? "The peer connection closed. Return home and join the room again."
+          : "Manual pairing cannot reconnect silently. Leave the room and exchange fresh codes.";
+        toast("The peer connection closed.", "error");
         return;
       }
       network.authenticated = false;
@@ -6449,67 +6578,153 @@
       }, 12000);
     }
 
+    function isDataLinkOpen(link) {
+      return Boolean(link && (link.open === true || link.readyState === "open"));
+    }
+
+    async function beginPeerChannelAuthentication(network, isCurrent) {
+      network.reconnectAttempts = 0;
+      if (network.peerRetryTimer) clearTimeout(network.peerRetryTimer);
+      network.peerRetryTimer = null;
+      if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
+      network.negotiationTimer = null;
+      setConnectionStatus("Peer link ready");
+      setLobbyStatus("Peer link ready", "connected");
+      ui.lobbyNote.textContent = network.transport === "peerjs"
+        ? "Encrypted peer link established. Verifying the room…"
+        : "Encrypted peer link established. Verifying the one-time pairing code…";
+      let transportAuth = {};
+      if (network.transport === "manual") {
+        try {
+          transportAuth = {
+            room: app.room,
+            exchangeId: network.exchangeId,
+            proof: await dataChannelProof("dc-auth", app.role, network.sessionId)
+          };
+        } catch {
+          networkError("Could not verify the pairing code.");
+          return;
+        }
+      }
+      if (network.transport === "peerjs") {
+        try {
+          transportAuth = {
+            room: app.room,
+            nonce: network.authNonce,
+            senderPeerId: network.localPeerId,
+            receiverPeerId: network.remotePeerId,
+            proof: await peerJsChannelProof(
+              "dc-auth",
+              app.role,
+              network.sessionId,
+              network.authNonce,
+              network.localPeerId,
+              network.remotePeerId
+            )
+          };
+        } catch {
+          networkError("Could not verify the room connection.");
+          return;
+        }
+      }
+      if (!isCurrent()) return;
+      sendGameMessage({
+        type: "dc-auth",
+        name: currentName(),
+        role: app.role,
+        sessionId: network.sessionId,
+        resumeSecret: network.resumeSecret,
+        ...transportAuth
+      });
+    }
+
+    function queuePeerMessage(network, rawData) {
+      if (
+        typeof rawData !== "string" ||
+        rawData.length > 262144 ||
+        new TextEncoder().encode(rawData).byteLength > 262144
+      ) {
+        toast("An oversized or malformed peer message was ignored.", "error");
+        return;
+      }
+      let envelope;
+      try {
+        envelope = JSON.parse(rawData);
+      } catch {
+        toast("A malformed peer message was ignored.", "error");
+        return;
+      }
+      network.messageChain = (network.messageChain || Promise.resolve())
+        .then(() => handleGameEnvelope(envelope))
+        .catch(() => toast("A peer message could not be verified.", "error"));
+    }
+
     function wireDataChannel(channel) {
       const network = app.network;
       if (!network) return;
       network.dc = channel;
-      channel.onopen = async () => {
-        network.reconnectAttempts = 0;
-        setConnectionStatus("Peer link ready");
-        setLobbyStatus("Peer link ready", "connected");
-        ui.lobbyNote.textContent = "Encrypted peer link established. Verifying the one-time pairing code…";
-        let manualAuth = {};
-        if (network.transport === "manual") {
-          try {
-            manualAuth = {
-              room: app.room,
-              exchangeId: network.exchangeId,
-              proof: await dataChannelProof("dc-auth", app.role, network.sessionId)
-            };
-          } catch {
-            networkError("Could not verify the pairing code.");
-            return;
-          }
-          if (app.network !== network || network.dc !== channel || channel.readyState !== "open") return;
-        }
-        sendGameMessage({
-          type: "dc-auth",
-          name: currentName(),
-          role: app.role,
-          sessionId: network.sessionId,
-          resumeSecret: network.resumeSecret,
-          ...manualAuth
-        });
+      const isCurrent = () => app.network === network &&
+        network.dc === channel &&
+        isDataLinkOpen(channel);
+      const onOpen = () => beginPeerChannelAuthentication(
+        network,
+        isCurrent
+      );
+      const onData = data => {
+        if (app.network !== network || network.dc !== channel) return;
+        queuePeerMessage(network, data);
       };
-      channel.onmessage = event => {
-        if (typeof event.data !== "string" || event.data.length > 262144) {
-          toast("An oversized peer message was ignored.", "error");
-          return;
-        }
-        let envelope;
-        try {
-          envelope = JSON.parse(event.data);
-        } catch {
-          toast("A malformed peer message was ignored.", "error");
-          return;
-        }
-        network.messageChain = (network.messageChain || Promise.resolve())
-          .then(() => handleGameEnvelope(envelope))
-          .catch(() => toast("A peer message could not be verified.", "error"));
-      };
-      channel.onerror = () => {
+      const onError = () => {
+        if (app.network !== network || network.dc !== channel) return;
         setConnectionStatus("Peer link issue", "reconnecting");
       };
-      channel.onclose = () => {
-        if (network.manualClose) return;
+      const onClose = () => {
+        if (
+          app.network !== network ||
+          network.dc !== channel ||
+          network.manualClose
+        ) return;
         if (network.transport === "manual") {
           restartPeerHandshake();
+          return;
+        }
+        if (network.transport === "peerjs" && !network.authenticated) {
+          network.dc = null;
+          network.pc = null;
+          network.signalVerified = false;
+          if (app.role === "guest") {
+            scheduleGuestPeerRetry(network);
+          } else {
+            network.remotePeerId = null;
+            network.authorizedPeerId = null;
+            network.remoteSessionId = null;
+            network.remoteAuthNonce = null;
+            resetLobbySeats();
+            populateLobby({ hostName: currentName() });
+            setLobbyStatus("Room open", "connecting");
+            ui.lobbyTitle.textContent = "Waiting for a rival";
+            ui.lobbyNote.textContent = "Room is still open. Send the six-character code to one friend.";
+          }
           return;
         }
         setConnectionStatus("Reconnecting", "reconnecting");
         setLobbyStatus("Reconnecting", "connecting");
         restartPeerHandshake();
       };
+
+      if (network.transport === "peerjs" && typeof channel.on === "function") {
+        network.pc = channel.peerConnection || null;
+        channel.on("open", onOpen);
+        channel.on("data", onData);
+        channel.on("error", onError);
+        channel.on("close", onClose);
+        if (channel.open) queueMicrotask(onOpen);
+      } else {
+        channel.onopen = onOpen;
+        channel.onmessage = event => onData(event.data);
+        channel.onerror = onError;
+        channel.onclose = onClose;
+      }
     }
 
     function createPeerConnection(initiator = false) {
@@ -6879,7 +7094,7 @@
         const injectedIceServers = Array.isArray(message.metadata?.iceServers)
           ? message.metadata.iceServers
           : [];
-        const manualIceServers = configuredManualIceServers();
+        const manualIceServers = configuredIceServers();
         network.iceServers = manualIceServers.length
           ? [...manualIceServers, ...injectedIceServers]
           : injectedIceServers;
@@ -6920,7 +7135,7 @@
           setConnectionStatus("Rival reconnecting", "reconnecting");
           if (network.subscribed) publishHello();
         } else if (message.code === "action_not_permitted") {
-          networkError("The Metered publishable key needs subscribe, publish, presence, and send permissions.");
+          networkError("The legacy signaling route is unavailable.");
         } else if (message.code === "over_message_quota") {
           networkError("This Metered account has reached its messaging quota.");
         }
@@ -7027,7 +7242,7 @@
           const terminalMessages = new Map([
             [1008, "Metered rejected an invalid signaling message."],
             [1009, "A signaling message exceeded Metered's size limit."],
-            [4001, "Metered rejected the publishable key or this page origin."],
+            [4001, "The legacy signaling service rejected this page origin."],
             [4002, "The Metered credential expired."],
             [4003, "This key is not authorized for the TRIAD room channel."],
             [4012, "This Metered account is suspended."],
@@ -7098,7 +7313,7 @@
 
     function connectManualNetwork() {
       cleanupNetwork();
-      const iceServers = configuredManualIceServers();
+      const iceServers = configuredIceServers();
       const network = {
         transport: "manual",
         key: "",
@@ -7148,21 +7363,218 @@
       return network;
     }
 
+    function connectPeerNetwork() {
+      const network = connectManualNetwork();
+      network.transport = "peerjs";
+      network.peer = null;
+      network.pendingPeerConnections = new Set();
+      network.peerRetryTimer = null;
+      network.peerConnectAttempts = 0;
+      network.generation += 1;
+      network.exchangeId = null;
+      return network;
+    }
+
+    function peerJsOptions() {
+      return {
+        host: "0.peerjs.com",
+        port: 443,
+        path: "/",
+        secure: true,
+        debug: 0,
+        config: {
+          iceServers: configuredIceServers(),
+          iceTransportPolicy: "all",
+          sdpSemantics: "unified-plan"
+        }
+      };
+    }
+
+    async function updateSelectedPeerRoute(network, connection) {
+      const pc = connection?.peerConnection;
+      if (!pc || app.network !== network || network.dc !== connection) return;
+      try {
+        const stats = await pc.getStats();
+        let selectedPair = null;
+        stats.forEach(report => {
+          if (report.type === "transport" && report.selectedCandidatePairId) {
+            selectedPair = stats.get(report.selectedCandidatePairId);
+          }
+        });
+        if (!selectedPair) {
+          stats.forEach(report => {
+            if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
+              selectedPair = report;
+            }
+          });
+        }
+        const local = selectedPair ? stats.get(selectedPair.localCandidateId) : null;
+        const remote = selectedPair ? stats.get(selectedPair.remoteCandidateId) : null;
+        network.usingTurn = local?.candidateType === "relay" || remote?.candidateType === "relay";
+        setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
+      } catch {
+        // The peer connection remains valid if candidate statistics are unavailable.
+      }
+    }
+
+    function watchPeerJsRoute(network, connection) {
+      const pc = connection?.peerConnection;
+      if (!pc) return;
+      network.pc = pc;
+      const inspect = () => {
+        if (["connected", "completed"].includes(pc.iceConnectionState)) {
+          updateSelectedPeerRoute(network, connection);
+        }
+      };
+      pc.addEventListener("iceconnectionstatechange", inspect);
+      inspect();
+    }
+
+    function scheduleGuestPeerRetry(network) {
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        app.role !== "guest" ||
+        network.peerRetryTimer
+      ) return;
+      if (network.peerConnectAttempts >= 3) {
+        networkError("No open room was found for that code. Check the code or ask the host to create a new room.");
+        return;
+      }
+      setLobbyStatus("Retrying room", "connecting");
+      ui.lobbyNote.textContent = "The host may still be opening the room. Trying again…";
+      const delay = 650 * network.peerConnectAttempts;
+      network.peerRetryTimer = setTimeout(() => {
+        if (app.network !== network || network.manualClose) return;
+        network.peerRetryTimer = null;
+        dialPeerJsRoom(network);
+      }, delay);
+    }
+
+    function wirePeerJsConnection(network, connection) {
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        network.transport !== "peerjs"
+      ) {
+        connection.close();
+        return;
+      }
+      if (network.dc && network.dc !== connection) {
+        connection.close();
+        if (app.role === "host") toast("This room already has a rival.", "error");
+        return;
+      }
+      network.remotePeerId = connection.peer;
+      network.authorizedPeerId = connection.peer;
+      network.signalVerified = true;
+      wireDataChannel(connection);
+      watchPeerJsRoute(network, connection);
+    }
+
+    async function acceptPeerJsGuest(network, connection) {
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        app.role !== "host" ||
+        network.transport !== "peerjs"
+      ) {
+        connection.close();
+        return;
+      }
+      network.pendingPeerConnections.add(connection);
+      const timeout = setTimeout(() => {
+        if (!network.pendingPeerConnections.has(connection)) return;
+        network.pendingPeerConnections.delete(connection);
+        connection.close();
+      }, 10000);
+      try {
+        const metadata = connection.metadata;
+        const metadataSize = JSON.stringify(metadata || {}).length;
+        if (
+          connection.label !== "triad32-state" ||
+          metadataSize > 2048 ||
+          metadata?.scope !== "triad32-peerjs" ||
+          metadata?.v !== GAME_CONFIG.protocolVersion ||
+          metadata?.role !== "guest" ||
+          normalizeRoomCode(metadata?.room) !== app.room ||
+          !/^session_[a-f0-9]{16}$/i.test(metadata?.sessionId || "") ||
+          !/^[a-f0-9]{48}$/i.test(metadata?.nonce || "") ||
+          !/^[a-f0-9]{64}$/i.test(metadata?.proof || "") ||
+          typeof metadata?.name !== "string" ||
+          metadata.name.length > 80
+        ) {
+          connection.close();
+          return;
+        }
+        const expectedProof = await peerJsIntroProof(
+          app.room,
+          connection.peer,
+          network.localPeerId,
+          metadata.sessionId,
+          metadata.nonce
+        );
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          !equalHex(expectedProof, metadata.proof)
+        ) {
+          connection.close();
+          return;
+        }
+        if (network.dc && network.dc !== connection) {
+          connection.close();
+          toast("This room already has a rival.", "error");
+          return;
+        }
+        network.remoteSessionId = metadata.sessionId;
+        network.remoteAuthNonce = metadata.nonce;
+        network.guestName = cleanName(metadata.name);
+        populateLobby({ hostName: currentName(), guestName: network.guestName });
+        ui.lobbyTitle.textContent = "Rival found";
+        ui.lobbyNote.textContent = "Opening the encrypted peer link. TURN will relay it if a direct route is blocked.";
+        setLobbyStatus("Negotiating", "connecting");
+        wirePeerJsConnection(network, connection);
+      } catch {
+        connection.close();
+      } finally {
+        clearTimeout(timeout);
+        network.pendingPeerConnections.delete(connection);
+      }
+    }
+
     function cleanupNetwork() {
       clearTurnTimers();
       if (app.resolutionTimerId) clearTimeout(app.resolutionTimerId);
       app.resolutionTimerId = null;
+      if (app.matchStartTimerId) clearTimeout(app.matchStartTimerId);
+      app.matchStartTimerId = null;
       clearShowdownTimers();
       const network = app.network;
       if (!network) return;
       network.manualClose = true;
       if (network.reconnectTimer) clearTimeout(network.reconnectTimer);
+      if (network.peerRetryTimer) clearTimeout(network.peerRetryTimer);
       try {
         network.ws?.close(1000, "leaving");
       } catch {
         // Already closed.
       }
+      network.pendingPeerConnections?.forEach(connection => {
+        try {
+          connection.close();
+        } catch {
+          // Already closed.
+        }
+      });
+      network.pendingPeerConnections?.clear();
       closePeerConnection({ preserveRemote: false });
+      try {
+        network.peer?.destroy();
+      } catch {
+        // Already destroyed.
+      }
+      network.peer = null;
       app.network = null;
     }
 
@@ -7177,9 +7589,14 @@
         turn: app.state?.turn || 0,
         payload
       };
-      if (network.dc?.readyState === "open") {
+      const encoded = JSON.stringify(envelope);
+      if (new TextEncoder().encode(encoded).byteLength > 262144) {
+        toast("A game update was too large to send.", "error");
+        return false;
+      }
+      if (isDataLinkOpen(network.dc)) {
         try {
-          network.dc.send(JSON.stringify(envelope));
+          network.dc.send(encoded);
           return true;
         } catch {
           setConnectionStatus("Reconnecting", "reconnecting");
@@ -7192,7 +7609,7 @@
       const network = app.network;
       if (
         !network ||
-        network.dc?.readyState !== "open" ||
+        !isDataLinkOpen(network.dc) ||
         !envelope ||
         envelope.scope !== "triad32-game" ||
         envelope.v !== GAME_CONFIG.protocolVersion
@@ -7207,23 +7624,63 @@
       if (!message?.type) return;
 
       if (message.type === "dc-auth") {
-        let manualProofValid = true;
+        let channelProofValid = true;
         if (network.transport === "manual") {
-          manualProofValid = Boolean(
+          channelProofValid = Boolean(
             message.room === app.room &&
             message.exchangeId === network.exchangeId &&
             /^[a-f0-9]{64}$/i.test(message.proof || "")
           );
-          if (manualProofValid) {
+          if (channelProofValid) {
             const expectedProof = await dataChannelProof("dc-auth", message.role, message.sessionId);
             if (app.network !== network || network.manualClose) return;
-            manualProofValid = equalHex(expectedProof, message.proof);
+            channelProofValid = equalHex(expectedProof, message.proof);
+          }
+        }
+        if (network.transport === "peerjs") {
+          channelProofValid = Boolean(
+            message.room === app.room &&
+            message.senderPeerId === network.remotePeerId &&
+            message.receiverPeerId === network.localPeerId &&
+            /^[a-f0-9]{48}$/i.test(message.nonce || "") &&
+            /^[a-f0-9]{64}$/i.test(message.proof || "")
+          );
+          if (channelProofValid) {
+            const expectedProof = await peerJsChannelProof(
+              "dc-auth",
+              message.role,
+              message.sessionId,
+              message.nonce,
+              message.senderPeerId,
+              message.receiverPeerId
+            );
+            if (app.network !== network || network.manualClose) return;
+            channelProofValid = equalHex(expectedProof, message.proof);
+          }
+          if (
+            channelProofValid &&
+            app.role === "guest" &&
+            !network.remoteSessionId &&
+            message.role === "host" &&
+            /^session_[a-f0-9]{16}$/i.test(message.sessionId || "")
+          ) {
+            network.remoteSessionId = message.sessionId;
+            network.remoteAuthNonce = message.nonce;
+          }
+          if (
+            channelProofValid &&
+            network.remoteAuthNonce &&
+            network.remoteAuthNonce !== message.nonce
+          ) {
+            channelProofValid = false;
           }
         }
         if (
           !network.signalVerified ||
-          !manualProofValid ||
+          !channelProofValid ||
+          !["host", "guest"].includes(message.role) ||
           message.role === app.role ||
+          !/^session_[a-f0-9]{16}$/i.test(message.sessionId || "") ||
           message.sessionId !== network.remoteSessionId ||
           !/^[a-f0-9]{48}$/i.test(message.resumeSecret || "") ||
           (
@@ -7242,13 +7699,31 @@
         if (app.role === "host") {
           network.guestName = remoteName;
           populateLobby({ hostName: currentName(), guestName: remoteName });
-          let manualAck = {};
+          let transportAck = { role: app.role };
           if (network.transport === "manual") {
-            manualAck = {
+            transportAck = {
               room: app.room,
               exchangeId: network.exchangeId,
               role: app.role,
               proof: await dataChannelProof("dc-auth-ack", app.role, network.sessionId)
+            };
+            if (app.network !== network || network.manualClose) return;
+          }
+          if (network.transport === "peerjs") {
+            transportAck = {
+              room: app.room,
+              role: app.role,
+              nonce: network.authNonce,
+              senderPeerId: network.localPeerId,
+              receiverPeerId: network.remotePeerId,
+              proof: await peerJsChannelProof(
+                "dc-auth-ack",
+                app.role,
+                network.sessionId,
+                network.authNonce,
+                network.localPeerId,
+                network.remotePeerId
+              )
             };
             if (app.network !== network || network.manualClose) return;
           }
@@ -7258,7 +7733,7 @@
             hasTurn: network.hasTurn,
             sessionId: network.sessionId,
             resumeSecret: network.resumeSecret,
-            ...manualAck
+            ...transportAck
           });
           if (app.state) {
             sendGameMessage({
@@ -7280,23 +7755,62 @@
       }
 
       if (message.type === "dc-auth-ack" && app.role === "guest") {
-        let manualProofValid = true;
+        let channelProofValid = true;
         if (network.transport === "manual") {
-          manualProofValid = Boolean(
+          channelProofValid = Boolean(
             message.room === app.room &&
             message.exchangeId === network.exchangeId &&
             message.role === "host" &&
             /^[a-f0-9]{64}$/i.test(message.proof || "")
           );
-          if (manualProofValid) {
+          if (channelProofValid) {
             const expectedProof = await dataChannelProof("dc-auth-ack", message.role, message.sessionId);
             if (app.network !== network || network.manualClose) return;
-            manualProofValid = equalHex(expectedProof, message.proof);
+            channelProofValid = equalHex(expectedProof, message.proof);
+          }
+        }
+        if (network.transport === "peerjs") {
+          channelProofValid = Boolean(
+            message.room === app.room &&
+            message.role === "host" &&
+            message.senderPeerId === network.remotePeerId &&
+            message.receiverPeerId === network.localPeerId &&
+            /^[a-f0-9]{48}$/i.test(message.nonce || "") &&
+            /^[a-f0-9]{64}$/i.test(message.proof || "")
+          );
+          if (channelProofValid) {
+            const expectedProof = await peerJsChannelProof(
+              "dc-auth-ack",
+              message.role,
+              message.sessionId,
+              message.nonce,
+              message.senderPeerId,
+              message.receiverPeerId
+            );
+            if (app.network !== network || network.manualClose) return;
+            channelProofValid = equalHex(expectedProof, message.proof);
+          }
+          if (
+            channelProofValid &&
+            !network.remoteSessionId &&
+            /^session_[a-f0-9]{16}$/i.test(message.sessionId || "")
+          ) {
+            network.remoteSessionId = message.sessionId;
+            network.remoteAuthNonce = message.nonce;
+          }
+          if (
+            channelProofValid &&
+            network.remoteAuthNonce &&
+            network.remoteAuthNonce !== message.nonce
+          ) {
+            channelProofValid = false;
           }
         }
         if (
           !network.signalVerified ||
-          !manualProofValid ||
+          !channelProofValid ||
+          message.role !== "host" ||
+          !/^session_[a-f0-9]{16}$/i.test(message.sessionId || "") ||
           message.sessionId !== network.remoteSessionId ||
           !/^[a-f0-9]{48}$/i.test(message.resumeSecret || "") ||
           (
@@ -7357,18 +7871,25 @@
     function startHostedMatch() {
       if (app.role !== "host" || !app.network?.authenticated) return;
       if (app.state?.phase === "planning" || app.state?.phase === "showdown") return;
+      const network = app.network;
       const hostName = currentName();
-      const guestName = app.network.guestName || "Rival";
+      const guestName = network.guestName || "Rival";
       app.state = createMatchState([hostName, guestName]);
       app.seat = 0;
       app.seenCards.clear();
       setLobbyStatus("Connected", "connected");
       ui.lobbyTitle.textContent = "Duel ready";
-      ui.lobbyNote.textContent = app.network.hasTurn
+      ui.lobbyNote.textContent = network.hasTurn
         ? "TURN relay is armed as a fallback. Dealing the opening hand…"
         : "Peer link is ready. Dealing the opening hand…";
-      setTimeout(() => {
-        if (app.role !== "host" || !app.network?.authenticated) return;
+      if (app.matchStartTimerId) clearTimeout(app.matchStartTimerId);
+      app.matchStartTimerId = setTimeout(() => {
+        app.matchStartTimerId = null;
+        if (
+          app.network !== network ||
+          app.role !== "host" ||
+          !network.authenticated
+        ) return;
         app.state.turnStart = Date.now();
         sendGameMessage({
           type: "match-start",
@@ -7377,7 +7898,7 @@
           deadlineAt: app.state.turnStart + GAME_CONFIG.turnSeconds * 1000
         });
         showScreen(ui.gameScreen);
-        setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Direct peer");
+        setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
         beginPlanning({ preserveDeadline: true });
       }, 900);
     }
@@ -7532,14 +8053,15 @@
 
     function onlineCapabilityProblem() {
       if (!window.isSecureContext) return "Online rooms require HTTPS. GitHub Pages provides it automatically.";
-      if (!globalThis.crypto?.subtle || !globalThis.crypto?.getRandomValues) return "This browser is missing secure cryptography required for private pairing.";
+      if (!globalThis.crypto?.subtle || !globalThis.crypto?.getRandomValues) return "This browser is missing secure cryptography required for online rooms.";
       if (!globalThis.RTCPeerConnection) return "This browser does not support WebRTC peer connections.";
-      if (!globalThis.TextEncoder || !globalThis.TextDecoder) return "This browser is too old for the pairing protocol.";
+      if (!globalThis.TextEncoder || !globalThis.TextDecoder) return "This browser is too old for the room protocol.";
+      if (typeof globalThis.Peer !== "function") return "The PeerJS room service could not load. Check the connection and reload this page.";
       return "";
     }
 
     function turnConfigurationProblem() {
-      const servers = configuredManualIceServers();
+      const servers = configuredIceServers();
       const hasTurn = servers.some(server => {
         const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
         return urls.some(url => /^turns?:/i.test(String(url)));
@@ -7630,7 +8152,215 @@
       }
     }
 
-    async function startOnlineHost() {
+    function peerJsErrorMessage(error) {
+      const messages = {
+        "peer-unavailable": "No open room was found for that code.",
+        "network": "The PeerJS room service could not be reached.",
+        "server-error": "The PeerJS room service returned an error.",
+        "socket-error": "The PeerJS room service connection failed.",
+        "socket-closed": "The PeerJS room service connection closed.",
+        "browser-incompatible": "This browser cannot create PeerJS rooms.",
+        "invalid-id": "The generated room address was rejected.",
+        "invalid-key": "The public PeerJS room service rejected this page.",
+        "ssl-unavailable": "The room service is unavailable over HTTPS.",
+        "webrtc": "The browser could not establish a direct or TURN-relayed route."
+      };
+      return messages[error?.type] || "The online room could not be opened.";
+    }
+
+    function schedulePeerBrokerReconnect(network, peer) {
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        network.peerRetryTimer ||
+        peer.destroyed ||
+        !peer.disconnected
+      ) return;
+      if (isDataLinkOpen(network.dc)) return;
+      setLobbyStatus("Room service retry", "connecting");
+      ui.lobbyNote.textContent = "The room service disconnected. Trying to restore the room address…";
+      network.peerRetryTimer = setTimeout(() => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          peer.destroyed ||
+          !peer.disconnected
+        ) return;
+        network.peerRetryTimer = null;
+        try {
+          peer.reconnect();
+        } catch {
+          networkError("The room service could not reconnect.");
+        }
+      }, 1200);
+    }
+
+    function registerPeerJsHost(network, collisionAttempt = 0) {
+      if (app.network !== network || network.manualClose) return;
+      const generation = ++network.generation;
+      app.room = createRoomCode();
+      app.roomLink = buildRoomLink(app.room);
+      app.inviteToken = null;
+      network.sessionId = createId("session");
+      network.authNonce = createInviteToken();
+      network.resumeSecret = createInviteToken();
+      network.remoteSessionId = null;
+      network.remoteAuthNonce = null;
+      network.remotePeerId = null;
+      network.authorizedPeerId = null;
+      network.signalVerified = false;
+      network.peerReady = false;
+      ui.roomSharePanel.hidden = true;
+      ui.copyRoomCodeBtn.disabled = true;
+      ui.copyRoomLinkBtn.disabled = true;
+      ui.roomCodeText.textContent = "······";
+      setLobbyStatus("Claiming room", "connecting");
+      ui.lobbyNote.textContent = "Claiming a unique six-character room code…";
+
+      let peer;
+      try {
+        peer = new Peer(peerIdForRoom(app.room), peerJsOptions());
+      } catch (error) {
+        networkError(peerJsErrorMessage(error));
+        return;
+      }
+      network.peer = peer;
+
+      peer.on("open", id => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          network.generation !== generation
+        ) return;
+        network.peerReady = true;
+        network.localPeerId = id;
+        populateLobby({ hostName: currentName() });
+        ui.roomSharePanel.hidden = false;
+        ui.copyRoomCodeBtn.disabled = false;
+        ui.copyRoomLinkBtn.disabled = false;
+        ui.lobbyTitle.textContent = "Waiting for a rival";
+        ui.lobbyNote.textContent = "Room is open. Send the six-character code to one friend.";
+        setLobbyStatus("Room open", "connecting");
+        announce(`Room ${app.room} is open.`);
+      });
+
+      peer.on("connection", connection => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          network.generation !== generation
+        ) {
+          connection.close();
+          return;
+        }
+        acceptPeerJsGuest(network, connection);
+      });
+
+      peer.on("disconnected", () => {
+        if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        schedulePeerBrokerReconnect(network, peer);
+      });
+
+      peer.on("close", () => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          isDataLinkOpen(network.dc)
+        ) return;
+        networkError("The room address closed. Return home and create a new room.");
+      });
+
+      peer.on("error", error => {
+        if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        if (
+          error?.type === "unavailable-id" &&
+          !network.peerReady &&
+          !network.dc &&
+          collisionAttempt < 5
+        ) {
+          network.peer = null;
+          try {
+            peer.destroy();
+          } catch {
+            // Already closed.
+          }
+          setLobbyStatus("Code collision", "connecting");
+          ui.lobbyNote.textContent = "That code was already in use. Generating another…";
+          network.peerRetryTimer = setTimeout(() => {
+            if (app.network !== network || network.manualClose) return;
+            network.peerRetryTimer = null;
+            registerPeerJsHost(network, collisionAttempt + 1);
+          }, 250 + Math.random() * 350);
+          return;
+        }
+        if (isDataLinkOpen(network.dc)) return;
+        networkError(peerJsErrorMessage(error));
+      });
+    }
+
+    async function dialPeerJsRoom(network) {
+      if (
+        app.network !== network ||
+        network.manualClose ||
+        app.role !== "guest" ||
+        !network.peer?.id
+      ) return;
+      network.peerConnectAttempts += 1;
+      const hostPeerId = peerIdForRoom(app.room);
+      network.remotePeerId = hostPeerId;
+      network.authorizedPeerId = hostPeerId;
+      network.remoteSessionId = null;
+      network.remoteAuthNonce = null;
+      network.signalVerified = false;
+      const proof = await peerJsIntroProof(
+        app.room,
+        network.localPeerId,
+        hostPeerId,
+        network.sessionId,
+        network.authNonce
+      );
+      if (app.network !== network || network.manualClose) return;
+      let connection;
+      try {
+        connection = network.peer.connect(hostPeerId, {
+          label: "triad32-state",
+          serialization: "none",
+          reliable: true,
+          metadata: {
+            scope: "triad32-peerjs",
+            v: GAME_CONFIG.protocolVersion,
+            room: app.room,
+            role: "guest",
+            sessionId: network.sessionId,
+            nonce: network.authNonce,
+            name: currentName(),
+            proof
+          }
+        });
+      } catch (error) {
+        scheduleGuestPeerRetry(network);
+        return;
+      }
+      wirePeerJsConnection(network, connection);
+      setLobbyStatus("Finding host", "connecting");
+      ui.lobbyNote.textContent = "Room found in the join hub. Opening an encrypted peer route…";
+      if (network.negotiationTimer) clearTimeout(network.negotiationTimer);
+      network.negotiationTimer = setTimeout(() => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.dc !== connection ||
+          isDataLinkOpen(connection)
+        ) return;
+        connection.close();
+      }, 10000);
+    }
+
+    function startOnlineHost() {
       const capabilityProblem = onlineCapabilityProblem();
       const configurationProblem = turnConfigurationProblem();
       if (capabilityProblem || configurationProblem) {
@@ -7642,21 +8372,33 @@
       app.role = "host";
       app.seat = 0;
       app.state = null;
-      app.room = createRoomCode();
-      app.inviteToken = createInviteToken();
-      history.replaceState(null, "", location.href.split("#")[0]);
-      const network = connectManualNetwork();
+      app.room = null;
+      app.roomLink = "";
+      app.inviteToken = null;
+      const cleanUrl = new URL(location.href);
+      cleanUrl.searchParams.delete("room");
+      cleanUrl.hash = "";
+      history.replaceState(null, "", cleanUrl.href);
+      const network = connectPeerNetwork();
       resetLobbySeats();
       populateLobby({ hostName: currentName() });
       ui.lobbyTitle.textContent = "Waiting for a rival";
-      ui.lobbyNote.textContent = "Preparing a single-use pairing offer.";
+      ui.lobbyNote.textContent = "Creating a six-character room…";
       setLobbyStatus("Preparing", "connecting");
-      resetPairingUi("host");
+      ui.roomSharePanel.hidden = true;
       showScreen(ui.lobbyScreen);
-      await createManualOffer(network);
+      registerPeerJsHost(network);
     }
 
-    function startOnlineGuest() {
+    function startOnlineGuest(rawCode = ui.joinRoomCodeInput.value) {
+      const room = normalizeRoomCode(rawCode);
+      ui.joinRoomCodeInput.value = room;
+      if (!validRoomCode(room)) {
+        ui.joinRoomCodeInput.setAttribute("aria-invalid", "true");
+        toast("Enter the host's complete six-character room code.", "error");
+        ui.joinRoomCodeInput.focus();
+        return;
+      }
       const capabilityProblem = onlineCapabilityProblem();
       const configurationProblem = turnConfigurationProblem();
       if (capabilityProblem || configurationProblem) {
@@ -7668,18 +8410,65 @@
       app.role = "guest";
       app.seat = 1;
       app.state = null;
-      app.room = null;
+      app.room = room;
+      app.roomLink = buildRoomLink(room);
       app.inviteToken = null;
-      history.replaceState(null, "", location.href.split("#")[0]);
-      connectManualNetwork();
+      ui.joinRoomCodeInput.removeAttribute("aria-invalid");
+      history.replaceState(null, "", app.roomLink);
+      const network = connectPeerNetwork();
       resetLobbySeats();
-      populateLobby({ hostName: "Host from offer", guestName: currentName(), joining: true });
-      ui.lobbyTitle.textContent = "Join a private duel";
-      ui.lobbyNote.textContent = "Paste the host's offer to create your answer.";
-      setLobbyStatus("Paste offer", "connecting");
-      resetPairingUi("guest");
+      populateLobby({ hostName: "Room host", guestName: currentName(), joining: true });
+      ui.roomSharePanel.hidden = true;
+      ui.lobbyTitle.textContent = `Joining room ${room}`;
+      ui.lobbyNote.textContent = "Contacting the host through the PeerJS room service…";
+      setLobbyStatus("Finding room", "connecting");
       showScreen(ui.lobbyScreen);
-      requestAnimationFrame(() => ui.pairingInput.focus({ preventScroll: true }));
+      let peer;
+      try {
+        peer = new Peer(peerJsOptions());
+      } catch (error) {
+        networkError(peerJsErrorMessage(error));
+        return;
+      }
+      network.peer = peer;
+      peer.on("open", id => {
+        if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        network.localPeerId = id;
+        dialPeerJsRoom(network);
+      });
+      peer.on("connection", connection => connection.close());
+      peer.on("disconnected", () => {
+        if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        schedulePeerBrokerReconnect(network, peer);
+      });
+      peer.on("close", () => {
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.peer !== peer ||
+          isDataLinkOpen(network.dc)
+        ) return;
+        networkError("The room service connection closed.");
+      });
+      peer.on("error", error => {
+        if (app.network !== network || network.manualClose || network.peer !== peer) return;
+        if (error?.type === "peer-unavailable" && !network.authenticated) {
+          if (network.dc) {
+            const staleConnection = network.dc;
+            network.dc = null;
+            network.pc = null;
+            try {
+              staleConnection.close();
+            } catch {
+              // Already closed.
+            }
+          }
+          scheduleGuestPeerRetry(network);
+          return;
+        }
+        if (isDataLinkOpen(network.dc)) return;
+        networkError(peerJsErrorMessage(error));
+      });
     }
 
     async function createManualAnswer(rawCode) {
@@ -7839,48 +8628,82 @@
       app.state = null;
       app.room = null;
       app.inviteToken = null;
+      app.roomLink = "";
       app.selection = { actionId: null, elementId: null, modId: null };
       app.submitted = false;
       app.resolving = false;
       ui.showdownOverlay.classList.remove("visible");
       ui.endOverlay.classList.remove("visible");
       ui.appRoot.inert = false;
-      ui.pairingOutput.value = "";
-      ui.pairingInput.value = "";
-      ui.copyPairingBtn.disabled = true;
-      ui.applyPairingBtn.disabled = true;
-      history.replaceState(null, "", location.href.split("#")[0]);
+      ui.roomSharePanel.hidden = true;
+      ui.copyRoomCodeBtn.disabled = false;
+      ui.copyRoomLinkBtn.disabled = false;
+      ui.joinRoomCodeInput.value = "";
+      const homeUrl = new URL(location.href);
+      homeUrl.searchParams.delete("room");
+      homeUrl.hash = "";
+      history.replaceState(null, "", homeUrl.href);
       showScreen(ui.landingScreen);
     }
 
-    async function copyPairingCode() {
-      const code = ui.pairingOutput.value;
-      if (!code) return;
-      const originalLabel = ui.copyPairingBtn.textContent;
+    async function copyRoomValue(value, button, successMessage) {
+      if (!value) return;
+      const originalLabel = button.textContent;
       try {
-        await navigator.clipboard.writeText(code);
-        ui.copyPairingBtn.textContent = "Copied";
-        toast(`${app.role === "host" ? "Offer" : "Answer"} code copied.`);
+        await navigator.clipboard.writeText(value);
+        button.textContent = "Copied";
+        toast(successMessage);
       } catch {
-        ui.pairingOutput.focus();
-        ui.pairingOutput.select();
+        const temporary = document.createElement("textarea");
+        temporary.value = value;
+        temporary.setAttribute("readonly", "");
+        temporary.style.position = "fixed";
+        temporary.style.opacity = "0";
+        document.body.append(temporary);
+        temporary.select();
         document.execCommand("copy");
-        toast("Connection code selected. Copy it and send it privately.");
+        temporary.remove();
+        toast(successMessage);
       }
       setTimeout(() => {
-        if (ui.copyPairingBtn.textContent === "Copied") ui.copyPairingBtn.textContent = originalLabel;
+        if (button.textContent === "Copied") button.textContent = originalLabel;
       }, 1500);
+    }
+
+    function copyRoomCode() {
+      return copyRoomValue(app.room, ui.copyRoomCodeBtn, "Room code copied.");
+    }
+
+    function copyRoomLink() {
+      return copyRoomValue(app.roomLink, ui.copyRoomLinkBtn, "Invite link copied.");
     }
 
     // UI event wiring
     ui.practiceBtn.addEventListener("click", startPractice);
     ui.hostBtn.addEventListener("click", startOnlineHost);
-    ui.joinBtn.addEventListener("click", startOnlineGuest);
-    ui.copyPairingBtn.addEventListener("click", copyPairingCode);
-    ui.applyPairingBtn.addEventListener("click", applyPairingCode);
-    ui.pairingInput.addEventListener("keydown", event => {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) applyPairingCode();
+    ui.joinRoomBtn.addEventListener("click", () => startOnlineGuest());
+    ui.joinRoomCodeInput.addEventListener("input", () => {
+      ui.joinRoomCodeInput.value = normalizeRoomCode(ui.joinRoomCodeInput.value);
+      ui.joinRoomCodeInput.removeAttribute("aria-invalid");
     });
+    ui.joinRoomCodeInput.addEventListener("paste", () => {
+      setTimeout(() => {
+        ui.joinRoomCodeInput.value = normalizeRoomCode(ui.joinRoomCodeInput.value);
+        if (
+          validRoomCode(ui.joinRoomCodeInput.value) &&
+          ui.landingScreen.classList.contains("active")
+        ) {
+          startOnlineGuest();
+        }
+      }, 0);
+    });
+    ui.joinRoomCodeInput.addEventListener("keydown", event => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      startOnlineGuest();
+    });
+    ui.copyRoomCodeBtn.addEventListener("click", copyRoomCode);
+    ui.copyRoomLinkBtn.addEventListener("click", copyRoomLink);
     ui.leaveLobbyBtn.addEventListener("click", () => goHome({ force: true }));
     ui.lockTurnBtn.addEventListener("click", submitLocalTurn);
     ui.rematchBtn.addEventListener("click", requestRematch);
@@ -7978,6 +8801,8 @@
     ui.playerNameInput.value = cleanName(storage.get("name", "Player"));
     ui.settingsNameInput.value = ui.playerNameInput.value;
     ui.handSortSelect.value = app.handSort;
+    const linkedRoom = roomCodeFromLocation();
+    if (validRoomCode(linkedRoom)) ui.joinRoomCodeInput.value = linkedRoom;
     syncSoundControls();
   </script>
 </body>
