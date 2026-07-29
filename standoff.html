@@ -539,6 +539,11 @@
       margin-top: 17px;
     }
 
+    .mode-card-practice {
+      grid-column: 1 / -1;
+      min-height: 102px;
+    }
+
     .mode-card {
       min-height: 138px;
       padding: 16px;
@@ -650,6 +655,8 @@
 
     .lobby-card {
       width: min(620px, 100%);
+      max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px);
+      overflow: auto;
       padding: clamp(22px, 5vw, 40px);
       border: 1px solid var(--line);
       border-radius: 26px;
@@ -749,6 +756,103 @@
     .invite-row .text-input {
       color: var(--muted);
       font-size: 11px;
+    }
+
+    .pairing-panel {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 26px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .pairing-head {
+      display: grid;
+      gap: 5px;
+    }
+
+    .pairing-kicker {
+      color: var(--mint);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .pairing-head strong {
+      font-size: 14px;
+    }
+
+    .pairing-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .pairing-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .pairing-field[hidden] {
+      display: none;
+    }
+
+    .pairing-field label {
+      color: var(--faint);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .pairing-code {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      outline: none;
+      background: rgba(4, 8, 13, .74);
+      color: var(--muted);
+      font: 10px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow-wrap: anywhere;
+      transition: border-color .18s ease, background-color .18s ease;
+    }
+
+    .pairing-code:focus {
+      border-color: rgba(121, 224, 194, .5);
+      background: rgba(4, 8, 13, .92);
+    }
+
+    .pairing-code::placeholder {
+      color: var(--faint);
+    }
+
+    .pairing-code[readonly] {
+      cursor: text;
+    }
+
+    .pairing-button-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .pairing-button-row .primary-btn,
+    .pairing-button-row .soft-btn {
+      min-width: 142px;
+    }
+
+    .pairing-privacy {
+      margin: -4px 0 0;
+      color: var(--faint);
+      font-size: 9px;
+      line-height: 1.5;
     }
 
     .seats {
@@ -3433,6 +3537,10 @@
         grid-template-columns: 1fr;
       }
 
+      .mode-card-practice {
+        grid-column: auto;
+      }
+
       .mode-card {
         display: grid;
         grid-template-columns: 38px 1fr;
@@ -3471,8 +3579,17 @@
         grid-template-columns: 1fr auto;
       }
 
-      #shareInviteBtn {
-        display: none;
+      .pairing-panel {
+        padding: 14px;
+      }
+
+      .pairing-button-row {
+        display: grid;
+      }
+
+      .pairing-button-row .primary-btn,
+      .pairing-button-row .soft-btn {
+        width: 100%;
       }
 
       .seats {
@@ -3610,19 +3727,11 @@
         </div>
 
         <div class="launch-panel">
-          <div id="inviteCallout" class="invite-callout">
-            <div>
-              <strong>Private duel invitation</strong>
-              <small>Room <span id="inviteRoomLabel">—</span> is waiting.</small>
-            </div>
-            <button id="joinInviteBtn" class="primary-btn" type="button">Join rival</button>
-          </div>
-
           <label class="field-label" for="playerNameInput">Your callsign</label>
           <input id="playerNameInput" class="text-input" type="text" maxlength="18" autocomplete="nickname" placeholder="Enter a name" value="Player">
 
           <div class="mode-grid">
-            <button id="practiceBtn" class="mode-card" type="button">
+            <button id="practiceBtn" class="mode-card mode-card-practice" type="button">
               <span class="mode-icon" aria-hidden="true">◎</span>
               <strong>Practice duel</strong>
               <small>Learn the system against a tactical bot. No setup needed.</small>
@@ -3630,19 +3739,24 @@
             <button id="hostBtn" class="mode-card" type="button">
               <span class="mode-icon" aria-hidden="true">↗</span>
               <strong>Host online</strong>
-              <small>Create a private room using the connection values set inside this HTML file.</small>
+              <small>Create an offer code and send it privately to one rival.</small>
+            </button>
+            <button id="joinBtn" class="mode-card" type="button">
+              <span class="mode-icon" aria-hidden="true">↘</span>
+              <strong>Join online</strong>
+              <small>Paste the host's offer, then send your answer code back.</small>
             </button>
           </div>
 
           <p class="panel-footnote">
             <span class="dot" aria-hidden="true"></span>
-            <span>Online moves use an encrypted peer connection. Metered TURN steps in automatically when direct connection is blocked. Friend rooms use the host as referee.</span>
+            <span>Online moves use an encrypted peer connection. Your configured TURN service relays the match when a direct route is blocked. No signaling key or player account is needed.</span>
           </p>
         </div>
       </div>
 
       <footer class="shell landing-footer">
-        <span>One file · No player sign-in · Private room links</span>
+        <span>One file · No player sign-in · Manual private pairing</span>
         <div class="legend" aria-label="Element cycle">
           <span><i class="fire-dot"></i>Fire</span>
           <span><i class="ice-dot"></i>Ice</span>
@@ -3666,11 +3780,30 @@
           <strong id="roomCodeText">———</strong>
         </div>
 
-        <div id="inviteRow" class="invite-row">
-          <label class="sr-only" for="inviteLinkInput">Invite link</label>
-          <input id="inviteLinkInput" class="text-input" type="text" readonly value="">
-          <button id="copyInviteBtn" class="soft-btn" type="button">Copy</button>
-          <button id="shareInviteBtn" class="icon-btn" type="button" aria-label="Share invite">↗</button>
+        <div id="pairingPanel" class="pairing-panel">
+          <div class="pairing-head">
+            <span id="pairingKicker" class="pairing-kicker">Step 1 of 2</span>
+            <strong id="pairingTitle">Preparing a private offer</strong>
+            <p id="pairingHelp">Keep this page open while the browser gathers connection routes.</p>
+          </div>
+
+          <div id="pairingOutputGroup" class="pairing-field">
+            <label id="pairingOutputLabel" for="pairingOutput">Host offer code</label>
+            <textarea id="pairingOutput" class="pairing-code" rows="4" readonly spellcheck="false" autocapitalize="off" aria-describedby="pairingPrivacy" placeholder="Gathering connection routes…"></textarea>
+            <div class="pairing-button-row">
+              <button id="copyPairingBtn" class="soft-btn" type="button" disabled>Copy offer</button>
+            </div>
+          </div>
+
+          <div id="pairingInputGroup" class="pairing-field">
+            <label id="pairingInputLabel" for="pairingInput">Rival's answer code</label>
+            <textarea id="pairingInput" class="pairing-code" rows="4" maxlength="131072" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste the answer code here" disabled></textarea>
+            <div class="pairing-button-row">
+              <button id="applyPairingBtn" class="primary-btn" type="button" disabled>Finish connection</button>
+            </div>
+          </div>
+
+          <p id="pairingPrivacy" class="pairing-privacy">Pairing codes are single-use connection details. Send them privately; they never contain your TURN credential.</p>
         </div>
 
         <div class="seats" aria-label="Lobby players">
@@ -4004,16 +4137,16 @@
     "use strict";
 
     /* TRIAD // 32 — ONLINE CONNECTION SETTINGS
-       Type your browser-safe Metered values here before publishing.
+       Type your Metered TURN username and credential here before publishing.
 
-       - meteredPublishableKey is still required for room signaling (pk_live_…).
-       - meteredTurnUsername and meteredTurnCredential are optional manual TURN
-         values. Leave both placeholders unchanged to use Metered's auto-injected
-         TURN servers instead.
-       - Never place a Metered account secret key (sk_… / secretKey) in this file.
-         Everything in a public GitHub Pages HTML file can be read by visitors. */
+       No publishable signaling key is needed. Players pair manually by exchanging
+       a one-time offer and answer code; those codes never contain the TURN
+       credential.
+
+       Never place a Metered account secret key (sk_… / secretKey) in this file.
+       Every value in a public GitHub Pages HTML file can be read by visitors, so
+       use quota-limited TURN credentials and rotate them when needed. */
     const GAME_CONFIG = Object.freeze({
-      meteredPublishableKey: "pk_live_REPLACE_ME",
       meteredTurnUsername: "ac26e8769c809d07ae519ea6",
       meteredTurnCredential: "WAse66kdxp3VMEA7",
       meteredTurnHost: "global.relay.metered.ca",
@@ -4711,19 +4844,25 @@
       landingScreen: $("#landingScreen"),
       lobbyScreen: $("#lobbyScreen"),
       gameScreen: $("#gameScreen"),
-      inviteCallout: $("#inviteCallout"),
-      inviteRoomLabel: $("#inviteRoomLabel"),
-      joinInviteBtn: $("#joinInviteBtn"),
       playerNameInput: $("#playerNameInput"),
       practiceBtn: $("#practiceBtn"),
       hostBtn: $("#hostBtn"),
+      joinBtn: $("#joinBtn"),
       lobbyTitle: $("#lobbyTitle"),
       lobbyStatus: $("#lobbyStatus"),
       roomCodeText: $("#roomCodeText"),
-      inviteRow: $("#inviteRow"),
-      inviteLinkInput: $("#inviteLinkInput"),
-      copyInviteBtn: $("#copyInviteBtn"),
-      shareInviteBtn: $("#shareInviteBtn"),
+      pairingPanel: $("#pairingPanel"),
+      pairingKicker: $("#pairingKicker"),
+      pairingTitle: $("#pairingTitle"),
+      pairingHelp: $("#pairingHelp"),
+      pairingOutputGroup: $("#pairingOutputGroup"),
+      pairingOutputLabel: $("#pairingOutputLabel"),
+      pairingOutput: $("#pairingOutput"),
+      copyPairingBtn: $("#copyPairingBtn"),
+      pairingInputGroup: $("#pairingInputGroup"),
+      pairingInputLabel: $("#pairingInputLabel"),
+      pairingInput: $("#pairingInput"),
+      applyPairingBtn: $("#applyPairingBtn"),
       hostSeat: $("#hostSeat"),
       hostSeatAvatar: $("#hostSeatAvatar"),
       hostSeatName: $("#hostSeatName"),
@@ -4813,7 +4952,6 @@
       state: null,
       room: null,
       inviteToken: null,
-      inviteUrl: "",
       selection: { actionId: null, elementId: null, modId: null },
       submitted: false,
       deadline: 0,
@@ -4877,18 +5015,6 @@
       return value;
     }
 
-    function isPublishableKey(value) {
-      return typeof value === "string" &&
-        value.length <= 512 &&
-        /^pk_[A-Za-z0-9._~-]+$/.test(value);
-    }
-
-    function effectiveMeteredKey() {
-      const configured = GAME_CONFIG.meteredPublishableKey;
-      if (isPublishableKey(configured) && !configured.includes("REPLACE_ME")) return configured;
-      return "";
-    }
-
     function configuredManualIceServers() {
       const username = String(GAME_CONFIG.meteredTurnUsername || "").trim();
       const credential = String(GAME_CONFIG.meteredTurnCredential || "").trim();
@@ -4896,6 +5022,9 @@
       if (
         !username ||
         !credential ||
+        username.length > 512 ||
+        credential.length > 512 ||
+        !/^[a-z0-9.-]+$/i.test(host) ||
         username.includes("REPLACE_ME") ||
         credential.includes("REPLACE_ME")
       ) return [];
@@ -5922,8 +6051,6 @@
         ui.guestSeatName.textContent = joining ? currentName() : "Waiting";
         ui.guestSeatAvatar.textContent = joining ? initials(currentName()) : "···";
       }
-      ui.inviteRow.style.display = app.role === "host" ? "" : "none";
-      ui.inviteLinkInput.value = app.inviteUrl || "";
     }
 
     function saveSettings() {
@@ -5933,24 +6060,6 @@
       storage.set("sound", String(app.soundEnabled));
       closeDialog(ui.settingsDialog);
       toast("Settings saved.");
-    }
-
-    function parseInviteHash() {
-      const hash = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
-      const params = new URLSearchParams(hash);
-      return {
-        room: params.get("room")?.toUpperCase() || "",
-        hostRoom: params.get("host")?.toUpperCase() || "",
-        token: params.get("token") || ""
-      };
-    }
-
-    function validGuestInvite(invite) {
-      return Boolean(
-        invite &&
-        /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/.test(invite.room) &&
-        /^[a-f0-9]{48}$/i.test(invite.token)
-      );
     }
 
     function createRoomCode() {
@@ -5966,17 +6075,145 @@
       return [...bytes].map(value => value.toString(16).padStart(2, "0")).join("");
     }
 
-    function buildInviteUrl(room, token) {
-      const base = location.href.split("#")[0];
-      const params = new URLSearchParams({ room, token });
-      return `${base}#${params.toString()}`;
+    const PAIRING_CODE_LIMIT = 131072;
+    const PAIRING_JSON_LIMIT = 98304;
+    const PAIRING_SDP_LIMIT = 81920;
+
+    function pairingCodePrefix(kind) {
+      return `TRIAD32.${String(kind).toUpperCase()}.${GAME_CONFIG.protocolVersion}.`;
     }
 
-    function updateInviteCallout() {
-      const invite = parseInviteHash();
-      const valid = validGuestInvite(invite);
-      ui.inviteCallout.classList.toggle("visible", valid);
-      if (valid) ui.inviteRoomLabel.textContent = invite.room;
+    function encodePairingCode(packet) {
+      const json = JSON.stringify(packet);
+      const bytes = new TextEncoder().encode(json);
+      if (bytes.length > PAIRING_JSON_LIMIT) throw new Error("The connection description is unexpectedly large.");
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      const body = btoa(binary)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
+      const code = `${pairingCodePrefix(packet.kind)}${body}`;
+      if (code.length > PAIRING_CODE_LIMIT) throw new Error("The connection code is unexpectedly large.");
+      return code;
+    }
+
+    function decodePairingCode(rawCode, expectedKind) {
+      const compact = String(rawCode || "").replace(/\s+/g, "");
+      const prefix = pairingCodePrefix(expectedKind);
+      if (!compact || compact.length > PAIRING_CODE_LIMIT || !compact.startsWith(prefix)) {
+        throw new Error(`Paste a valid ${expectedKind} code from TRIAD // 32.`);
+      }
+      const encoded = compact.slice(prefix.length);
+      if (!encoded || !/^[A-Za-z0-9_-]+$/.test(encoded)) {
+        throw new Error("The connection code is incomplete or damaged.");
+      }
+      const padded = encoded.replace(/-/g, "+").replace(/_/g, "/") +
+        "=".repeat((4 - encoded.length % 4) % 4);
+      let binary;
+      try {
+        binary = atob(padded);
+      } catch {
+        throw new Error("The connection code could not be decoded.");
+      }
+      if (binary.length > PAIRING_JSON_LIMIT) throw new Error("The connection code is too large.");
+      const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+      let packet;
+      try {
+        packet = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+      } catch {
+        throw new Error("The connection code contains invalid data.");
+      }
+      validatePairingPacket(packet, expectedKind);
+      return packet;
+    }
+
+    function validatePairingPacket(packet, expectedKind) {
+      const expectedRole = expectedKind === "offer" ? "host" : "guest";
+      const expectedDescription = expectedKind;
+      if (
+        !packet ||
+        packet.scope !== "triad32-manual" ||
+        packet.v !== GAME_CONFIG.protocolVersion ||
+        packet.kind !== expectedKind ||
+        packet.role !== expectedRole ||
+        !/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/.test(packet.room || "") ||
+        !/^[a-f0-9]{48}$/i.test(packet.exchangeId || "") ||
+        !/^session_[a-f0-9]{16}$/i.test(packet.sessionId || "") ||
+        typeof packet.name !== "string" ||
+        packet.name.length > 80 ||
+        packet.description?.type !== expectedDescription ||
+        typeof packet.description?.sdp !== "string" ||
+        packet.description.sdp.length < 20 ||
+        packet.description.sdp.length > PAIRING_SDP_LIMIT ||
+        !packet.description.sdp.startsWith("v=0") ||
+        !/(?:^|\r?\n)m=application\s/i.test(packet.description.sdp)
+      ) {
+        throw new Error(`This ${expectedKind} code is invalid or belongs to another game version.`);
+      }
+      if (expectedKind === "offer" && !/^[a-f0-9]{48}$/i.test(packet.token || "")) {
+        throw new Error("This offer is missing its private room token.");
+      }
+      if (
+        expectedKind === "answer" &&
+        (
+          !/^session_[a-f0-9]{16}$/i.test(packet.hostSessionId || "") ||
+          !/^[a-f0-9]{64}$/i.test(packet.offerDigest || "") ||
+          !/^[a-f0-9]{64}$/i.test(packet.proof || "")
+        )
+      ) {
+        throw new Error("This answer is missing its pairing proof.");
+      }
+    }
+
+    async function hmacHex(secret, value) {
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(String(secret)),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(String(value)));
+      return [...new Uint8Array(signature)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    function pairingDescription(description) {
+      return {
+        type: description.type,
+        sdp: description.sdp
+      };
+    }
+
+    async function descriptionDigest(description) {
+      return sha256Hex(JSON.stringify([description.type, description.sdp]));
+    }
+
+    function answerProofMaterial(packet, answerDigest) {
+      return [
+        "triad32-answer",
+        GAME_CONFIG.protocolVersion,
+        packet.room,
+        packet.exchangeId,
+        packet.hostSessionId,
+        packet.sessionId,
+        packet.offerDigest,
+        answerDigest
+      ].join("|");
+    }
+
+    async function dataChannelProof(type, role, sessionId) {
+      const network = app.network;
+      if (!network?.exchangeId || !app.inviteToken) return "";
+      return hmacHex(app.inviteToken, [
+        `triad32-${type}`,
+        GAME_CONFIG.protocolVersion,
+        app.room,
+        network.exchangeId,
+        role,
+        sessionId
+      ].join("|"));
     }
 
     function signalRequestId(prefix = "req") {
@@ -6182,6 +6419,14 @@
     function restartPeerHandshake() {
       const network = app.network;
       if (!network || network.manualClose) return;
+      if (network.transport === "manual") {
+        network.authenticated = false;
+        setConnectionStatus("Pairing ended", "offline");
+        setLobbyStatus("Pairing ended", "error");
+        ui.lobbyNote.textContent = "Manual pairing cannot reconnect silently. Leave the room and exchange fresh codes.";
+        toast("Peer link closed. Exchange fresh pairing codes to reconnect.", "error");
+        return;
+      }
       network.authenticated = false;
       network.authNonce = createInviteToken();
       network.sentProofs.clear();
@@ -6208,31 +6453,59 @@
       const network = app.network;
       if (!network) return;
       network.dc = channel;
-      channel.onopen = () => {
+      channel.onopen = async () => {
         network.reconnectAttempts = 0;
         setConnectionStatus("Peer link ready");
         setLobbyStatus("Peer link ready", "connected");
-        ui.lobbyNote.textContent = "Secure peer link established. Verifying the room invitation…";
+        ui.lobbyNote.textContent = "Encrypted peer link established. Verifying the one-time pairing code…";
+        let manualAuth = {};
+        if (network.transport === "manual") {
+          try {
+            manualAuth = {
+              room: app.room,
+              exchangeId: network.exchangeId,
+              proof: await dataChannelProof("dc-auth", app.role, network.sessionId)
+            };
+          } catch {
+            networkError("Could not verify the pairing code.");
+            return;
+          }
+          if (app.network !== network || network.dc !== channel || channel.readyState !== "open") return;
+        }
         sendGameMessage({
           type: "dc-auth",
           name: currentName(),
           role: app.role,
           sessionId: network.sessionId,
-          resumeSecret: network.resumeSecret
+          resumeSecret: network.resumeSecret,
+          ...manualAuth
         });
       };
       channel.onmessage = event => {
+        if (typeof event.data !== "string" || event.data.length > 262144) {
+          toast("An oversized peer message was ignored.", "error");
+          return;
+        }
+        let envelope;
         try {
-          handleGameEnvelope(JSON.parse(event.data));
+          envelope = JSON.parse(event.data);
         } catch {
           toast("A malformed peer message was ignored.", "error");
+          return;
         }
+        network.messageChain = (network.messageChain || Promise.resolve())
+          .then(() => handleGameEnvelope(envelope))
+          .catch(() => toast("A peer message could not be verified.", "error"));
       };
       channel.onerror = () => {
         setConnectionStatus("Peer link issue", "reconnecting");
       };
       channel.onclose = () => {
         if (network.manualClose) return;
+        if (network.transport === "manual") {
+          restartPeerHandshake();
+          return;
+        }
         setConnectionStatus("Reconnecting", "reconnecting");
         setLobbyStatus("Reconnecting", "connecting");
         restartPeerHandshake();
@@ -6263,7 +6536,7 @@
       pc.onconnectionstatechange = () => {
         const state = pc.connectionState;
         if (state === "connected") {
-          setConnectionStatus(network.usingTurn ? "Metered relay" : "Direct peer");
+          setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
         } else if (["disconnected", "failed"].includes(state)) {
           setConnectionStatus("Peer reconnecting", "reconnecting");
           if (state === "failed" && network.ws?.readyState === WebSocket.OPEN) {
@@ -6292,7 +6565,7 @@
           const local = selectedPair ? stats.get(selectedPair.localCandidateId) : null;
           const remote = selectedPair ? stats.get(selectedPair.remoteCandidateId) : null;
           network.usingTurn = local?.candidateType === "relay" || remote?.candidateType === "relay";
-          setConnectionStatus(network.usingTurn ? "Metered relay" : "Direct peer");
+          setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
         } catch {
           // Connection state is still valid even if stats are unavailable.
         }
@@ -6317,6 +6590,89 @@
         })();
       }
       return pc;
+    }
+
+    function createManualPeerConnection(initiator = false) {
+      const network = app.network;
+      if (!network || network.transport !== "manual") return null;
+      closePeerConnection();
+      const pc = new RTCPeerConnection({
+        iceServers: network.iceServers,
+        iceTransportPolicy: "all"
+      });
+      network.pc = pc;
+
+      pc.ondatachannel = event => wireDataChannel(event.channel);
+      pc.onconnectionstatechange = () => {
+        if (app.network !== network || network.manualClose || network.pc !== pc) return;
+        const state = pc.connectionState;
+        if (state === "connected") {
+          setConnectionStatus("Peer connected");
+        } else if (state === "disconnected") {
+          setConnectionStatus("Peer interrupted", "reconnecting");
+        } else if (state === "failed") {
+          setConnectionStatus("Pairing failed", "offline");
+          setLobbyStatus("Pairing failed", "error");
+          ui.lobbyNote.textContent = "The peer route failed. Leave this room and exchange a fresh pair of codes.";
+          toast("The peer route failed. Exchange fresh pairing codes.", "error");
+        }
+      };
+      pc.oniceconnectionstatechange = async () => {
+        if (
+          app.network !== network ||
+          network.pc !== pc ||
+          !["connected", "completed"].includes(pc.iceConnectionState)
+        ) return;
+        try {
+          const stats = await pc.getStats();
+          let selectedPair = null;
+          stats.forEach(report => {
+            if (report.type === "transport" && report.selectedCandidatePairId) {
+              selectedPair = stats.get(report.selectedCandidatePairId);
+            }
+          });
+          if (!selectedPair) {
+            stats.forEach(report => {
+              if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
+                selectedPair = report;
+              }
+            });
+          }
+          const local = selectedPair ? stats.get(selectedPair.localCandidateId) : null;
+          const remote = selectedPair ? stats.get(selectedPair.remoteCandidateId) : null;
+          network.usingTurn = local?.candidateType === "relay" || remote?.candidateType === "relay";
+          setConnectionStatus(network.usingTurn ? "TURN relay" : "Direct peer");
+        } catch {
+          // The connection remains valid if candidate stats are unavailable.
+        }
+      };
+
+      if (initiator) {
+        const channel = pc.createDataChannel("triad32-state", { ordered: true });
+        wireDataChannel(channel);
+      }
+      return pc;
+    }
+
+    function waitForIceGatheringComplete(pc, timeoutMs = 25000) {
+      if (pc.iceGatheringState === "complete") return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        let timer = null;
+        const cleanup = () => {
+          pc.removeEventListener("icegatheringstatechange", onStateChange);
+          if (timer) clearTimeout(timer);
+        };
+        const onStateChange = () => {
+          if (pc.iceGatheringState !== "complete") return;
+          cleanup();
+          resolve();
+        };
+        pc.addEventListener("icegatheringstatechange", onStateChange);
+        timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("Connection-route gathering timed out. Check the TURN values and try again."));
+        }, timeoutMs);
+      });
     }
 
     async function addPendingIce() {
@@ -6486,7 +6842,7 @@
         network.guestName = remoteName;
         populateLobby({ hostName: currentName(), guestName: remoteName });
         ui.lobbyTitle.textContent = "Rival found";
-        ui.lobbyNote.textContent = "Opening an encrypted peer link. Metered TURN will relay it if a direct route is blocked.";
+        ui.lobbyNote.textContent = "Opening an encrypted peer link. TURN will relay it if a direct route is blocked.";
         setLobbyStatus("Negotiating", "connecting");
         createPeerConnection(true);
       } else {
@@ -6544,7 +6900,7 @@
         network.pendingSignalRequests.delete(message.requestId);
         setLobbyStatus("Room open", "connecting");
         ui.lobbyNote.textContent = app.role === "host"
-          ? "Room is live. Send the invite link to one friend."
+          ? "Room is live. Send the pairing code to one friend."
           : "Room joined. Looking for the host…";
         publishHello();
         return;
@@ -6699,6 +7055,7 @@
     function connectOnlineNetwork(key) {
       cleanupNetwork();
       const network = {
+        transport: "metered",
         key,
         ws: null,
         pc: null,
@@ -6732,10 +7089,63 @@
         hostName: "",
         guestName: "",
         clockOffsetMs: null,
-        clockRttMs: null
+        clockRttMs: null,
+        messageChain: Promise.resolve()
       };
       app.network = network;
       openSignalSocket(network);
+    }
+
+    function connectManualNetwork() {
+      cleanupNetwork();
+      const iceServers = configuredManualIceServers();
+      const network = {
+        transport: "manual",
+        key: "",
+        ws: null,
+        pc: null,
+        dc: null,
+        localPeerId: createId("peer"),
+        remotePeerId: null,
+        authorizedPeerId: null,
+        sessionId: createId("session"),
+        remoteSessionId: null,
+        remoteAuthNonce: null,
+        resumeSecret: createInviteToken(),
+        remoteResumeSecret: null,
+        resumeEstablished: false,
+        authNonce: createInviteToken(),
+        signalVerified: false,
+        sentProofs: new Set(),
+        pendingSignalRequests: new Map(),
+        iceServers,
+        pendingIce: [],
+        subscribed: false,
+        authenticated: false,
+        manualClose: false,
+        reconnectAttempts: 0,
+        reconnectTimer: null,
+        negotiationTimer: null,
+        retryAfterMs: null,
+        subscribeRequestId: "",
+        receivedMessageIds: new Set(),
+        usingTurn: false,
+        hasTurn: iceServers.some(server => {
+          const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+          return urls.some(url => String(url).startsWith("turn:") || String(url).startsWith("turns:"));
+        }),
+        hostName: "",
+        guestName: "",
+        clockOffsetMs: null,
+        clockRttMs: null,
+        exchangeId: createInviteToken(),
+        localOfferDigest: "",
+        answerConsumed: false,
+        generation: 0,
+        messageChain: Promise.resolve()
+      };
+      app.network = network;
+      return network;
     }
 
     function cleanupNetwork() {
@@ -6778,7 +7188,7 @@
       return false;
     }
 
-    function handleGameEnvelope(envelope) {
+    async function handleGameEnvelope(envelope) {
       const network = app.network;
       if (
         !network ||
@@ -6797,8 +7207,22 @@
       if (!message?.type) return;
 
       if (message.type === "dc-auth") {
+        let manualProofValid = true;
+        if (network.transport === "manual") {
+          manualProofValid = Boolean(
+            message.room === app.room &&
+            message.exchangeId === network.exchangeId &&
+            /^[a-f0-9]{64}$/i.test(message.proof || "")
+          );
+          if (manualProofValid) {
+            const expectedProof = await dataChannelProof("dc-auth", message.role, message.sessionId);
+            if (app.network !== network || network.manualClose) return;
+            manualProofValid = equalHex(expectedProof, message.proof);
+          }
+        }
         if (
           !network.signalVerified ||
+          !manualProofValid ||
           message.role === app.role ||
           message.sessionId !== network.remoteSessionId ||
           !/^[a-f0-9]{48}$/i.test(message.resumeSecret || "") ||
@@ -6818,12 +7242,23 @@
         if (app.role === "host") {
           network.guestName = remoteName;
           populateLobby({ hostName: currentName(), guestName: remoteName });
+          let manualAck = {};
+          if (network.transport === "manual") {
+            manualAck = {
+              room: app.room,
+              exchangeId: network.exchangeId,
+              role: app.role,
+              proof: await dataChannelProof("dc-auth-ack", app.role, network.sessionId)
+            };
+            if (app.network !== network || network.manualClose) return;
+          }
           sendGameMessage({
             type: "dc-auth-ack",
             name: currentName(),
             hasTurn: network.hasTurn,
             sessionId: network.sessionId,
-            resumeSecret: network.resumeSecret
+            resumeSecret: network.resumeSecret,
+            ...manualAck
           });
           if (app.state) {
             sendGameMessage({
@@ -6845,8 +7280,23 @@
       }
 
       if (message.type === "dc-auth-ack" && app.role === "guest") {
+        let manualProofValid = true;
+        if (network.transport === "manual") {
+          manualProofValid = Boolean(
+            message.room === app.room &&
+            message.exchangeId === network.exchangeId &&
+            message.role === "host" &&
+            /^[a-f0-9]{64}$/i.test(message.proof || "")
+          );
+          if (manualProofValid) {
+            const expectedProof = await dataChannelProof("dc-auth-ack", message.role, message.sessionId);
+            if (app.network !== network || network.manualClose) return;
+            manualProofValid = equalHex(expectedProof, message.proof);
+          }
+        }
         if (
           !network.signalVerified ||
+          !manualProofValid ||
           message.sessionId !== network.remoteSessionId ||
           !/^[a-f0-9]{48}$/i.test(message.resumeSecret || "") ||
           (
@@ -6865,8 +7315,8 @@
         setLobbyStatus("Connected", "connected");
         ui.lobbyTitle.textContent = "Duel ready";
         ui.lobbyNote.textContent = message.hasTurn
-          ? "Metered TURN is armed as a relay fallback. Waiting for the host to deal."
-          : "Peer link is ready. TURN was not injected, so restrictive networks may fail.";
+          ? "TURN relay is ready if the direct route needs it. Waiting for the host to deal."
+          : "Peer link is ready. Waiting for the host to deal.";
         sendGameMessage({ type: "clock-ping", t0: Date.now() });
         return;
       }
@@ -6915,8 +7365,8 @@
       setLobbyStatus("Connected", "connected");
       ui.lobbyTitle.textContent = "Duel ready";
       ui.lobbyNote.textContent = app.network.hasTurn
-        ? "Metered TURN is armed as a relay fallback. Dealing the opening hand…"
-        : "Peer link is ready. TURN was not injected, so restrictive networks may fail.";
+        ? "TURN relay is armed as a fallback. Dealing the opening hand…"
+        : "Peer link is ready. Dealing the opening hand…";
       setTimeout(() => {
         if (app.role !== "host" || !app.network?.authenticated) return;
         app.state.turnStart = Date.now();
@@ -6927,7 +7377,7 @@
           deadlineAt: app.state.turnStart + GAME_CONFIG.turnSeconds * 1000
         });
         showScreen(ui.gameScreen);
-        setConnectionStatus(app.network.usingTurn ? "Metered relay" : "Direct peer");
+        setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Direct peer");
         beginPlanning({ preserveDeadline: true });
       }, 900);
     }
@@ -6964,7 +7414,7 @@
         app.seenCards.clear();
         ui.endOverlay.classList.remove("visible");
         showScreen(ui.gameScreen);
-        setConnectionStatus(app.network.usingTurn ? "Metered relay" : "Peer connected");
+        setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Peer connected");
         beginPlanning({ preserveDeadline: true });
         requestAnimationFrame(() => ui.lockTurnBtn.focus({ preventScroll: true }));
         return;
@@ -7065,7 +7515,7 @@
         if (!message.state || message.state.turn < (app.state?.turn || 0)) return;
         app.state = message.state;
         applyHostTiming(message);
-        setConnectionStatus(app.network.usingTurn ? "Metered relay" : "Peer connected");
+        setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Peer connected");
         beginPlanning({ preserveDeadline: true });
         requestAnimationFrame(() => ui.lockTurnBtn.focus({ preventScroll: true }));
         return;
@@ -7082,22 +7532,109 @@
 
     function onlineCapabilityProblem() {
       if (!window.isSecureContext) return "Online rooms require HTTPS. GitHub Pages provides it automatically.";
-      if (!globalThis.crypto?.subtle || !globalThis.crypto?.getRandomValues) return "This browser is missing secure cryptography required for private room links.";
-      if (!globalThis.WebSocket) return "This browser does not support realtime WebSocket connections.";
+      if (!globalThis.crypto?.subtle || !globalThis.crypto?.getRandomValues) return "This browser is missing secure cryptography required for private pairing.";
       if (!globalThis.RTCPeerConnection) return "This browser does not support WebRTC peer connections.";
-      if (!globalThis.TextEncoder) return "This browser is too old for the room authentication protocol.";
+      if (!globalThis.TextEncoder || !globalThis.TextDecoder) return "This browser is too old for the pairing protocol.";
       return "";
     }
 
-    function startOnlineHost() {
-      const capabilityProblem = onlineCapabilityProblem();
-      if (capabilityProblem) {
-        toast(capabilityProblem, "error");
-        return;
+    function turnConfigurationProblem() {
+      const servers = configuredManualIceServers();
+      const hasTurn = servers.some(server => {
+        const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+        return urls.some(url => /^turns?:/i.test(String(url)));
+      });
+      return hasTurn
+        ? ""
+        : "Set meteredTurnUsername and meteredTurnCredential inside GAME_CONFIG before playing online.";
+    }
+
+    function resetPairingUi(role) {
+      ui.pairingOutput.value = "";
+      ui.pairingInput.value = "";
+      ui.copyPairingBtn.disabled = true;
+      ui.pairingInput.disabled = role === "host";
+      ui.applyPairingBtn.disabled = role === "host";
+      ui.pairingOutputGroup.hidden = role === "guest";
+      ui.pairingInputGroup.hidden = false;
+      if (role === "host") {
+        ui.pairingKicker.textContent = "Step 1 of 2";
+        ui.pairingTitle.textContent = "Preparing your private offer";
+        ui.pairingHelp.textContent = "Keep this page open while the browser gathers direct and TURN relay routes.";
+        ui.pairingOutputLabel.textContent = "Host offer code";
+        ui.pairingOutput.placeholder = "Gathering connection routes…";
+        ui.copyPairingBtn.textContent = "Copy offer";
+        ui.pairingInputLabel.textContent = "Rival's answer code";
+        ui.pairingInput.placeholder = "Paste the answer code here";
+        ui.applyPairingBtn.textContent = "Finish connection";
+      } else {
+        ui.pairingKicker.textContent = "Step 1 of 2";
+        ui.pairingTitle.textContent = "Paste the host's offer";
+        ui.pairingHelp.textContent = "Ask the host for their complete offer code, then paste it below.";
+        ui.pairingOutputLabel.textContent = "Your answer code";
+        ui.pairingOutput.placeholder = "";
+        ui.copyPairingBtn.textContent = "Copy answer";
+        ui.pairingInputLabel.textContent = "Host offer code";
+        ui.pairingInput.placeholder = "Paste the host's offer code here";
+        ui.applyPairingBtn.textContent = "Create answer";
       }
-      const key = effectiveMeteredKey();
-      if (!key) {
-        toast("Set meteredPublishableKey inside GAME_CONFIG in this HTML file before hosting online.", "error");
+    }
+
+    async function createManualOffer(network) {
+      const generation = ++network.generation;
+      const pc = createManualPeerConnection(true);
+      if (!pc) return;
+      setLobbyStatus("Gathering routes", "connecting");
+      ui.lobbyNote.textContent = "Gathering direct and TURN relay routes. This can take several seconds.";
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await waitForIceGatheringComplete(pc);
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.pc !== pc ||
+          network.generation !== generation
+        ) return;
+        const description = pairingDescription(pc.localDescription);
+        network.localOfferDigest = await descriptionDigest(description);
+        if (app.network !== network || network.manualClose || network.pc !== pc) return;
+        const code = encodePairingCode({
+          scope: "triad32-manual",
+          v: GAME_CONFIG.protocolVersion,
+          kind: "offer",
+          role: "host",
+          room: app.room,
+          token: app.inviteToken,
+          exchangeId: network.exchangeId,
+          sessionId: network.sessionId,
+          name: currentName(),
+          description
+        });
+        ui.pairingOutput.value = code;
+        ui.pairingOutput.placeholder = "";
+        ui.copyPairingBtn.disabled = false;
+        ui.pairingInput.disabled = false;
+        ui.applyPairingBtn.disabled = false;
+        ui.pairingTitle.textContent = "Send this offer to your rival";
+        ui.pairingHelp.textContent = "Copy the whole offer code, send it privately, then paste the answer they return.";
+        setLobbyStatus("Offer ready", "connecting");
+        const relayReady = /(?:^|\r?\n)a=candidate:.*\styp relay(?:\s|$)/im.test(description.sdp);
+        ui.lobbyNote.textContent = relayReady
+          ? "Offer ready with TURN fallback. Waiting for your rival's answer."
+          : "Offer ready, but no relay route was gathered. Direct connection may still work.";
+        requestAnimationFrame(() => ui.copyPairingBtn.focus({ preventScroll: true }));
+      } catch (error) {
+        if (app.network !== network || network.manualClose) return;
+        networkError(error.message || "Could not create a host offer.");
+      }
+    }
+
+    async function startOnlineHost() {
+      const capabilityProblem = onlineCapabilityProblem();
+      const configurationProblem = turnConfigurationProblem();
+      if (capabilityProblem || configurationProblem) {
+        toast(capabilityProblem || configurationProblem, "error");
         return;
       }
       currentName();
@@ -7107,31 +7644,23 @@
       app.state = null;
       app.room = createRoomCode();
       app.inviteToken = createInviteToken();
-      app.inviteUrl = buildInviteUrl(app.room, app.inviteToken);
-      history.replaceState(null, "", `#host=${encodeURIComponent(app.room)}&token=${encodeURIComponent(app.inviteToken)}`);
+      history.replaceState(null, "", location.href.split("#")[0]);
+      const network = connectManualNetwork();
       resetLobbySeats();
       populateLobby({ hostName: currentName() });
       ui.lobbyTitle.textContent = "Waiting for a rival";
-      ui.lobbyNote.textContent = "Opening the room. Share the invite when it is ready.";
-      setLobbyStatus("Connecting", "connecting");
+      ui.lobbyNote.textContent = "Preparing a single-use pairing offer.";
+      setLobbyStatus("Preparing", "connecting");
+      resetPairingUi("host");
       showScreen(ui.lobbyScreen);
-      connectOnlineNetwork(key);
+      await createManualOffer(network);
     }
 
     function startOnlineGuest() {
       const capabilityProblem = onlineCapabilityProblem();
-      if (capabilityProblem) {
-        toast(capabilityProblem, "error");
-        return;
-      }
-      const invite = parseInviteHash();
-      if (!validGuestInvite(invite)) {
-        toast("This invite link is incomplete or invalid.", "error");
-        return;
-      }
-      const key = effectiveMeteredKey();
-      if (!key) {
-        toast("Set meteredPublishableKey inside GAME_CONFIG in this HTML file before joining online.", "error");
+      const configurationProblem = turnConfigurationProblem();
+      if (capabilityProblem || configurationProblem) {
+        toast(capabilityProblem || configurationProblem, "error");
         return;
       }
       currentName();
@@ -7139,16 +7668,166 @@
       app.role = "guest";
       app.seat = 1;
       app.state = null;
-      app.room = invite.room;
-      app.inviteToken = invite.token;
-      app.inviteUrl = location.href;
+      app.room = null;
+      app.inviteToken = null;
+      history.replaceState(null, "", location.href.split("#")[0]);
+      connectManualNetwork();
       resetLobbySeats();
-      populateLobby({ hostName: "Finding host", guestName: currentName(), joining: true });
-      ui.lobbyTitle.textContent = "Joining private duel";
-      ui.lobbyNote.textContent = "Connecting to the room and verifying your invitation…";
-      setLobbyStatus("Connecting", "connecting");
+      populateLobby({ hostName: "Host from offer", guestName: currentName(), joining: true });
+      ui.lobbyTitle.textContent = "Join a private duel";
+      ui.lobbyNote.textContent = "Paste the host's offer to create your answer.";
+      setLobbyStatus("Paste offer", "connecting");
+      resetPairingUi("guest");
       showScreen(ui.lobbyScreen);
-      connectOnlineNetwork(key);
+      requestAnimationFrame(() => ui.pairingInput.focus({ preventScroll: true }));
+    }
+
+    async function createManualAnswer(rawCode) {
+      const network = app.network;
+      if (!network || network.transport !== "manual" || app.role !== "guest") return;
+      const packet = decodePairingCode(rawCode, "offer");
+      const generation = ++network.generation;
+      app.room = packet.room;
+      app.inviteToken = packet.token;
+      network.exchangeId = packet.exchangeId;
+      network.remoteSessionId = packet.sessionId;
+      network.remotePeerId = `manual-${packet.sessionId}`;
+      network.authorizedPeerId = network.remotePeerId;
+      network.hostName = cleanName(packet.name);
+      network.signalVerified = true;
+      populateLobby({
+        hostName: network.hostName,
+        guestName: currentName(),
+        joining: true
+      });
+      const pc = createManualPeerConnection(false);
+      if (!pc) throw new Error("Could not open a peer connection.");
+      setLobbyStatus("Building answer", "connecting");
+      ui.lobbyNote.textContent = "Verifying the offer and gathering your connection routes.";
+      try {
+        const remoteDescription = pairingDescription(packet.description);
+        network.localOfferDigest = await descriptionDigest(remoteDescription);
+        await pc.setRemoteDescription(remoteDescription);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await waitForIceGatheringComplete(pc);
+        if (
+          app.network !== network ||
+          network.manualClose ||
+          network.pc !== pc ||
+          network.generation !== generation
+        ) return;
+        const description = pairingDescription(pc.localDescription);
+        const answerDigest = await descriptionDigest(description);
+        const answerPacket = {
+          scope: "triad32-manual",
+          v: GAME_CONFIG.protocolVersion,
+          kind: "answer",
+          role: "guest",
+          room: app.room,
+          exchangeId: network.exchangeId,
+          hostSessionId: packet.sessionId,
+          sessionId: network.sessionId,
+          name: currentName(),
+          offerDigest: network.localOfferDigest,
+          description,
+          proof: ""
+        };
+        answerPacket.proof = await hmacHex(
+          app.inviteToken,
+          answerProofMaterial(answerPacket, answerDigest)
+        );
+        if (app.network !== network || network.manualClose || network.pc !== pc) return;
+        ui.pairingOutput.value = encodePairingCode(answerPacket);
+        ui.pairingOutputGroup.hidden = false;
+        ui.pairingInputGroup.hidden = true;
+        ui.copyPairingBtn.disabled = false;
+        ui.pairingKicker.textContent = "Step 2 of 2";
+        ui.pairingTitle.textContent = "Send this answer back";
+        ui.pairingHelp.textContent = "Copy the whole answer code and send it to the host. Keep this page open while they apply it.";
+        setLobbyStatus("Answer ready", "connecting");
+        ui.lobbyNote.textContent = "Answer ready. Waiting for the host to finish the connection.";
+        requestAnimationFrame(() => ui.copyPairingBtn.focus({ preventScroll: true }));
+      } catch (error) {
+        if (app.network === network && !network.manualClose) {
+          closePeerConnection();
+          network.signalVerified = false;
+        }
+        throw error;
+      }
+    }
+
+    async function applyManualAnswer(rawCode) {
+      const network = app.network;
+      if (!network || network.transport !== "manual" || app.role !== "host") return;
+      if (!network.pc?.localDescription || !network.localOfferDigest) {
+        throw new Error("The host offer is not ready yet.");
+      }
+      if (network.answerConsumed) throw new Error("An answer has already been applied.");
+      const packet = decodePairingCode(rawCode, "answer");
+      if (
+        packet.room !== app.room ||
+        packet.exchangeId !== network.exchangeId ||
+        packet.hostSessionId !== network.sessionId ||
+        !equalHex(packet.offerDigest, network.localOfferDigest)
+      ) {
+        throw new Error("This answer belongs to a different or expired offer.");
+      }
+      const answerDigest = await descriptionDigest(packet.description);
+      const expectedProof = await hmacHex(
+        app.inviteToken,
+        answerProofMaterial(packet, answerDigest)
+      );
+      if (app.network !== network || network.manualClose) return;
+      if (!equalHex(expectedProof, packet.proof)) {
+        throw new Error("The answer's pairing proof is invalid.");
+      }
+      network.remoteSessionId = packet.sessionId;
+      network.remotePeerId = `manual-${packet.sessionId}`;
+      network.authorizedPeerId = network.remotePeerId;
+      network.guestName = cleanName(packet.name);
+      network.signalVerified = true;
+      network.answerConsumed = true;
+      populateLobby({ hostName: currentName(), guestName: network.guestName });
+      try {
+        await network.pc.setRemoteDescription(pairingDescription(packet.description));
+      } catch (error) {
+        network.answerConsumed = false;
+        network.signalVerified = false;
+        throw error;
+      }
+      if (app.network !== network || network.manualClose) return;
+      ui.pairingInput.value = "";
+      ui.pairingInputGroup.hidden = true;
+      ui.pairingKicker.textContent = "Pairing complete";
+      ui.pairingTitle.textContent = "Opening the encrypted peer link";
+      ui.pairingHelp.textContent = "The game will begin automatically after both browsers verify the room.";
+      setLobbyStatus("Connecting", "connecting");
+      ui.lobbyNote.textContent = "Answer accepted. Establishing the direct or TURN-relayed peer route.";
+    }
+
+    async function applyPairingCode() {
+      const network = app.network;
+      if (!network || network.transport !== "manual") return;
+      const rawCode = ui.pairingInput.value;
+      if (!rawCode.trim()) {
+        toast(`Paste the ${app.role === "host" ? "answer" : "offer"} code first.`, "error");
+        return;
+      }
+      ui.applyPairingBtn.disabled = true;
+      ui.pairingInput.disabled = true;
+      try {
+        if (app.role === "host") await applyManualAnswer(rawCode);
+        else await createManualAnswer(rawCode);
+      } catch (error) {
+        if (app.network !== network || network.manualClose) return;
+        setLobbyStatus("Code rejected", "error");
+        ui.lobbyNote.textContent = error.message || "The pairing code could not be used.";
+        toast(ui.lobbyNote.textContent, "error");
+        ui.applyPairingBtn.disabled = false;
+        ui.pairingInput.disabled = false;
+        requestAnimationFrame(() => ui.pairingInput.focus({ preventScroll: true }));
+      }
     }
 
     function goHome({ force = false } = {}) {
@@ -7160,55 +7839,48 @@
       app.state = null;
       app.room = null;
       app.inviteToken = null;
-      app.inviteUrl = "";
       app.selection = { actionId: null, elementId: null, modId: null };
       app.submitted = false;
       app.resolving = false;
       ui.showdownOverlay.classList.remove("visible");
       ui.endOverlay.classList.remove("visible");
       ui.appRoot.inert = false;
+      ui.pairingOutput.value = "";
+      ui.pairingInput.value = "";
+      ui.copyPairingBtn.disabled = true;
+      ui.applyPairingBtn.disabled = true;
       history.replaceState(null, "", location.href.split("#")[0]);
-      updateInviteCallout();
       showScreen(ui.landingScreen);
     }
 
-    async function copyInvite() {
-      if (!app.inviteUrl) return;
+    async function copyPairingCode() {
+      const code = ui.pairingOutput.value;
+      if (!code) return;
+      const originalLabel = ui.copyPairingBtn.textContent;
       try {
-        await navigator.clipboard.writeText(app.inviteUrl);
-        ui.copyInviteBtn.textContent = "Copied";
-        toast("Invite link copied.");
-        setTimeout(() => { ui.copyInviteBtn.textContent = "Copy"; }, 1500);
+        await navigator.clipboard.writeText(code);
+        ui.copyPairingBtn.textContent = "Copied";
+        toast(`${app.role === "host" ? "Offer" : "Answer"} code copied.`);
       } catch {
-        ui.inviteLinkInput.select();
+        ui.pairingOutput.focus();
+        ui.pairingOutput.select();
         document.execCommand("copy");
-        toast("Invite link selected. Copy it to send.");
+        toast("Connection code selected. Copy it and send it privately.");
       }
-    }
-
-    async function shareInvite() {
-      if (!app.inviteUrl) return;
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: "TRIAD // 32 duel",
-            text: `${currentName()} challenged you to a TRIAD // 32 duel.`,
-            url: app.inviteUrl
-          });
-          return;
-        } catch (error) {
-          if (error.name === "AbortError") return;
-        }
-      }
-      copyInvite();
+      setTimeout(() => {
+        if (ui.copyPairingBtn.textContent === "Copied") ui.copyPairingBtn.textContent = originalLabel;
+      }, 1500);
     }
 
     // UI event wiring
     ui.practiceBtn.addEventListener("click", startPractice);
     ui.hostBtn.addEventListener("click", startOnlineHost);
-    ui.joinInviteBtn.addEventListener("click", startOnlineGuest);
-    ui.copyInviteBtn.addEventListener("click", copyInvite);
-    ui.shareInviteBtn.addEventListener("click", shareInvite);
+    ui.joinBtn.addEventListener("click", startOnlineGuest);
+    ui.copyPairingBtn.addEventListener("click", copyPairingCode);
+    ui.applyPairingBtn.addEventListener("click", applyPairingCode);
+    ui.pairingInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) applyPairingCode();
+    });
     ui.leaveLobbyBtn.addEventListener("click", () => goHome({ force: true }));
     ui.lockTurnBtn.addEventListener("click", submitLocalTurn);
     ui.rematchBtn.addEventListener("click", requestRematch);
@@ -7301,14 +7973,12 @@
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) updateTimer();
     });
-    window.addEventListener("hashchange", updateInviteCallout);
 
     // Initial view
     ui.playerNameInput.value = cleanName(storage.get("name", "Player"));
     ui.settingsNameInput.value = ui.playerNameInput.value;
     ui.handSortSelect.value = app.handSort;
     syncSoundControls();
-    updateInviteCallout();
   </script>
 </body>
 </html>
