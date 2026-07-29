@@ -1010,6 +1010,7 @@
 
     /* Game shell */
     #gameScreen {
+      position: relative;
       grid-template-rows: auto minmax(0, 1fr) auto;
       height: 100vh;
       height: 100dvh;
@@ -2014,6 +2015,241 @@
 
     @keyframes deal-in {
       from { opacity: 0; transform: translateY(7px) scale(.98); }
+    }
+
+    /* Guided opening draw */
+    .opening-deal {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      visibility: hidden;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 52%, rgba(121, 224, 194, .11), transparent 28%),
+        rgba(5, 8, 12, .86);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .24s ease, visibility .24s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .opening-deal.active {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .opening-deal-copy {
+      position: absolute;
+      top: clamp(74px, 13vh, 118px);
+      left: 50%;
+      display: grid;
+      width: min(420px, calc(100% - 32px));
+      gap: 5px;
+      text-align: center;
+      transform: translateX(-50%);
+    }
+
+    .opening-deal-copy small {
+      color: var(--mint);
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .opening-deal-copy strong {
+      font-family: var(--display);
+      font-size: clamp(21px, 3vw, 31px);
+      font-weight: 620;
+      letter-spacing: -.03em;
+    }
+
+    .opening-deal-copy span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 650;
+      letter-spacing: .04em;
+    }
+
+    .opening-deal-stage {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .opening-deck {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 78px;
+      height: 112px;
+      opacity: 0;
+      transform: translate(-50%, calc(-50% + 18px)) scale(.9);
+    }
+
+    .opening-deal.active .opening-deck {
+      animation: opening-deck-arrive .34s var(--ease-out) forwards;
+    }
+
+    .opening-deal.dealing .opening-deck {
+      animation: opening-deck-settle .46s ease forwards;
+    }
+
+    .opening-deck-card {
+      --deck-x: 0px;
+      --deck-y: 0px;
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255, 255, 255, .19);
+      border-radius: 11px;
+      background:
+        linear-gradient(135deg, transparent 46%, rgba(121, 224, 194, .13) 47% 53%, transparent 54%),
+        linear-gradient(155deg, #222b36, #11171f 62%);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, .42);
+      transform: translate(var(--deck-x), var(--deck-y));
+    }
+
+    .opening-deck-card::before {
+      position: absolute;
+      inset: 22px 15px;
+      border: 1px solid rgba(121, 224, 194, .38);
+      border-radius: 8px;
+      content: "";
+      transform: rotate(45deg);
+    }
+
+    .opening-deck-card::after {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      content: "32";
+      color: var(--mint);
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -.05em;
+    }
+
+    .opening-deck-card:nth-child(1) { --deck-x: -5px; --deck-y: 6px; }
+    .opening-deck-card:nth-child(2) { --deck-x: -3px; --deck-y: 4px; }
+    .opening-deck-card:nth-child(3) { --deck-x: -1px; --deck-y: 2px; }
+
+    .opening-deal.shuffling .opening-deck-card:nth-child(2) {
+      animation: opening-shuffle-left .27s var(--ease-out) 2;
+    }
+
+    .opening-deal.shuffling .opening-deck-card:nth-child(3) {
+      animation: opening-shuffle-right .27s var(--ease-out) .04s 2;
+    }
+
+    .opening-deal.shuffling .opening-deck-card:nth-child(4) {
+      animation: opening-shuffle-top .27s var(--ease-out) .08s 2;
+    }
+
+    .opening-deal-flight-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .opening-deal-flight {
+      position: fixed;
+      z-index: 3;
+      width: 92px !important;
+      height: 132px !important;
+      margin: 0;
+      opacity: 0;
+      pointer-events: none;
+      will-change: top, left, transform, opacity;
+    }
+
+    #gameScreen.opening-deal-active #playerHand,
+    #gameScreen.opening-deal-active #opponentHand {
+      opacity: .12;
+      transition: opacity .2s ease;
+    }
+
+    .opening-guide-prompt {
+      position: absolute;
+      bottom: clamp(126px, 20vh, 178px);
+      left: 50%;
+      z-index: 18;
+      display: flex;
+      min-height: 38px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 13px;
+      border: 1px solid rgba(121, 224, 194, .36);
+      border-radius: 999px;
+      background: rgba(12, 18, 23, .95);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .34);
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+
+    .opening-guide-prompt[hidden] {
+      display: none;
+    }
+
+    .opening-guide-prompt span {
+      color: var(--mint);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .opening-guide-prompt strong {
+      color: var(--ink);
+      font-size: 9px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .game-card.opening-guide-target,
+    .slot.opening-guide-committed,
+    #lockTurnBtn.opening-guide-submit {
+      z-index: 9;
+      outline: 2px solid var(--mint);
+      outline-offset: 3px;
+      animation: opening-guide-pulse 1.15s ease-in-out infinite;
+    }
+
+    @keyframes opening-deck-arrive {
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes opening-deck-settle {
+      from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      to { opacity: .2; transform: translate(-50%, calc(-50% + 8px)) scale(.88); filter: blur(1px); }
+    }
+
+    @keyframes opening-shuffle-left {
+      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
+      42% { transform: translate(calc(var(--deck-x) - 50px), calc(var(--deck-y) - 3px)) rotate(-7deg); }
+      70% { transform: translate(calc(var(--deck-x) + 3px), var(--deck-y)) rotate(1deg); }
+    }
+
+    @keyframes opening-shuffle-right {
+      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
+      42% { transform: translate(calc(var(--deck-x) + 50px), calc(var(--deck-y) + 3px)) rotate(7deg); }
+      70% { transform: translate(calc(var(--deck-x) - 3px), var(--deck-y)) rotate(-1deg); }
+    }
+
+    @keyframes opening-shuffle-top {
+      0%, 100% { transform: translate(var(--deck-x), var(--deck-y)); }
+      45% { transform: translate(var(--deck-x), calc(var(--deck-y) - 19px)) rotate(3deg); }
+      72% { transform: translate(var(--deck-x), calc(var(--deck-y) + 3px)); }
+    }
+
+    @keyframes opening-guide-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(121, 224, 194, .12), 0 14px 28px rgba(0, 0, 0, .28); }
+      50% { box-shadow: 0 0 0 7px rgba(121, 224, 194, 0), 0 16px 34px rgba(0, 0, 0, .36); }
     }
 
     .empty-hand {
@@ -3201,6 +3437,14 @@
         min-height: 580px;
       }
 
+      .opening-deal-copy {
+        top: 64px;
+      }
+
+      .opening-guide-prompt {
+        bottom: 126px;
+      }
+
       .game-topbar {
         position: sticky;
         top: 0;
@@ -3704,6 +3948,19 @@
         min-height: 540px;
       }
 
+      .opening-deal-copy {
+        top: 56px;
+      }
+
+      .opening-deck {
+        width: 68px;
+        height: 98px;
+      }
+
+      .opening-guide-prompt {
+        bottom: 111px;
+      }
+
       .battlefield {
         grid-template-rows: 72px minmax(210px, 1fr) 68px;
       }
@@ -3772,6 +4029,12 @@
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .12s !important;
+      }
+
+      .game-card.opening-guide-target,
+      .slot.opening-guide-committed,
+      #lockTurnBtn.opening-guide-submit {
+        animation: none !important;
       }
 
     }
@@ -3930,7 +4193,29 @@
         </div>
       </header>
 
-      <div class="battlefield">
+      <div id="openingDeal" class="opening-deal" aria-hidden="true">
+        <div class="opening-deal-copy" aria-hidden="true">
+          <small>Turn 01 · Opening draw</small>
+          <strong id="openingDealTitle">Deck online</strong>
+          <span id="openingDealSubtitle">Preparing one action for each duelist</span>
+        </div>
+        <div class="opening-deal-stage" aria-hidden="true">
+          <div id="openingDealDeck" class="opening-deck">
+            <span class="opening-deck-card"></span>
+            <span class="opening-deck-card"></span>
+            <span class="opening-deck-card"></span>
+            <span class="opening-deck-card"></span>
+          </div>
+          <div id="openingDealFlightLayer" class="opening-deal-flight-layer"></div>
+        </div>
+      </div>
+
+      <div id="openingGuidePrompt" class="opening-guide-prompt" hidden>
+        <span>First move</span>
+        <strong id="openingGuideText">Select Reload</strong>
+      </div>
+
+      <div id="gameBattlefield" class="battlefield">
         <div class="player-strip opponent-strip">
           <div class="identity">
             <div id="opponentAvatar" class="avatar">R</div>
@@ -4012,7 +4297,7 @@
         </div>
       </div>
 
-      <div class="hand-dock">
+      <div id="handDock" class="hand-dock">
         <div class="hand-head">
           <span>Your hand</span>
           <div class="hand-controls">
@@ -4237,6 +4522,7 @@
       protocolVersion: 1
     });
 
+    const OPENING_DEAL_DURATION_MS = 1850;
     const ELEMENTS = Object.freeze(["fire", "ice", "water"]);
     const MODS = Object.freeze([
       "vampiric",
@@ -4941,6 +5227,15 @@
       timerNumber: $("#timerNumber"),
       soundBtn: $("#soundBtn"),
       logBtn: $("#logBtn"),
+      openingDeal: $("#openingDeal"),
+      openingDealTitle: $("#openingDealTitle"),
+      openingDealSubtitle: $("#openingDealSubtitle"),
+      openingDealDeck: $("#openingDealDeck"),
+      openingDealFlightLayer: $("#openingDealFlightLayer"),
+      openingGuidePrompt: $("#openingGuidePrompt"),
+      openingGuideText: $("#openingGuideText"),
+      gameBattlefield: $("#gameBattlefield"),
+      handDock: $("#handDock"),
       opponentAvatar: $("#opponentAvatar"),
       opponentName: $("#opponentName"),
       opponentReadyTag: $("#opponentReadyTag"),
@@ -5026,6 +5321,14 @@
       resolutionTimerId: null,
       matchStartTimerId: null,
       showdownTimers: [],
+      openingDeal: {
+        matchId: null,
+        active: false,
+        guide: null,
+        timers: [],
+        animations: [],
+        resizeHandler: null
+      },
       timerAnnouncements: new Set(),
       seenCards: new Set(),
       handSort: ["category", "draw", "name"].includes(storage.get("handSort", "category"))
@@ -5181,6 +5484,248 @@
       `;
     }
 
+    function queueOpeningDeal(callback, delay) {
+      const timerId = setTimeout(() => {
+        app.openingDeal.timers = app.openingDeal.timers.filter(id => id !== timerId);
+        if (app.openingDeal.active) callback();
+      }, delay);
+      app.openingDeal.timers.push(timerId);
+      return timerId;
+    }
+
+    function clearOpeningDealMotion() {
+      const deal = app.openingDeal;
+      deal.timers.forEach(clearTimeout);
+      deal.timers = [];
+      deal.animations.forEach(animation => {
+        try {
+          animation.cancel();
+        } catch {
+          // The animation already finished.
+        }
+      });
+      deal.animations = [];
+      if (deal.resizeHandler) {
+        window.removeEventListener("resize", deal.resizeHandler);
+        deal.resizeHandler = null;
+      }
+      deal.active = false;
+      ui.openingDeal.classList.remove("active", "shuffling", "dealing");
+      ui.openingDeal.setAttribute("aria-hidden", "true");
+      ui.openingDealFlightLayer.innerHTML = "";
+      ui.gameScreen.classList.remove("opening-deal-active");
+      ui.gameScreen.removeAttribute("aria-busy");
+      ui.gameBattlefield.inert = false;
+      ui.handDock.inert = false;
+    }
+
+    function syncOpeningGuide() {
+      ui.playerHand.querySelectorAll(".opening-guide-target").forEach(card => {
+        card.classList.remove("opening-guide-target");
+        card.removeAttribute("aria-describedby");
+      });
+      ui.actionSlot.classList.remove("opening-guide-committed");
+      ui.actionSlot.removeAttribute("aria-describedby");
+      ui.actionSlot.querySelector("button")?.removeAttribute("aria-describedby");
+      ui.lockTurnBtn.classList.remove("opening-guide-submit");
+      ui.lockTurnBtn.removeAttribute("aria-describedby");
+
+      const deal = app.openingDeal;
+      const showGuide = Boolean(
+        deal.guide &&
+        !deal.active &&
+        app.state &&
+        app.state.turn === 1 &&
+        app.state.phase === "planning" &&
+        !app.submitted
+      );
+      ui.openingGuidePrompt.hidden = !showGuide;
+      if (!showGuide) return;
+
+      if (deal.guide === "reload") {
+        ui.openingGuideText.textContent = "Select Reload from your hand";
+        const reloadCard = ui.playerHand.querySelector('[data-card-value="reload"]');
+        if (reloadCard) {
+          reloadCard.classList.add("opening-guide-target");
+          reloadCard.setAttribute("aria-describedby", "openingGuidePrompt");
+        }
+        return;
+      }
+
+      ui.openingGuideText.textContent = "Reload is ready — lock your turn";
+      ui.actionSlot.classList.add("opening-guide-committed");
+      ui.actionSlot.querySelector("button")?.setAttribute("aria-describedby", "openingGuidePrompt");
+      ui.lockTurnBtn.classList.add("opening-guide-submit");
+      ui.lockTurnBtn.setAttribute("aria-describedby", "openingGuidePrompt");
+    }
+
+    function clearOpeningDeal({ resetMatch = false } = {}) {
+      clearOpeningDealMotion();
+      app.openingDeal.guide = null;
+      if (resetMatch) app.openingDeal.matchId = null;
+      syncOpeningGuide();
+    }
+
+    function finishOpeningDeal() {
+      if (!app.openingDeal.active) return;
+      const matchId = app.openingDeal.matchId;
+      clearOpeningDealMotion();
+      if (
+        !app.state ||
+        app.state.id !== matchId ||
+        app.state.turn !== 1 ||
+        app.state.phase !== "planning" ||
+        app.state.winner !== null
+      ) return;
+
+      app.openingDeal.guide = app.selection.actionId ? "submit" : "reload";
+      renderGame();
+      requestAnimationFrame(() => {
+        const target = app.openingDeal.guide === "reload"
+          ? ui.playerHand.querySelector('[data-card-value="reload"]')
+          : ui.lockTurnBtn;
+        target?.focus({ preventScroll: true });
+      });
+      announce("Opening draw. Both duelists receive Reload. Select Reload, then lock your turn.");
+    }
+
+    function createOpeningFlight(target, side, delay = 0) {
+      if (!target || !app.openingDeal.active) return;
+      const sourceRect = ui.openingDealDeck.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      if (!sourceRect.width || !targetRect.width) return;
+
+      const sourceX = sourceRect.left + sourceRect.width / 2;
+      const sourceY = sourceRect.top + sourceRect.height / 2;
+      const targetX = targetRect.left + targetRect.width / 2;
+      const targetY = targetRect.top + targetRect.height / 2;
+      const targetScale = clamp(Math.min(targetRect.width / 92, targetRect.height / 132), .48, 1);
+      const verticalDirection = side === "opponent" ? -1 : 1;
+      const rotation = side === "opponent" ? -350 : 390;
+      const clone = document.createElement("div");
+      clone.className = `game-card card-family-action card-reload opening-deal-flight ${side}`;
+      clone.innerHTML = cardContent({ value: "reload" });
+      clone.setAttribute("aria-hidden", "true");
+      clone.style.left = `${sourceX}px`;
+      clone.style.top = `${sourceY}px`;
+      ui.openingDealFlightLayer.appendChild(clone);
+
+      if (typeof clone.animate !== "function") return;
+      const deltaX = targetX - sourceX;
+      const deltaY = targetY - sourceY;
+      const animation = clone.animate([
+        {
+          left: `${sourceX}px`,
+          top: `${sourceY}px`,
+          opacity: .15,
+          transform: `translate(-50%, -50%) rotate(${verticalDirection * 7}deg) scale(.72)`
+        },
+        {
+          offset: .22,
+          left: `${sourceX + deltaX * .12}px`,
+          top: `${sourceY - 34}px`,
+          opacity: 1,
+          transform: `translate(-50%, -50%) rotate(${verticalDirection * 68}deg) scale(.9)`
+        },
+        {
+          offset: .78,
+          left: `${sourceX + deltaX * .88}px`,
+          top: `${sourceY + deltaY * .82 - verticalDirection * 12}px`,
+          opacity: 1,
+          transform: `translate(-50%, -50%) rotate(${rotation * .82}deg) scale(${Math.max(targetScale, .72)})`
+        },
+        {
+          offset: .92,
+          left: `${targetX}px`,
+          top: `${targetY}px`,
+          opacity: 1,
+          transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${targetScale})`
+        },
+        {
+          left: `${targetX}px`,
+          top: `${targetY}px`,
+          opacity: 0,
+          transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${targetScale * .98})`
+        }
+      ], {
+        duration: side === "opponent" ? 760 : 820,
+        delay,
+        easing: "cubic-bezier(.18,.74,.2,1)",
+        fill: "forwards"
+      });
+      app.openingDeal.animations.push(animation);
+    }
+
+    function launchOpeningFlights() {
+      if (!app.openingDeal.active) return;
+      const opponentTarget = ui.opponentHand.querySelector(".card-back-mini") || ui.opponentHand;
+      const playerTarget = ui.playerHand.querySelector('[data-card-value="reload"]');
+      createOpeningFlight(opponentTarget, "opponent", 0);
+      createOpeningFlight(playerTarget, "player", 90);
+      playSound("reveal");
+    }
+
+    function shouldRunOpeningDeal({ resume = false } = {}) {
+      if (resume || !app.state || app.state.turn !== 1 || app.state.winner !== null) return false;
+      if (app.openingDeal.matchId === app.state.id) return false;
+      const { me } = getPlayersForView();
+      return Boolean(me?.hand?.some(card => card.value === "reload"));
+    }
+
+    function runOpeningDeal({ resume = false } = {}) {
+      if (!shouldRunOpeningDeal({ resume })) return 0;
+      clearOpeningDeal();
+      app.openingDeal.matchId = app.state.id;
+      app.openingDeal.active = true;
+      ui.openingDealTitle.textContent = "Deck online";
+      ui.openingDealSubtitle.textContent = "Preparing one action for each duelist";
+
+      const reducedMotion = typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reducedMotion) {
+        finishOpeningDeal();
+        return 0;
+      }
+
+      ui.openingDeal.classList.add("active");
+      ui.openingDeal.setAttribute("aria-hidden", "false");
+      ui.gameScreen.classList.add("opening-deal-active");
+      ui.gameScreen.setAttribute("aria-busy", "true");
+      ui.gameBattlefield.inert = true;
+      ui.handDock.inert = true;
+      renderGame();
+      void ui.openingDeal.offsetWidth;
+
+      queueOpeningDeal(() => {
+        ui.openingDeal.classList.add("shuffling");
+        ui.openingDealTitle.textContent = "Shuffling";
+        ui.openingDealSubtitle.textContent = "Building the opening draw";
+      }, 190);
+
+      queueOpeningDeal(() => {
+        ui.openingDeal.classList.remove("shuffling");
+        ui.openingDeal.classList.add("dealing");
+        ui.openingDealTitle.textContent = "Reload dealt";
+        ui.openingDealSubtitle.textContent = "One Reload to each duelist";
+        launchOpeningFlights();
+      }, 850);
+
+      queueOpeningDeal(finishOpeningDeal, OPENING_DEAL_DURATION_MS);
+      app.openingDeal.resizeHandler = finishOpeningDeal;
+      window.addEventListener("resize", app.openingDeal.resizeHandler, { once: true });
+      return OPENING_DEAL_DURATION_MS;
+    }
+
+    function focusPlanningControl() {
+      requestAnimationFrame(() => {
+        if (app.openingDeal.active) return;
+        const target = app.openingDeal.guide === "reload"
+          ? ui.playerHand.querySelector('[data-card-value="reload"]')
+          : ui.lockTurnBtn;
+        target?.focus({ preventScroll: true });
+      });
+    }
+
     function gameCardHtml(card, player, index) {
       const selectedAction = getCard(player, app.selection.actionId);
       const isLocked = player.lockedId === card.id;
@@ -5195,6 +5740,7 @@
         explanation = incompatible ? `${CARD_COPY[card.value].name} cannot modify ${CARD_COPY[selectedAction.value].name}.` : "";
       }
       const isNew = !app.seenCards.has(card.id);
+      const interactionLocked = isLocked || app.submitted || app.openingDeal.active;
       const classes = [
         "game-card",
         cardCssClass(card),
@@ -5212,9 +5758,9 @@
           data-card-family="${escapeHtml(card.family)}"
           style="--deal-delay:${Math.min(index, 8) * 35}ms"
           aria-label="${escapeHtml(`${copy.type}. ${copy.name}. ${copy.detail}${isLocked ? " Locked this turn." : ""}`)}"
-          aria-disabled="${isLocked || app.submitted}"
+          aria-disabled="${interactionLocked}"
           data-card-note="${escapeHtml(isLocked ? "Locked this turn." : explanation)}"
-          ${isLocked || app.submitted ? "disabled" : ""}
+          ${interactionLocked ? "disabled" : ""}
         >${cardContent(card)}</button>
       `;
     }
@@ -5229,7 +5775,7 @@
           data-card-value="${escapeHtml(card.value)}"
           data-card-family="${escapeHtml(card.family)}"
           aria-label="${escapeHtml(`${CARD_COPY[card.value].type}. ${CARD_COPY[card.value].name}. ${CARD_COPY[card.value].detail} Activate to return it to your hand.`)}"
-          ${app.submitted ? "disabled" : ""}
+          ${app.submitted || app.openingDeal.active ? "disabled" : ""}
         >${cardContent(card)}</button>
       `;
     }
@@ -5459,9 +6005,10 @@
       ui.opponentSlots.classList.toggle("ready", opponentReady);
 
       const valid = validateSelection(me, app.selection).ok;
-      ui.lockTurnBtn.disabled = !valid || myReady || app.state.phase !== "planning";
+      ui.lockTurnBtn.disabled = !valid || myReady || app.state.phase !== "planning" || app.openingDeal.active;
       ui.lockTurnBtn.classList.toggle("locked", myReady);
       ui.lockTurnBtn.textContent = myReady ? "Locked · Waiting" : "Lock turn";
+      syncOpeningGuide();
 
       if (turnChanged && app.state.turn > 1) {
         announce(`Turn ${app.state.turn}. New cards dealt. ${Math.round((app.deadline - Date.now()) / 1000) || GAME_CONFIG.turnSeconds} seconds.`);
@@ -5478,7 +6025,7 @@
     }
 
     function selectHandCard(button, card) {
-      if (app.submitted || app.state?.phase !== "planning") return;
+      if (app.openingDeal.active || app.submitted || app.state?.phase !== "planning") return;
       const { me } = getPlayersForView();
       if (me.lockedId === card.id) {
         toast("Love Lock sealed that card for this turn.");
@@ -5514,16 +6061,24 @@
       } else {
         app.selection.modId = card.id;
       }
+      const advancedOpeningGuide = app.state.turn === 1 &&
+        card.value === "reload" &&
+        app.openingDeal.guide === "reload";
+      if (advancedOpeningGuide) {
+        app.openingDeal.guide = "submit";
+      }
       renderGame();
       requestAnimationFrame(() => target.querySelector("button")?.focus({ preventScroll: true }));
+      if (advancedOpeningGuide) announce("Reload selected. Lock your turn.");
       playSound("select");
     }
 
     function returnSlotCard(slotName, source) {
-      if (app.submitted || app.state?.phase !== "planning") return;
+      if (app.openingDeal.active || app.submitted || app.state?.phase !== "planning") return;
       const key = `${slotName}Id`;
       const cardId = app.selection[key];
       if (!cardId) return;
+      const card = selectedCardForSlot(slotName);
       const returning = [cardId];
       app.selection[key] = null;
       if (slotName === "action") {
@@ -5531,6 +6086,9 @@
         if (app.selection.modId) returning.push(app.selection.modId);
         app.selection.elementId = null;
         app.selection.modId = null;
+      }
+      if (app.state.turn === 1 && card?.value === "reload") {
+        app.openingDeal.guide = "reload";
       }
       renderGame();
       const target = ui.playerHand.querySelector(`[data-card-id="${cssEscape(cardId)}"]`);
@@ -5561,9 +6119,10 @@
 
     function updateTimer() {
       if (!app.state || app.state.phase !== "planning") return;
-      const milliseconds = Math.max(0, app.deadline - Date.now());
+      const total = GAME_CONFIG.turnSeconds * 1000;
+      const milliseconds = clamp(app.deadline - Date.now(), 0, total);
       const seconds = Math.ceil(milliseconds / 1000);
-      const progress = clamp(milliseconds / (GAME_CONFIG.turnSeconds * 1000), 0, 1);
+      const progress = milliseconds / total;
       ui.timer.style.setProperty("--progress", progress);
       ui.timerNumber.textContent = String(seconds);
       ui.timer.classList.toggle("urgent", seconds <= 5);
@@ -5582,6 +6141,7 @@
       if (!app.state || app.state.winner !== null) return;
       clearTurnTimers();
       clearShowdownTimers();
+      clearOpeningDealMotion();
       ui.showdownOverlay.classList.remove("visible");
       resetShowdownVisuals();
       ui.appRoot.inert = false;
@@ -5598,6 +6158,9 @@
           }
         : { actionId: null, elementId: null, modId: null };
       app.submitted = resume ? Boolean(app.state.submitted[app.seat]) : false;
+      if (app.openingDeal.matchId !== app.state.id || app.state.turn !== 1 || resume) {
+        app.openingDeal.guide = null;
+      }
       app.timerAnnouncements.clear();
       if (!preserveDeadline) {
         app.state.turnStart = Date.now();
@@ -5606,11 +6169,17 @@
         app.deadline = app.state.turnStart + GAME_CONFIG.turnSeconds * 1000;
       }
       renderGame();
+      const openingWillRun = shouldRunOpeningDeal({ resume });
+      const openingDelay = runOpeningDeal({ resume });
+      if (openingWillRun) {
+        app.state.turnStart += OPENING_DEAL_DURATION_MS;
+        app.deadline += OPENING_DEAL_DURATION_MS;
+      }
       updateTimer();
       app.timerId = setInterval(updateTimer, 100);
 
       if (app.mode === "practice") {
-        const thinkTime = 650 + Math.random() * 1250;
+        const thinkTime = openingDelay + 650 + Math.random() * 1250;
         app.aiTimerId = setTimeout(() => {
           if (!app.state || app.state.phase !== "planning" || app.state.submitted[1]) return;
           const aiSelection = chooseAiSelection(app.state, 1);
@@ -5626,6 +6195,7 @@
     function handlePlanningTimeout() {
       if (!app.state || app.state.phase !== "planning") return;
       clearTurnTimers();
+      clearOpeningDeal();
       if (app.mode === "guest") {
         ui.timerNumber.textContent = "0";
         ui.lockTurnBtn.disabled = true;
@@ -5678,7 +6248,7 @@
     }
 
     function submitLocalTurn() {
-      if (!app.state || app.state.phase !== "planning" || app.submitted) return;
+      if (!app.state || app.openingDeal.active || app.state.phase !== "planning" || app.submitted) return;
       const { me } = getPlayersForView();
       const validation = validateSelection(me, app.selection);
       if (!validation.ok) {
@@ -5714,6 +6284,7 @@
         }
       }
 
+      app.openingDeal.guide = null;
       renderGame();
       announce("Turn locked. Waiting for your rival.");
       maybeResolveTurn();
@@ -5817,6 +6388,7 @@
 
     function presentShowdown(result) {
       clearShowdownTimers();
+      clearOpeningDeal();
       [ui.rulesDialog, ui.settingsDialog, ui.logDialog].forEach(closeDialog);
       app.overlayReturnFocus = document.activeElement;
       ui.appRoot.inert = true;
@@ -6013,7 +6585,7 @@
         });
       }
       beginPlanning({ preserveDeadline: true });
-      requestAnimationFrame(() => ui.lockTurnBtn.focus({ preventScroll: true }));
+      focusPlanningControl();
     }
 
     function showEndScreen(winner, finalTurn) {
@@ -7621,6 +8193,7 @@
 
     function cleanupNetwork() {
       clearTurnTimers();
+      clearOpeningDeal({ resetMatch: true });
       if (app.resolutionTimerId) clearTimeout(app.resolutionTimerId);
       app.resolutionTimerId = null;
       if (app.matchStartTimerId) clearTimeout(app.matchStartTimerId);
@@ -8075,13 +8648,18 @@
         app.seat = 1;
         app.mode = "guest";
         sendGameMessage({ type: "match-start-ack", matchId: app.state.id });
-        if (alreadyStarted) return;
+        if (alreadyStarted) {
+          if (app.state.turn === 1) app.state.turnStart += OPENING_DEAL_DURATION_MS;
+          app.deadline = app.state.turnStart + GAME_CONFIG.turnSeconds * 1000;
+          updateTimer();
+          return;
+        }
         app.seenCards.clear();
         ui.endOverlay.classList.remove("visible");
         showScreen(ui.gameScreen);
         setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Peer connected");
         beginPlanning({ preserveDeadline: true });
-        requestAnimationFrame(() => ui.lockTurnBtn.focus({ preventScroll: true }));
+        focusPlanningControl();
         return;
       }
 
@@ -8182,7 +8760,7 @@
         applyHostTiming(message);
         setConnectionStatus(app.network.usingTurn ? "TURN relay" : "Peer connected");
         beginPlanning({ preserveDeadline: true });
-        requestAnimationFrame(() => ui.lockTurnBtn.focus({ preventScroll: true }));
+        focusPlanningControl();
         return;
       }
 
