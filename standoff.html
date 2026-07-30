@@ -4870,7 +4870,7 @@
     }
 
     function drawSpecial(player, rng = Math.random) {
-      const value = rng() < .75 ? randomChoice(ELEMENTS, rng) : randomChoice(MODS, rng);
+      const value = rng() < .50 ? randomChoice(ELEMENTS, rng) : randomChoice(MODS, rng);
       const card = makeCard(value);
       player.hand.push(card);
       return card;
