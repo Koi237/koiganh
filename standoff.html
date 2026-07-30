@@ -5472,7 +5472,7 @@
           <b>Fire</b><span>beats</span><b>Ice</b><span>beats</span><b>Water</b><span>beats</span><b>Fire</b>
         </div>
         <p>When an elemental shot meets an elemental shield, advantage adds +50% damage and disadvantage adds −50%. Matching elements make no change.</p>
-        <p>An elemental shot that hits a player while they Shoot or Reload leaves a stain. It detonates for 4 damage after two more turns unless that player uses the element that beats the stain in a Shoot or Shield.</p>
+        <p>An elemental shot that hits a player while they Shoot or Reload leaves a stain. It detonates for 4 damage after two more turns unless that player uses the element that beats the stain in a Shoot or Shield. If Rainbow changes that element, only the rolled element is checked for cleansing.</p>
       </section>
 
       <section class="rule-section">
@@ -5679,7 +5679,7 @@
         type: "MOD",
         symbol: "◈",
         effect: "Randomize this action.",
-        detail: "Randomize a played element. With no element, randomize raw Shoot damage, raw Shield reduction, or Reload's special-card draw count."
+        detail: "Randomize a played element; the rolled element replaces the original for stain cleansing. With no element, randomize raw Shoot damage, raw Shield reduction, or Reload's special-card draw count."
       },
       love_lock: {
         name: "Love Lock",
@@ -5973,14 +5973,16 @@
         effects.push(`Silver Hand amplifies every damage event ×${silverFactor}.`);
       }
 
-      // A played counter element cleanses every matching pre-existing stain.
+      // Rainbow's final rolled element replaces the originally equipped element for cleansing.
+      // That final counter element cleanses every matching pre-existing stain.
       resolved.forEach((play, index) => {
-        if (!["shoot", "shield"].includes(play.action) || !play.finalElement) return;
+        const cleansingElement = play.finalElement;
+        if (!["shoot", "shield"].includes(play.action) || !cleansingElement) return;
         const kept = [];
         state.players[index].stains.forEach(stain => {
-          if (counterFor(stain.element) === play.finalElement) {
+          if (counterFor(stain.element) === cleansingElement) {
             cleansed[index].push(stain);
-            effects.push(`${state.players[index].name} cleansed a ${CARD_COPY[stain.element].name} stain with ${CARD_COPY[play.finalElement].name}.`);
+            effects.push(`${state.players[index].name} cleansed a ${CARD_COPY[stain.element].name} stain with ${CARD_COPY[cleansingElement].name}.`);
           } else {
             kept.push(stain);
           }
