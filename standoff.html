@@ -2859,16 +2859,38 @@
     }
 
     .showdown-grid {
+      --showdown-impact-width: 180px;
+      --showdown-gap: 20px;
+      position: relative;
       display: grid;
-      grid-template-columns: 1fr 180px 1fr;
+      grid-template-columns: minmax(0, 1fr) var(--showdown-impact-width) minmax(0, 1fr);
       align-items: center;
-      gap: 20px;
+      gap: var(--showdown-gap);
       margin-top: clamp(22px, 4vh, 38px);
     }
 
     .reveal-side {
+      position: relative;
       min-width: 0;
       text-align: center;
+      isolation: isolate;
+    }
+
+    .reveal-side::before {
+      position: absolute;
+      inset: 30px -7px -8px;
+      z-index: -1;
+      border: 1px solid rgba(193, 164, 255, .16);
+      border-radius: 20px;
+      content: "";
+      background:
+        radial-gradient(circle at 50% 58%, rgba(193, 164, 255, .13), transparent 63%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .showdown-panel.rainbow.modifier:not(.aim) .reveal-side.rainbow-owner::before {
+      animation: rainbow-owner-field .64s var(--ease-snap) both;
     }
 
     .reveal-name {
@@ -2930,7 +2952,7 @@
       transform: translateY(20px) rotateY(90deg);
       opacity: 0;
       cursor: help;
-      transition: transform .62s var(--ease-out), opacity .38s ease, box-shadow .18s ease;
+      transition: transform .62s var(--ease-out), opacity .38s ease, filter .25s ease, box-shadow .18s ease;
       transform-style: preserve-3d;
     }
 
@@ -2964,7 +2986,7 @@
     .impact-stage {
       --shot-color: var(--ink);
       position: relative;
-      width: 180px;
+      width: var(--showdown-impact-width);
       height: 128px;
       overflow: visible;
     }
@@ -3338,57 +3360,18 @@
     .mod-sigil[data-mod="dark_steel"] { color: #d7e0e8; border-color: rgba(215, 224, 232, .4); }
 
     .rainbow-roll-layer {
-      --rainbow-roll-count: 1;
       position: absolute;
-      top: 50%;
-      left: 50%;
+      inset: 0;
       z-index: 12;
       display: grid;
-      width: min(460px, calc(100vw - 48px));
-      grid-template-columns: repeat(var(--rainbow-roll-count), minmax(0, 1fr));
-      gap: 8px;
-      padding: 8px;
+      grid-template-columns: minmax(0, 1fr) var(--showdown-impact-width) minmax(0, 1fr);
+      align-items: center;
+      gap: var(--showdown-gap);
       visibility: hidden;
-      overflow: hidden;
-      border: 1px solid rgba(193, 164, 255, .34);
-      border-radius: 17px;
-      background:
-        linear-gradient(135deg, rgba(12, 16, 22, .97), rgba(25, 20, 34, .97));
-      box-shadow:
-        0 24px 70px rgba(0, 0, 0, .62),
-        0 0 34px rgba(193, 164, 255, .12);
       opacity: 0;
       pointer-events: none;
-      transform: translate(-50%, -44%) scale(.94);
+      transform: translateY(10px) scale(.97);
       transform-origin: center;
-      backdrop-filter: blur(12px);
-    }
-
-    .rainbow-roll-layer[data-count="1"] {
-      width: min(330px, calc(100vw - 48px));
-    }
-
-    .rainbow-roll-layer::before {
-      position: absolute;
-      top: 0;
-      right: 12px;
-      left: 12px;
-      height: 1px;
-      content: "";
-      background: linear-gradient(90deg, transparent, var(--fire), var(--ice), var(--water), transparent);
-      box-shadow: 0 0 13px rgba(193, 164, 255, .42);
-    }
-
-    .rainbow-roll-layer::after {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: -30%;
-      width: 22%;
-      content: "";
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .11), transparent);
-      opacity: 0;
-      transform: skewX(-18deg);
     }
 
     .showdown-panel.rainbow.modifier .rainbow-roll-layer.has-rolls {
@@ -3399,10 +3382,6 @@
       animation: rainbow-roll-lock-in .62s var(--ease-snap) both;
     }
 
-    .showdown-panel.rainbow.modifier:not(.aim) .rainbow-roll-layer.has-rolls::after {
-      animation: rainbow-roll-scan .72s .08s var(--ease-out) both;
-    }
-
     .showdown-panel.rainbow.aim .rainbow-roll-layer.has-rolls {
       animation: rainbow-roll-lock-out .24s ease both;
     }
@@ -3411,7 +3390,9 @@
       --rainbow-roll-color: var(--mod);
       position: relative;
       display: grid;
+      width: min(300px, 100%);
       min-width: 0;
+      grid-row: 1;
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
         "owner code"
@@ -3425,9 +3406,59 @@
       border-radius: 12px;
       background:
         radial-gradient(circle at 50% 110%, color-mix(in srgb, var(--rainbow-roll-color) 13%, transparent), transparent 56%),
-        rgba(255, 255, 255, .018);
+        linear-gradient(135deg, rgba(12, 16, 22, .97), rgba(25, 20, 34, .97));
       box-shadow: inset 0 0 24px color-mix(in srgb, var(--rainbow-roll-color) 5%, transparent);
       text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .rainbow-roll-readout[data-side="left"] {
+      grid-column: 1;
+      justify-self: start;
+      border-left: 3px solid var(--rainbow-roll-color);
+      box-shadow:
+        inset 14px 0 30px color-mix(in srgb, var(--rainbow-roll-color) 7%, transparent),
+        0 22px 55px rgba(0, 0, 0, .58),
+        0 0 28px color-mix(in srgb, var(--rainbow-roll-color) 12%, transparent);
+      transform-origin: left center;
+    }
+
+    .rainbow-roll-readout[data-side="right"] {
+      grid-column: 3;
+      justify-self: end;
+      border-right: 3px solid var(--rainbow-roll-color);
+      box-shadow:
+        inset -14px 0 30px color-mix(in srgb, var(--rainbow-roll-color) 7%, transparent),
+        0 22px 55px rgba(0, 0, 0, .58),
+        0 0 28px color-mix(in srgb, var(--rainbow-roll-color) 12%, transparent);
+      transform-origin: right center;
+    }
+
+    .rainbow-roll-readout::before {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      left: 10px;
+      height: 1px;
+      content: "";
+      background: linear-gradient(90deg, transparent, var(--fire), var(--ice), var(--water), transparent);
+      box-shadow: 0 0 13px rgba(193, 164, 255, .42);
+    }
+
+    .rainbow-roll-readout::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -30%;
+      width: 22%;
+      content: "";
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .11), transparent);
+      opacity: 0;
+      transform: skewX(-18deg);
+    }
+
+    .showdown-panel.rainbow.modifier:not(.aim) .rainbow-roll-readout::after {
+      animation: rainbow-roll-scan .72s .08s var(--ease-out) both;
     }
 
     .rainbow-roll-readout[data-accent="fire"],
@@ -3458,12 +3489,15 @@
 
     .rainbow-roll-code {
       grid-area: code;
+      overflow: hidden;
       color: var(--mod);
       font-size: 6px;
       font-weight: 900;
       letter-spacing: .15em;
       text-align: right;
+      text-overflow: ellipsis;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .rainbow-roll-value {
@@ -3512,10 +3546,26 @@
       line-height: 1.3;
     }
 
+    .showdown-panel.rainbow.modifier:not(.aim) .reveal-side.rainbow-owner .reveal-card:not([data-card-value="rainbow"]) {
+      opacity: .48;
+      filter: saturate(.55) brightness(.72);
+    }
+
+    .showdown-panel.rainbow.modifier:not(.aim) .reveal-side.rainbow-owner .reveal-card[data-card-value="rainbow"] {
+      z-index: 6;
+      opacity: 1;
+      filter: saturate(1.18) brightness(1.08);
+      box-shadow:
+        0 20px 46px rgba(0, 0, 0, .48),
+        0 0 0 2px rgba(193, 164, 255, .22),
+        0 0 26px rgba(193, 164, 255, .3);
+      transform: translateY(-8px) rotateY(0) scale(1.045);
+    }
+
     .rainbow-card-roll-chip {
       --rainbow-roll-color: var(--mod);
       position: absolute;
-      bottom: -9px;
+      top: calc(100% - 9px);
       left: 50%;
       z-index: 7;
       display: inline-grid;
@@ -3680,20 +3730,35 @@
       68% { transform: translateY(2px) rotate(-4deg) scale(.98); }
     }
 
+    @keyframes rainbow-owner-field {
+      0% {
+        opacity: 0;
+        transform: scale(.94);
+      }
+      64% {
+        opacity: 1;
+        transform: scale(1.015);
+      }
+      100% {
+        opacity: .88;
+        transform: scale(1);
+      }
+    }
+
     @keyframes rainbow-roll-lock-in {
       0% {
         opacity: 0;
-        transform: translate(-50%, -41%) scale(.91);
+        transform: translateY(12px) scale(.91);
         filter: saturate(.45) blur(5px);
       }
       58% {
         opacity: 1;
-        transform: translate(-50%, -52%) scale(1.015);
+        transform: translateY(-3px) scale(1.015);
         filter: saturate(1.2) blur(0);
       }
       100% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translateY(0) scale(1);
         filter: saturate(1) blur(0);
       }
     }
@@ -3701,12 +3766,12 @@
     @keyframes rainbow-roll-lock-out {
       from {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translateY(0) scale(1);
       }
       to {
         visibility: hidden;
         opacity: 0;
-        transform: translate(-50%, -54%) scale(.97);
+        transform: translateY(-6px) scale(.97);
       }
     }
 
@@ -4600,8 +4665,8 @@
       }
 
       .showdown-grid {
-        grid-template-columns: minmax(0, 1fr) 104px minmax(0, 1fr);
-        gap: 4px;
+        --showdown-impact-width: 104px;
+        --showdown-gap: 4px;
       }
 
       .showdown-health {
@@ -4623,40 +4688,35 @@
         height: 112px;
       }
 
-      .rainbow-roll-layer {
-        width: min(350px, calc(100vw - 28px));
-        gap: 6px;
-        padding: 6px;
-        border-radius: 14px;
-      }
-
-      .rainbow-roll-layer[data-count="1"] {
-        width: min(282px, calc(100vw - 28px));
-      }
-
       .rainbow-roll-readout {
-        padding: 10px 9px 9px;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "owner"
+          "value"
+          "unit";
+        padding: 9px 7px 8px;
       }
 
       .rainbow-roll-owner {
-        font-size: 6px;
+        font-size: 5.5px;
+        text-align: center;
       }
 
       .rainbow-roll-code,
       .rainbow-roll-detail {
-        font-size: 5.5px;
+        display: none;
       }
 
       .rainbow-roll-value {
-        gap: 5px;
+        gap: 3px;
       }
 
       .rainbow-roll-value i {
-        font-size: clamp(15px, 5vw, 21px);
+        display: none;
       }
 
       .rainbow-roll-value strong {
-        font-size: clamp(24px, 8vw, 34px);
+        font-size: clamp(17px, 5.4vw, 23px);
       }
 
       .rainbow-roll-unit {
@@ -4664,7 +4724,7 @@
       }
 
       .rainbow-card-roll-chip {
-        bottom: -7px;
+        top: calc(100% - 7px);
         min-width: 66px;
         padding: 4px 6px;
       }
@@ -5327,7 +5387,6 @@
           <span id="rightAftermathBurst" class="aftermath-burst right"></span>
           <span id="leftModSigil" class="mod-sigil left"></span>
           <span id="rightModSigil" class="mod-sigil right"></span>
-          <div id="rainbowRollLayer" class="rainbow-roll-layer" data-count="0"></div>
           <div id="leftShotLane" class="shot-lane left" data-active="false" data-element="raw" data-mod="none">
             <span class="showdown-gun"><i></i></span>
             <span class="muzzle-flash"></span>
@@ -5353,6 +5412,7 @@
           </div>
           <div id="revealRight" class="reveal-stack"></div>
         </div>
+        <div id="rainbowRollLayer" class="rainbow-roll-layer" data-count="0" aria-hidden="true"></div>
       </div>
 
       <h3 id="resolutionTitle" class="resolution-title">Actions collide</h3>
@@ -7814,6 +7874,14 @@
       };
     }
 
+    function positionRainbowCardRollChip(stack) {
+      const rainbowCard = stack.querySelector('[data-card-value="rainbow"]');
+      const chip = stack.querySelector(".rainbow-card-roll-chip");
+      if (!rainbowCard || !chip) return;
+      chip.style.left = `${rainbowCard.offsetLeft + rainbowCard.offsetWidth / 2}px`;
+      chip.style.top = `${rainbowCard.offsetTop + rainbowCard.offsetHeight - 8}px`;
+    }
+
     function attachRainbowCardRoll(stack, play) {
       if (play?.modValue !== "rainbow") return;
       const presentation = rainbowRollPresentation(play);
@@ -7829,10 +7897,15 @@
           <strong>${escapeHtml(presentation.chip)}</strong>
         </span>
       `);
+      positionRainbowCardRollChip(stack);
     }
 
     function configureRainbowRollVisuals(result, players, meSeat) {
       const orderedSeats = [meSeat, 1 - meSeat];
+      const leftHasRainbow = result.plays[meSeat]?.modValue === "rainbow";
+      const rightHasRainbow = result.plays[1 - meSeat]?.modValue === "rainbow";
+      ui.revealLeft.closest(".reveal-side")?.classList.toggle("rainbow-owner", leftHasRainbow);
+      ui.revealRight.closest(".reveal-side")?.classList.toggle("rainbow-owner", rightHasRainbow);
       const entries = orderedSeats
         .map(seat => ({
           seat,
@@ -7847,11 +7920,13 @@
 
       ui.rainbowRollLayer.classList.toggle("has-rolls", Boolean(entries.length));
       ui.rainbowRollLayer.dataset.count = String(entries.length);
-      ui.rainbowRollLayer.style.setProperty("--rainbow-roll-count", String(Math.max(1, entries.length)));
-      ui.rainbowRollLayer.innerHTML = entries.map(({ player, presentation }) => `
-        <div class="rainbow-roll-readout" data-accent="${escapeHtml(presentation.accent)}">
-          <span class="rainbow-roll-owner">${escapeHtml(player.name)}</span>
-          <span class="rainbow-roll-code">RNG // LOCK</span>
+      ui.rainbowRollLayer.innerHTML = entries.map(({ seat, player, presentation }) => {
+        const side = seat === meSeat ? "left" : "right";
+        const ownerLabel = side === "left" ? "Your Rainbow card" : "Rival Rainbow card";
+        return `
+        <div class="rainbow-roll-readout" data-side="${side}" data-accent="${escapeHtml(presentation.accent)}">
+          <span class="rainbow-roll-owner">${ownerLabel}</span>
+          <span class="rainbow-roll-code">${escapeHtml(player.name)} // RNG LOCK</span>
           <span class="rainbow-roll-value">
             <i>${escapeHtml(presentation.symbol)}</i>
             <strong>${escapeHtml(presentation.value)}</strong>
@@ -7859,7 +7934,8 @@
           <span class="rainbow-roll-unit">${escapeHtml(presentation.unit)}</span>
           <span class="rainbow-roll-detail">${escapeHtml(presentation.detail)}</span>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       attachRainbowCardRoll(ui.revealLeft, result.plays[meSeat]);
       attachRainbowCardRoll(ui.revealRight, result.plays[1 - meSeat]);
@@ -11253,7 +11329,11 @@
       const target = event.target.closest?.("[data-card-value], [data-stain-element]");
       if (target && !target.contains(event.relatedTarget)) hideHoverTooltip(target);
     });
-    window.addEventListener("resize", () => hideHoverTooltip());
+    window.addEventListener("resize", () => {
+      hideHoverTooltip();
+      positionRainbowCardRollChip(ui.revealLeft);
+      positionRainbowCardRollChip(ui.revealRight);
+    });
     document.addEventListener("scroll", () => hideHoverTooltip(), true);
 
     $$("[data-open-rules]").forEach(button => button.addEventListener("click", () => openDialog(ui.rulesDialog)));
