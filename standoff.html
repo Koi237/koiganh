@@ -2349,6 +2349,40 @@
       text-transform: uppercase;
     }
 
+    .showdown-health {
+      display: grid;
+      width: min(230px, 100%);
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      margin: -4px auto 12px;
+    }
+
+    .showdown-health.right {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .showdown-health .health-track {
+      height: 9px;
+      border: 1px solid rgba(255, 255, 255, .06);
+      background: rgba(255, 255, 255, .09);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, .36);
+    }
+
+    .showdown-health .health-value {
+      min-width: 42px;
+      color: #c8d0d8;
+      font-size: 10px;
+    }
+
+    .showdown-panel.hit .showdown-health[data-direct-damage="true"] .health-track {
+      animation: showdown-health-hit .72s var(--ease-snap);
+    }
+
+    .showdown-panel.aftermath .showdown-health[data-aftermath-damage="true"] .health-track {
+      animation: showdown-health-aftershock .72s var(--ease-snap);
+    }
+
     .reveal-stack {
       display: flex;
       min-height: 154px;
@@ -2401,6 +2435,93 @@
       width: 180px;
       height: 128px;
       overflow: visible;
+    }
+
+    .showdown-reload-deck {
+      position: absolute;
+      z-index: 6;
+      top: 50%;
+      left: 50%;
+      width: 48px;
+      height: 69px;
+      visibility: hidden;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(.78);
+      pointer-events: none;
+    }
+
+    .showdown-panel.reloading .showdown-reload-deck {
+      visibility: visible;
+      animation: showdown-deck-deal 1.3s var(--ease-out) both;
+    }
+
+    .showdown-reload-deck-card,
+    .showdown-reload-flight {
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, transparent 47%, rgba(121, 224, 194, .11) 48% 52%, transparent 53%),
+        #151c24;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .42);
+    }
+
+    .showdown-reload-deck-card {
+      --reload-deck-x: 0px;
+      --reload-deck-y: 0px;
+      position: absolute;
+      inset: 0;
+      transform: translate(var(--reload-deck-x), var(--reload-deck-y));
+    }
+
+    .showdown-reload-deck-card:nth-child(1) {
+      --reload-deck-x: -4px;
+      --reload-deck-y: 6px;
+    }
+
+    .showdown-reload-deck-card:nth-child(2) {
+      --reload-deck-x: -2px;
+      --reload-deck-y: 3px;
+    }
+
+    .showdown-reload-deck-card::before,
+    .showdown-reload-flight::before {
+      position: absolute;
+      inset: 15px 11px;
+      border: 1px solid rgba(121, 224, 194, .27);
+      border-radius: 5px;
+      content: "";
+      transform: rotate(45deg);
+    }
+
+    .showdown-reload-deck-card::after,
+    .showdown-reload-flight::after {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      content: "32";
+      color: rgba(121, 224, 194, .86);
+      font-family: var(--display);
+      font-size: 9px;
+      font-weight: 650;
+    }
+
+    .showdown-reload-flight-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 8;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .showdown-reload-flight {
+      position: fixed;
+      width: 54px;
+      height: 78px;
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: center;
+      will-change: transform, opacity;
     }
 
     .impact-core {
@@ -2884,6 +3005,25 @@
       0% { opacity: 0; transform: translateY(8px) scale(.45); }
       55% { opacity: 1; transform: translateY(-9px) scale(1.18); }
       100% { opacity: 1; transform: translateY(-6px) scale(1); }
+    }
+
+    @keyframes showdown-health-hit {
+      0%, 100% { box-shadow: inset 0 1px 3px rgba(0, 0, 0, .36); transform: translateX(0); }
+      28% { box-shadow: 0 0 0 3px rgba(255, 101, 119, .14), 0 0 22px rgba(255, 101, 119, .22); transform: translateX(-3px); }
+      52% { transform: translateX(3px); }
+      72% { transform: translateX(-1px); }
+    }
+
+    @keyframes showdown-health-aftershock {
+      0%, 100% { box-shadow: inset 0 1px 3px rgba(0, 0, 0, .36); transform: translateY(0); }
+      38% { box-shadow: 0 0 0 3px rgba(255, 101, 119, .12), 0 0 18px rgba(255, 101, 119, .2); transform: translateY(2px); }
+      68% { transform: translateY(-1px); }
+    }
+
+    @keyframes showdown-deck-deal {
+      0% { visibility: visible; opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(.78); }
+      14%, 74% { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { visibility: hidden; opacity: 0; transform: translate(-50%, calc(-50% - 4px)) scale(.94); }
     }
 
     @keyframes aftermath-settle {
@@ -3665,9 +3805,32 @@
         gap: 4px;
       }
 
+      .showdown-health {
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+
+      .showdown-health .health-track {
+        height: 7px;
+      }
+
+      .showdown-health .health-value {
+        min-width: 34px;
+        font-size: 8px;
+      }
+
       .impact-stage {
         width: 104px;
         height: 112px;
+      }
+
+      .showdown-reload-deck {
+        width: 38px;
+        height: 55px;
+      }
+
+      .showdown-reload-deck-card::before {
+        inset: 12px 9px;
       }
 
       .shot-lane {
@@ -4269,9 +4432,19 @@
       <div class="showdown-grid">
         <div class="reveal-side">
           <div id="revealLeftName" class="reveal-name">You</div>
+          <div id="showdownLeftHealth" class="showdown-health" data-direct-damage="false" data-aftermath-damage="false">
+            <div class="health-track" role="progressbar" aria-label="Your showdown health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="showdownLeftHealthFill" class="health-fill" style="--hp:32"></div></div>
+            <span id="showdownLeftHealthValue" class="health-value">32 / 32</span>
+          </div>
           <div id="revealLeft" class="reveal-stack"></div>
         </div>
         <div id="impactStage" class="impact-stage" aria-hidden="true">
+          <div id="showdownReloadDeck" class="showdown-reload-deck">
+            <span class="showdown-reload-deck-card"></span>
+            <span class="showdown-reload-deck-card"></span>
+            <span class="showdown-reload-deck-card"></span>
+          </div>
+          <div id="showdownReloadFlightLayer" class="showdown-reload-flight-layer"></div>
           <span id="leftDamageBurst" class="damage-burst left"></span>
           <span id="rightDamageBurst" class="damage-burst right"></span>
           <span id="leftAftermathBurst" class="aftermath-burst left"></span>
@@ -4297,6 +4470,10 @@
         </div>
         <div class="reveal-side">
           <div id="revealRightName" class="reveal-name">Rival</div>
+          <div id="showdownRightHealth" class="showdown-health right" data-direct-damage="false" data-aftermath-damage="false">
+            <span id="showdownRightHealthValue" class="health-value">32 / 32</span>
+            <div class="health-track" role="progressbar" aria-label="Rival showdown health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="showdownRightHealthFill" class="health-fill" style="--hp:32"></div></div>
+          </div>
           <div id="revealRight" class="reveal-stack"></div>
         </div>
       </div>
@@ -4458,7 +4635,9 @@
         intercept: 5050,
         hit: 5450,
         aftermath: 6300,
-        recap: 7350
+        reload: 7150,
+        recap: 7350,
+        reloadRecap: 8500
       }),
       protocolVersion: 1
     });
@@ -4974,11 +5153,18 @@
       });
 
       // Reload resolves even if its owner reaches zero during this showdown.
+      const reloadDraws = resolved.map(() => ({ shoots: 0, specials: 0, total: 0 }));
       resolved.forEach((play, index) => {
         if (play.action !== "reload") return;
         const player = state.players[index];
+        const shootRefill = Math.max(0, 2 - countCards(player, "shoot"));
         while (countCards(player, "shoot") < 2) player.hand.push(makeCard("shoot"));
         for (let draw = 0; draw < play.reloadDrawCount; draw += 1) drawSpecial(player, rng);
+        reloadDraws[index] = {
+          shoots: shootRefill,
+          specials: play.reloadDrawCount,
+          total: shootRefill + play.reloadDrawCount
+        };
       });
 
       const winner = state.players[0].hp <= 0 && state.players[1].hp <= 0
@@ -5046,13 +5232,15 @@
           ...play,
           resolvedElement: resolved[index].finalElement,
           actionValue: resolved[index].action,
-          modValue: resolved[index].mod
+          modValue: resolved[index].mod,
+          reloadDrawCount: resolved[index].action === "reload" ? resolved[index].reloadDrawCount : 0
         })),
         silverFactor,
         directDamage,
         stainDamage,
         totalDamage,
         healing,
+        reloadDraws,
         beforeHp,
         afterHp: state.players.map(player => player.hp),
         effects,
@@ -5206,7 +5394,15 @@
       revealRightName: $("#revealRightName"),
       revealLeft: $("#revealLeft"),
       revealRight: $("#revealRight"),
+      showdownLeftHealth: $("#showdownLeftHealth"),
+      showdownLeftHealthFill: $("#showdownLeftHealthFill"),
+      showdownLeftHealthValue: $("#showdownLeftHealthValue"),
+      showdownRightHealth: $("#showdownRightHealth"),
+      showdownRightHealthFill: $("#showdownRightHealthFill"),
+      showdownRightHealthValue: $("#showdownRightHealthValue"),
       impactStage: $("#impactStage"),
+      showdownReloadDeck: $("#showdownReloadDeck"),
+      showdownReloadFlightLayer: $("#showdownReloadFlightLayer"),
       leftDamageBurst: $("#leftDamageBurst"),
       rightDamageBurst: $("#rightDamageBurst"),
       leftAftermathBurst: $("#leftAftermathBurst"),
@@ -5260,6 +5456,7 @@
       resolutionTimerId: null,
       matchStartTimerId: null,
       showdownTimers: [],
+      showdownAnimations: [],
       openingDeal: {
         matchId: null,
         active: false,
@@ -6278,6 +6475,7 @@
       "intercept",
       "hit",
       "aftermath",
+      "reloading",
       "recap",
       "arcane",
       "rainbow"
@@ -6333,9 +6531,126 @@
       return parts.join(" · ");
     }
 
+    function updateShowdownHealth(side, hp, playerName) {
+      const left = side === "left";
+      const fill = left ? ui.showdownLeftHealthFill : ui.showdownRightHealthFill;
+      const label = left ? ui.showdownLeftHealthValue : ui.showdownRightHealthValue;
+      updateHealth(fill, label, hp);
+      fill.parentElement?.setAttribute("aria-label", `${playerName} showdown health`);
+    }
+
+    function showdownReloadEntries(result, meSeat) {
+      const opponentSeat = 1 - meSeat;
+      return [
+        { seat: meSeat, side: "left", target: ui.revealLeft },
+        { seat: opponentSeat, side: "right", target: ui.revealRight }
+      ].filter(entry => result.plays?.[entry.seat]?.actionValue === "reload").map(entry => {
+        const recordedTotal = Number(result.reloadDraws?.[entry.seat]?.total);
+        const specialFallback = Number(result.plays?.[entry.seat]?.reloadDrawCount);
+        const total = Number.isFinite(recordedTotal) && recordedTotal > 0
+          ? recordedTotal
+          : Number.isFinite(specialFallback) && specialFallback > 0
+            ? specialFallback
+            : 2;
+        return { ...entry, count: clamp(Math.round(total), 1, 6) };
+      });
+    }
+
+    function clearShowdownReloadMotion() {
+      app.showdownAnimations.forEach(animation => {
+        try {
+          animation.cancel();
+        } catch {
+          // The animation already finished.
+        }
+      });
+      app.showdownAnimations = [];
+      ui.showdownReloadFlightLayer.replaceChildren();
+      ui.showdownPanel.classList.remove("reloading");
+    }
+
+    function createShowdownReloadFlight(entry, cardIndex) {
+      const sourceRect = ui.showdownReloadDeck.getBoundingClientRect();
+      const targetRect = entry.target.getBoundingClientRect();
+      if (!sourceRect.width || !targetRect.width) return;
+
+      const sourceX = sourceRect.left + sourceRect.width / 2;
+      const sourceY = sourceRect.top + sourceRect.height / 2;
+      const targetInset = Math.min(32, targetRect.width * .2);
+      const targetX = entry.side === "left"
+        ? targetRect.right - targetInset
+        : targetRect.left + targetInset;
+      const fanOffset = cardIndex - (entry.count - 1) / 2;
+      const targetY = targetRect.top + targetRect.height * .7 + fanOffset * 4;
+      const deltaX = targetX - sourceX;
+      const deltaY = targetY - sourceY;
+      const rotation = (entry.side === "left" ? -8 : 8) + fanOffset * 2;
+      const clone = document.createElement("span");
+      clone.className = `showdown-reload-flight ${entry.side}`;
+      clone.setAttribute("aria-hidden", "true");
+      clone.style.left = `${sourceX - 27}px`;
+      clone.style.top = `${sourceY - 39}px`;
+      ui.showdownReloadFlightLayer.appendChild(clone);
+
+      if (typeof clone.animate !== "function") {
+        clone.remove();
+        return;
+      }
+
+      const animation = clone.animate([
+        {
+          opacity: 0,
+          transform: "translate3d(0, 0, 0) rotate(0deg) scale(.76)"
+        },
+        {
+          offset: .14,
+          opacity: 1,
+          transform: "translate3d(0, -4px, 0) rotate(0deg) scale(.9)"
+        },
+        {
+          offset: .62,
+          opacity: 1,
+          transform: `translate3d(${deltaX * .62}px, ${deltaY * .58 - 20}px, 0) rotate(${rotation * .55}deg) scale(.84)`
+        },
+        {
+          offset: .9,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg) scale(.72)`
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(${deltaX}px, ${deltaY + 4}px, 0) rotate(${rotation}deg) scale(.68)`
+        }
+      ], {
+        duration: 690,
+        delay: cardIndex * 95 + (entry.side === "right" ? 50 : 0),
+        easing: "cubic-bezier(.2,.75,.22,1)",
+        fill: "forwards"
+      });
+      app.showdownAnimations.push(animation);
+      animation.finished.catch(() => {}).finally(() => clone.remove());
+    }
+
+    function runShowdownReloadDeal(entries) {
+      if (!entries.length) return;
+      ui.showdownPanel.classList.add("reloading");
+      void ui.showdownReloadDeck.offsetWidth;
+      const reducedMotion = typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reducedMotion) {
+        entries.forEach(entry => {
+          for (let cardIndex = 0; cardIndex < entry.count; cardIndex += 1) {
+            createShowdownReloadFlight(entry, cardIndex);
+          }
+        });
+      }
+      playSound("select");
+    }
+
     function clearShowdownTimers() {
       app.showdownTimers.forEach(clearTimeout);
       app.showdownTimers = [];
+      clearShowdownReloadMotion();
     }
 
     function presentShowdown(result) {
@@ -6353,6 +6668,9 @@
       const hasArcane = result.arcaneEaten?.some(Boolean);
       const timeline = GAME_CONFIG.showdownTimeline;
       const shotCount = result.plays.filter(play => play.actionValue === "shoot").length;
+      const reloadEntries = showdownReloadEntries(result, meSeat);
+      const beforeHp = result.beforeHp || result.afterHp || players.map(player => player.hp);
+      const afterHp = result.afterHp || players.map(player => player.hp);
       resetShowdownVisuals();
       ui.showdownPanel.classList.toggle("rainbow", hasRainbow);
       configureShotLane(ui.leftShotLane, myPlay, opponentSeat, result);
@@ -6364,6 +6682,12 @@
       ui.showdownTurn.textContent = `Turn ${String(result.turn).padStart(2, "0")}`;
       ui.revealLeftName.textContent = players[meSeat].name;
       ui.revealRightName.textContent = players[opponentSeat].name;
+      updateShowdownHealth("left", beforeHp[meSeat], players[meSeat].name);
+      updateShowdownHealth("right", beforeHp[opponentSeat], players[opponentSeat].name);
+      ui.showdownLeftHealth.dataset.directDamage = String(Boolean(result.directDamage?.[meSeat]));
+      ui.showdownRightHealth.dataset.directDamage = String(Boolean(result.directDamage?.[opponentSeat]));
+      ui.showdownLeftHealth.dataset.aftermathDamage = String(Boolean(result.stainDamage?.[meSeat]));
+      ui.showdownRightHealth.dataset.aftermathDamage = String(Boolean(result.stainDamage?.[opponentSeat]));
       ui.revealLeft.innerHTML = [myPlay.action, myPlay.element, myPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       ui.revealRight.innerHTML = [opponentPlay.action, opponentPlay.element, opponentPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       setDamageBurst(ui.leftDamageBurst, result.directDamage[meSeat], opponentPlay.actionValue === "shoot");
@@ -6468,6 +6792,16 @@
 
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("hit");
+        updateShowdownHealth(
+          "left",
+          clamp(beforeHp[meSeat] - (result.directDamage?.[meSeat] || 0), 0, 32),
+          players[meSeat].name
+        );
+        updateShowdownHealth(
+          "right",
+          clamp(beforeHp[opponentSeat] - (result.directDamage?.[opponentSeat] || 0), 0, 32),
+          players[opponentSeat].name
+        );
         const directNotes = [];
         if (opponentPlay.actionValue === "shoot") {
           directNotes.push(`${players[meSeat].name}: ${formatHp(result.directDamage[meSeat])} direct damage`);
@@ -6484,6 +6818,8 @@
 
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("aftermath");
+        updateShowdownHealth("left", afterHp[meSeat], players[meSeat].name);
+        updateShowdownHealth("right", afterHp[opponentSeat], players[opponentSeat].name);
         const afterNotes = [ui.leftAftermathBurst.textContent, ui.rightAftermathBurst.textContent].filter(Boolean);
         ui.showdownPhase.textContent = "Aftereffects resolve";
         ui.resolutionTitle.textContent = afterNotes.length ? "Stains and recovery" : "No delayed effects";
@@ -6493,6 +6829,20 @@
         if (result.healing.some(Boolean)) playSound("heal");
       }, timeline.aftermath));
 
+      if (reloadEntries.length) {
+        app.showdownTimers.push(setTimeout(() => {
+          runShowdownReloadDeal(reloadEntries);
+          const reloadNotes = reloadEntries.map(entry => {
+            const countLabel = `${entry.count} card${entry.count === 1 ? "" : "s"}`;
+            return `${players[entry.seat].name} receives ${countLabel}`;
+          });
+          ui.showdownPhase.textContent = reloadEntries.length > 1 ? "Both players reload" : "Reload replenishes";
+          ui.resolutionTitle.textContent = reloadEntries.length > 1 ? "Decks refill" : "Cards to hand";
+          ui.resolutionSubtitle.textContent = reloadNotes.join(" \u00b7 ");
+          announce(`${reloadNotes.join(". ")}.`);
+        }, timeline.reload));
+      }
+
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("recap");
         ui.showdownPhase.textContent = result.silverFactor > 1
@@ -6501,7 +6851,7 @@
         ui.resolutionTitle.textContent = result.headline;
         ui.resolutionSubtitle.textContent = result.summary;
         announce(`${result.headline}. ${result.summary}`);
-      }, timeline.recap));
+      }, reloadEntries.length ? timeline.reloadRecap : timeline.recap));
 
       app.showdownTimers.push(setTimeout(() => finishShowdown(result), GAME_CONFIG.showdownMs));
     }
