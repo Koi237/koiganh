@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080b10">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="TRIAD // 36 — a self-contained simultaneous-turn tactical card duel for two players.">
+  <meta name="description" content="TRIAD // 32 — a self-contained simultaneous-turn tactical card duel for two players.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="TRIAD // 36">
+  <meta property="og:title" content="TRIAD // 32">
   <meta property="og:description" content="A simultaneous-turn tactical card duel for two players.">
   <meta name="twitter:card" content="summary">
-  <title>TRIAD // 36</title>
+  <title>TRIAD // 32</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1675,8 +1675,34 @@
       animation: ready-in .3s var(--ease-snap);
     }
 
+    .ready-tag.opponent-commit-cue {
+      display: inline-block;
+      animation: opponent-ready-cue .7s cubic-bezier(.22, .8, .24, 1);
+    }
+
+    .ready-tag.visible.opponent-commit-settled {
+      animation: none;
+    }
+
     @keyframes ready-in {
       from { opacity: 0; transform: scale(.6); }
+    }
+
+    @keyframes opponent-ready-cue {
+      0% {
+        opacity: 0;
+        box-shadow: 0 0 0 0 rgba(121, 224, 194, 0);
+        transform: translateY(-4px) scale(.72);
+      }
+      42% {
+        opacity: 1;
+        box-shadow: 0 0 0 5px rgba(121, 224, 194, .1);
+        transform: translateY(0) scale(1.08);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(121, 224, 194, 0);
+        transform: scale(1);
+      }
     }
 
     .health-row {
@@ -1699,7 +1725,7 @@
     }
 
     .health-fill {
-      width: calc(var(--hp, 36) / 36 * 100%);
+      width: calc(var(--hp, 32) / 32 * 100%);
       height: 100%;
       border-radius: inherit;
       background: var(--mint);
@@ -1807,6 +1833,21 @@
       to { transform: translateY(calc(var(--fan-y, 0px) - 2px)) rotate(var(--fan-angle, 0deg)); }
     }
 
+    .opponent-hand.commit-sending .card-back-mini {
+      animation: opponent-hand-send .56s cubic-bezier(.22, .8, .24, 1) both;
+    }
+
+    @keyframes opponent-hand-send {
+      0%, 100% {
+        opacity: 1;
+        transform: translateY(var(--fan-y, 0)) rotate(var(--fan-angle, 0deg));
+      }
+      38% {
+        opacity: .46;
+        transform: translateY(calc(var(--fan-y, 0px) - 3px)) rotate(var(--fan-angle, 0deg)) scale(.97);
+      }
+    }
+
     .card-count {
       justify-self: end;
       color: var(--faint);
@@ -1909,9 +1950,13 @@
       50% { transform: translateY(-3px); box-shadow: 0 0 24px rgba(121, 224, 194, .08); }
     }
 
+    .opponent-slots {
+      --opponent-slot-scale: .82;
+    }
+
     .opponent-slots .slot {
       aspect-ratio: 5 / 6.7;
-      transform: scale(.82);
+      transform: scale(var(--opponent-slot-scale));
       opacity: .58;
     }
 
@@ -1922,12 +1967,74 @@
       background:
         linear-gradient(135deg, transparent 46%, rgba(121, 224, 194, .09) 47% 53%, transparent 54%),
         var(--surface-2);
-      animation: opponent-commit .42s var(--ease-snap);
+      transform: scale(var(--opponent-slot-scale));
     }
 
-    @keyframes opponent-commit {
-      from { transform: translateY(-45px) rotate(-6deg) scale(.7); opacity: 0; }
-      to { transform: scale(.82); opacity: 1; }
+    .opponent-slots.ready.committing .slot {
+      border-style: dashed;
+      border-color: rgba(121, 224, 194, .14);
+      opacity: .18;
+      background: rgba(121, 224, 194, .015);
+      box-shadow: none;
+      transform: scale(calc(var(--opponent-slot-scale) - .04));
+    }
+
+    .opponent-slots.ready.committing .slot.commit-arrived {
+      border-style: solid;
+      border-color: rgba(121, 224, 194, .34);
+      opacity: 1;
+      background:
+        linear-gradient(135deg, transparent 46%, rgba(121, 224, 194, .11) 47% 53%, transparent 54%),
+        var(--surface-2);
+      transform: scale(var(--opponent-slot-scale));
+      animation: opponent-slot-catch .18s cubic-bezier(.22, .8, .24, 1);
+    }
+
+    @keyframes opponent-slot-catch {
+      0% {
+        border-color: rgba(121, 224, 194, .7);
+        box-shadow: 0 0 0 1px rgba(121, 224, 194, .2), 0 0 30px rgba(121, 224, 194, .18);
+        filter: brightness(1.18);
+      }
+      100% {
+        border-color: rgba(121, 224, 194, .34);
+        box-shadow: 0 0 0 0 rgba(121, 224, 194, 0), 0 0 0 rgba(121, 224, 194, 0);
+        filter: brightness(1);
+      }
+    }
+
+    .opponent-commit-flight-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 16;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .opponent-commit-flight {
+      position: fixed;
+      width: 46px;
+      height: 66px;
+      margin: 0;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, transparent 46%, rgba(121, 224, 194, .16) 47% 53%, transparent 54%),
+        var(--surface-3);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .36), 0 0 18px rgba(121, 224, 194, .07);
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: center;
+      will-change: transform, opacity;
+    }
+
+    .opponent-commit-flight::after {
+      position: absolute;
+      inset: 18px 11px;
+      border: 1px solid rgba(121, 224, 194, .38);
+      border-radius: 5px;
+      content: "";
+      transform: rotate(45deg);
     }
 
     .duel-axis {
@@ -2521,7 +2628,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      content: "36";
+      content: "32";
       color: rgba(121, 224, 194, .82);
       font-family: var(--display);
       font-size: 13px;
@@ -2808,6 +2915,7 @@
     }
 
     .reveal-stack {
+      position: relative;
       display: flex;
       min-height: 154px;
       align-items: center;
@@ -2923,7 +3031,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      content: "36";
+      content: "32";
       color: rgba(121, 224, 194, .86);
       font-family: var(--display);
       font-size: 9px;
@@ -3229,6 +3337,221 @@
     .mod-sigil[data-mod="vampiric"] { color: #ff6f9b; border-color: rgba(255, 111, 155, .4); }
     .mod-sigil[data-mod="dark_steel"] { color: #d7e0e8; border-color: rgba(215, 224, 232, .4); }
 
+    .rainbow-roll-layer {
+      --rainbow-roll-count: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 12;
+      display: grid;
+      width: min(460px, calc(100vw - 48px));
+      grid-template-columns: repeat(var(--rainbow-roll-count), minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px;
+      visibility: hidden;
+      overflow: hidden;
+      border: 1px solid rgba(193, 164, 255, .34);
+      border-radius: 17px;
+      background:
+        linear-gradient(135deg, rgba(12, 16, 22, .97), rgba(25, 20, 34, .97));
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, .62),
+        0 0 34px rgba(193, 164, 255, .12);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -44%) scale(.94);
+      transform-origin: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .rainbow-roll-layer[data-count="1"] {
+      width: min(330px, calc(100vw - 48px));
+    }
+
+    .rainbow-roll-layer::before {
+      position: absolute;
+      top: 0;
+      right: 12px;
+      left: 12px;
+      height: 1px;
+      content: "";
+      background: linear-gradient(90deg, transparent, var(--fire), var(--ice), var(--water), transparent);
+      box-shadow: 0 0 13px rgba(193, 164, 255, .42);
+    }
+
+    .rainbow-roll-layer::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -30%;
+      width: 22%;
+      content: "";
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .11), transparent);
+      opacity: 0;
+      transform: skewX(-18deg);
+    }
+
+    .showdown-panel.rainbow.modifier .rainbow-roll-layer.has-rolls {
+      visibility: visible;
+    }
+
+    .showdown-panel.rainbow.modifier:not(.aim) .rainbow-roll-layer.has-rolls {
+      animation: rainbow-roll-lock-in .62s var(--ease-snap) both;
+    }
+
+    .showdown-panel.rainbow.modifier:not(.aim) .rainbow-roll-layer.has-rolls::after {
+      animation: rainbow-roll-scan .72s .08s var(--ease-out) both;
+    }
+
+    .showdown-panel.rainbow.aim .rainbow-roll-layer.has-rolls {
+      animation: rainbow-roll-lock-out .24s ease both;
+    }
+
+    .rainbow-roll-readout {
+      --rainbow-roll-color: var(--mod);
+      position: relative;
+      display: grid;
+      min-width: 0;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "owner code"
+        "value value"
+        "unit unit"
+        "detail detail";
+      align-items: center;
+      padding: 12px 14px 11px;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, var(--rainbow-roll-color) 36%, transparent);
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 50% 110%, color-mix(in srgb, var(--rainbow-roll-color) 13%, transparent), transparent 56%),
+        rgba(255, 255, 255, .018);
+      box-shadow: inset 0 0 24px color-mix(in srgb, var(--rainbow-roll-color) 5%, transparent);
+      text-align: center;
+    }
+
+    .rainbow-roll-readout[data-accent="fire"],
+    .rainbow-card-roll-chip[data-accent="fire"] { --rainbow-roll-color: var(--fire); }
+    .rainbow-roll-readout[data-accent="ice"],
+    .rainbow-card-roll-chip[data-accent="ice"] { --rainbow-roll-color: var(--ice); }
+    .rainbow-roll-readout[data-accent="water"],
+    .rainbow-card-roll-chip[data-accent="water"] { --rainbow-roll-color: var(--water); }
+    .rainbow-roll-readout[data-accent="damage"],
+    .rainbow-card-roll-chip[data-accent="damage"] { --rainbow-roll-color: var(--gold); }
+    .rainbow-roll-readout[data-accent="shield"],
+    .rainbow-card-roll-chip[data-accent="shield"] { --rainbow-roll-color: var(--ice); }
+    .rainbow-roll-readout[data-accent="reload"],
+    .rainbow-card-roll-chip[data-accent="reload"] { --rainbow-roll-color: var(--mint); }
+
+    .rainbow-roll-owner {
+      grid-area: owner;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 7px;
+      font-weight: 850;
+      letter-spacing: .11em;
+      text-align: left;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .rainbow-roll-code {
+      grid-area: code;
+      color: var(--mod);
+      font-size: 6px;
+      font-weight: 900;
+      letter-spacing: .15em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .rainbow-roll-value {
+      display: flex;
+      min-width: 0;
+      grid-area: value;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+      color: var(--rainbow-roll-color);
+      text-shadow: 0 0 22px color-mix(in srgb, var(--rainbow-roll-color) 42%, transparent);
+    }
+
+    .rainbow-roll-value i {
+      font-size: clamp(18px, 4vw, 27px);
+      font-style: normal;
+    }
+
+    .rainbow-roll-value strong {
+      overflow: hidden;
+      font-family: var(--display);
+      font-size: clamp(29px, 6vw, 43px);
+      font-weight: 650;
+      letter-spacing: -.055em;
+      line-height: .95;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rainbow-roll-unit {
+      grid-area: unit;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .rainbow-roll-detail {
+      grid-area: detail;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 7px;
+      line-height: 1.3;
+    }
+
+    .rainbow-card-roll-chip {
+      --rainbow-roll-color: var(--mod);
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      z-index: 7;
+      display: inline-grid;
+      min-width: 74px;
+      padding: 5px 8px;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--rainbow-roll-color) 48%, transparent);
+      border-radius: 7px;
+      background: rgba(11, 15, 21, .96);
+      box-shadow: 0 9px 24px rgba(0, 0, 0, .4), 0 0 15px color-mix(in srgb, var(--rainbow-roll-color) 12%, transparent);
+      color: var(--rainbow-roll-color);
+      line-height: 1.05;
+      pointer-events: none;
+      transform: translate(-50%, 7px) scale(.92);
+      white-space: nowrap;
+    }
+
+    .rainbow-card-roll-chip small {
+      color: var(--muted);
+      font-size: 5px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .rainbow-card-roll-chip strong {
+      margin-top: 2px;
+      font-size: 8px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .showdown-panel.modifier .rainbow-card-roll-chip {
+      animation: rainbow-card-roll-in .38s .12s var(--ease-snap) both;
+    }
+
     .silver-badge {
       position: absolute;
       top: 50%;
@@ -3296,7 +3619,7 @@
       box-shadow: 0 0 26px rgba(193, 164, 255, .18);
     }
 
-    .showdown-panel.rainbow.reveal .reveal-card.card-mod {
+    .showdown-panel.rainbow.reveal .reveal-card[data-card-value="rainbow"] {
       animation: rainbow-shuffle .72s .48s var(--ease-snap);
     }
 
@@ -3355,6 +3678,57 @@
     @keyframes rainbow-shuffle {
       35% { transform: translateY(-9px) rotate(7deg) scale(1.04); }
       68% { transform: translateY(2px) rotate(-4deg) scale(.98); }
+    }
+
+    @keyframes rainbow-roll-lock-in {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -41%) scale(.91);
+        filter: saturate(.45) blur(5px);
+      }
+      58% {
+        opacity: 1;
+        transform: translate(-50%, -52%) scale(1.015);
+        filter: saturate(1.2) blur(0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        filter: saturate(1) blur(0);
+      }
+    }
+
+    @keyframes rainbow-roll-lock-out {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      to {
+        visibility: hidden;
+        opacity: 0;
+        transform: translate(-50%, -54%) scale(.97);
+      }
+    }
+
+    @keyframes rainbow-roll-scan {
+      0% { left: -30%; opacity: 0; }
+      18% { opacity: .8; }
+      100% { left: 112%; opacity: 0; }
+    }
+
+    @keyframes rainbow-card-roll-in {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 7px) scale(.9);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -2px) scale(1.04);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
     }
 
     @keyframes flame-trail {
@@ -4118,12 +4492,13 @@
       }
 
       .opponent-slots .slot {
+        --opponent-slot-scale: .76;
         aspect-ratio: 5 / 6.5;
-        transform: scale(.76);
+        transform: scale(var(--opponent-slot-scale));
       }
 
       .opponent-slots.ready .slot {
-        transform: scale(.76);
+        transform: scale(var(--opponent-slot-scale));
       }
 
       .self-strip {
@@ -4246,6 +4621,52 @@
       .impact-stage {
         width: 104px;
         height: 112px;
+      }
+
+      .rainbow-roll-layer {
+        width: min(350px, calc(100vw - 28px));
+        gap: 6px;
+        padding: 6px;
+        border-radius: 14px;
+      }
+
+      .rainbow-roll-layer[data-count="1"] {
+        width: min(282px, calc(100vw - 28px));
+      }
+
+      .rainbow-roll-readout {
+        padding: 10px 9px 9px;
+      }
+
+      .rainbow-roll-owner {
+        font-size: 6px;
+      }
+
+      .rainbow-roll-code,
+      .rainbow-roll-detail {
+        font-size: 5.5px;
+      }
+
+      .rainbow-roll-value {
+        gap: 5px;
+      }
+
+      .rainbow-roll-value i {
+        font-size: clamp(15px, 5vw, 21px);
+      }
+
+      .rainbow-roll-value strong {
+        font-size: clamp(24px, 8vw, 34px);
+      }
+
+      .rainbow-roll-unit {
+        font-size: 6px;
+      }
+
+      .rainbow-card-roll-chip {
+        bottom: -7px;
+        min-width: 66px;
+        padding: 4px 6px;
       }
 
       .showdown-reload-deck {
@@ -4608,9 +5029,9 @@
       </div>
       <div class="shell">
         <header class="top-nav">
-          <button class="brand" type="button" data-go-home aria-label="TRIAD 36 home">
+          <button class="brand" type="button" data-go-home aria-label="TRIAD 32 home">
             <span class="brand-mark" aria-hidden="true"></span>
-            <span>TRIAD <span class="brand-slash">//</span> 36</span>
+            <span>TRIAD <span class="brand-slash">//</span> 32</span>
           </button>
           <div class="nav-actions">
             <nav class="koi-nav" aria-label="KOI site">
@@ -4630,7 +5051,7 @@
           <h1 id="heroTitle">Think fast.<span>Reveal together.</span></h1>
           <p>Load your hand, build a three-card action, and outread your rival. Every choice lands at once. Every element leaves a mark.</p>
           <div class="hero-rule" aria-label="Core match facts">
-            <b>36 health</b><span></span><b>45 seconds</b><span></span><b>2 players</b>
+            <b>32 health</b><span></span><b>45 seconds</b><span></span><b>2 players</b>
           </div>
         </div>
 
@@ -4734,7 +5155,7 @@
         <div class="match-meta">
           <button class="brand" type="button" data-go-home aria-label="Leave match and return home">
             <span class="brand-mark" aria-hidden="true"></span>
-            <span>TRIAD <span class="brand-slash">//</span> 36</span>
+            <span>TRIAD <span class="brand-slash">//</span> 32</span>
           </button>
           <span id="roundLabel" class="round-label">Turn 01</span>
           <span id="connectionState" class="connection-state" role="status" aria-live="polite">Practice link</span>
@@ -4767,6 +5188,8 @@
         </div>
       </div>
 
+      <div id="opponentCommitFlightLayer" class="opponent-commit-flight-layer" aria-hidden="true"></div>
+
       <div id="openingGuidePrompt" class="opening-guide-prompt" hidden>
         <span>First move</span>
         <strong id="openingGuideText">Select Reload</strong>
@@ -4782,8 +5205,8 @@
                 <span id="opponentReadyTag" class="ready-tag">Locked</span>
               </div>
               <div class="health-row">
-                <div class="health-track" role="progressbar" aria-label="Rival health" aria-valuemin="0" aria-valuemax="36" aria-valuenow="3+"><div id="opponentHealthFill" class="health-fill" style="--hp:36"></div></div>
-                <span id="opponentHealthValue" class="health-value">36 / 36</span>
+                <div class="health-track" role="progressbar" aria-label="Rival health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="opponentHealthFill" class="health-fill" style="--hp:32"></div></div>
+                <span id="opponentHealthValue" class="health-value">32 / 32</span>
               </div>
               <div id="opponentStatuses" class="status-chips"></div>
             </div>
@@ -4844,8 +5267,8 @@
                 <strong id="playerName">Player</strong>
               </div>
               <div class="health-row">
-                <span id="playerHealthValue" class="health-value">36 / 36</span>
-                <div class="health-track" role="progressbar" aria-label="Your health" aria-valuemin="0" aria-valuemax="36" aria-valuenow="36"><div id="playerHealthFill" class="health-fill" style="--hp:36"></div></div>
+                <span id="playerHealthValue" class="health-value">32 / 32</span>
+                <div class="health-track" role="progressbar" aria-label="Your health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="playerHealthFill" class="health-fill" style="--hp:32"></div></div>
               </div>
               <div id="playerStatuses" class="status-chips"></div>
             </div>
@@ -4886,8 +5309,8 @@
         <div class="reveal-side">
           <div id="revealLeftName" class="reveal-name">You</div>
           <div id="showdownLeftHealth" class="showdown-health" data-direct-damage="false" data-aftermath-damage="false">
-            <div class="health-track" role="progressbar" aria-label="Your showdown health" aria-valuemin="0" aria-valuemax="36" aria-valuenow="36"><div id="showdownLeftHealthFill" class="health-fill" style="--hp:36"></div></div>
-            <span id="showdownLeftHealthValue" class="health-value">36 / 36</span>
+            <div class="health-track" role="progressbar" aria-label="Your showdown health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="showdownLeftHealthFill" class="health-fill" style="--hp:32"></div></div>
+            <span id="showdownLeftHealthValue" class="health-value">32 / 32</span>
           </div>
           <div id="revealLeft" class="reveal-stack"></div>
         </div>
@@ -4904,6 +5327,7 @@
           <span id="rightAftermathBurst" class="aftermath-burst right"></span>
           <span id="leftModSigil" class="mod-sigil left"></span>
           <span id="rightModSigil" class="mod-sigil right"></span>
+          <div id="rainbowRollLayer" class="rainbow-roll-layer" data-count="0"></div>
           <div id="leftShotLane" class="shot-lane left" data-active="false" data-element="raw" data-mod="none">
             <span class="showdown-gun"><i></i></span>
             <span class="muzzle-flash"></span>
@@ -4924,8 +5348,8 @@
         <div class="reveal-side">
           <div id="revealRightName" class="reveal-name">Rival</div>
           <div id="showdownRightHealth" class="showdown-health right" data-direct-damage="false" data-aftermath-damage="false">
-            <span id="showdownRightHealthValue" class="health-value">36 / 36</span>
-            <div class="health-track" role="progressbar" aria-label="Rival showdown health" aria-valuemin="0" aria-valuemax="36" aria-valuenow="36"><div id="showdownRightHealthFill" class="health-fill" style="--hp:36"></div></div>
+            <span id="showdownRightHealthValue" class="health-value">32 / 32</span>
+            <div class="health-track" role="progressbar" aria-label="Rival showdown health" aria-valuemin="0" aria-valuemax="32" aria-valuenow="32"><div id="showdownRightHealthFill" class="health-fill" style="--hp:32"></div></div>
           </div>
           <div id="revealRight" class="reveal-stack"></div>
         </div>
@@ -4960,7 +5384,7 @@
       <button class="dialog-close" type="button" data-close-dialog aria-label="Close rules">×</button>
     </div>
     <div class="dialog-body">
-      <p class="rules-intro">Both players secretly build an action, lock it, then reveal together. Reduce the rival from 36 health to zero. If both fall in the same showdown, the duel is a draw.</p>
+      <p class="rules-intro">Both players secretly build an action, lock it, then reveal together. Reduce the rival from 32 health to zero. If both fall in the same showdown, the duel is a draw.</p>
 
       <section class="rule-section">
         <h3>Build one turn</h3>
@@ -5062,7 +5486,7 @@
   <script>
     "use strict";
 
-    /* TRIAD // 36 — ONLINE CONNECTION SETTINGS
+    /* TRIAD // 32 — ONLINE CONNECTION SETTINGS
        Type your Metered TURN username and credential here before publishing.
 
        No publishable signaling key is needed. Players meet by exchanging a short
@@ -5096,6 +5520,10 @@
     });
 
     const OPENING_DEAL_DURATION_MS = 1480;
+    const OPPONENT_COMMIT_FLIGHT_MS = 540;
+    const OPPONENT_COMMIT_STAGGER_MS = 65;
+    const OPPONENT_COMMIT_DURATION_MS = 820;
+    const OPPONENT_REVEAL_BUFFER_MS = 980;
     const ELEMENTS = Object.freeze(["fire", "ice", "water"]);
     const MODS = Object.freeze([
       "vampiric",
@@ -5285,7 +5713,7 @@
     function makePlayer(name) {
       return {
         name: cleanName(name),
-        hp: 36,
+        hp: 32,
         hand: [makeCard("reload")],
         hiddenHandCount: null,
         stains: [],
@@ -5618,7 +6046,7 @@
         player.hp = clamp(
           beforeHp[index] - directDamage[index] - stainDamage[index] + healing[index],
           0,
-          36
+          32
         );
       });
 
@@ -5824,6 +6252,7 @@
       openingDeal: $("#openingDeal"),
       openingDealDeck: $("#openingDealDeck"),
       openingDealFlightLayer: $("#openingDealFlightLayer"),
+      opponentCommitFlightLayer: $("#opponentCommitFlightLayer"),
       openingGuidePrompt: $("#openingGuidePrompt"),
       openingGuideText: $("#openingGuideText"),
       gameBattlefield: $("#gameBattlefield"),
@@ -5874,6 +6303,7 @@
       rightAftermathBurst: $("#rightAftermathBurst"),
       leftModSigil: $("#leftModSigil"),
       rightModSigil: $("#rightModSigil"),
+      rainbowRollLayer: $("#rainbowRollLayer"),
       leftShotLane: $("#leftShotLane"),
       rightShotLane: $("#rightShotLane"),
       silverBadge: $("#silverBadge"),
@@ -5931,6 +6361,15 @@
         resizeHandler: null,
         opponentRevealed: true,
         playerRevealed: true
+      },
+      opponentCommit: {
+        key: null,
+        ready: false,
+        active: false,
+        until: 0,
+        timers: [],
+        animations: [],
+        resizeHandler: null
       },
       timerAnnouncements: new Set(),
       seenCards: new Set(),
@@ -6368,6 +6807,216 @@
       return OPENING_DEAL_DURATION_MS;
     }
 
+    function hasReducedMotionPreference() {
+      return typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function queueOpponentCommit(callback, delay) {
+      const timerId = setTimeout(() => {
+        app.opponentCommit.timers = app.opponentCommit.timers.filter(id => id !== timerId);
+        callback();
+      }, delay);
+      app.opponentCommit.timers.push(timerId);
+      return timerId;
+    }
+
+    function clearOpponentCommitMotion({ resetTracking = false } = {}) {
+      const motion = app.opponentCommit;
+      motion.timers.forEach(clearTimeout);
+      motion.timers = [];
+      motion.animations.forEach(animation => {
+        try {
+          animation.cancel();
+        } catch {
+          // The animation already finished.
+        }
+      });
+      motion.animations = [];
+      if (motion.resizeHandler) {
+        window.removeEventListener("resize", motion.resizeHandler);
+        motion.resizeHandler = null;
+      }
+      motion.active = false;
+      motion.until = 0;
+      ui.opponentCommitFlightLayer.innerHTML = "";
+      ui.opponentHand.classList.remove("commit-sending");
+      ui.opponentReadyTag.classList.remove("opponent-commit-cue");
+      ui.opponentReadyTag.classList.toggle(
+        "opponent-commit-settled",
+        motion.ready && !resetTracking
+      );
+      ui.opponentSlots.classList.remove("committing");
+      ui.opponentSlots.querySelectorAll(".commit-arrived").forEach(slot => {
+        slot.classList.remove("commit-arrived");
+      });
+      if (resetTracking) {
+        motion.key = null;
+        motion.ready = false;
+      }
+    }
+
+    function finishOpponentCommitMotion(key) {
+      if (key && app.opponentCommit.key !== key) return;
+      clearOpponentCommitMotion();
+    }
+
+    function createOpponentCommitFlight(source, target, index, key) {
+      const sourceRect = source?.getBoundingClientRect();
+      const fallbackRect = ui.opponentHand.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const originRect = sourceRect?.width ? sourceRect : fallbackRect;
+      if (!originRect.width || !targetRect.width) {
+        target.classList.add("commit-arrived");
+        return;
+      }
+
+      const sourceX = originRect.left + originRect.width / 2;
+      const sourceY = originRect.top + originRect.height / 2;
+      const targetX = targetRect.left + targetRect.width / 2;
+      const targetY = targetRect.top + targetRect.height / 2;
+      const deltaX = targetX - sourceX;
+      const deltaY = targetY - sourceY;
+      const startRotations = [-8, -1, 7];
+      const startRotation = startRotations[index] || 0;
+      const endScale = clamp(
+        Math.min(targetRect.width / 46, targetRect.height / 66) * .84,
+        .82,
+        1.48
+      );
+      const middleScale = .98 + (endScale - .98) * .62;
+      const bend = (index - 1) * 8;
+      const delay = index * OPPONENT_COMMIT_STAGGER_MS;
+      const clone = document.createElement("span");
+      clone.className = "opponent-commit-flight";
+      clone.setAttribute("aria-hidden", "true");
+      clone.style.left = `${sourceX - 23}px`;
+      clone.style.top = `${sourceY - 33}px`;
+      ui.opponentCommitFlightLayer.appendChild(clone);
+
+      if (typeof clone.animate !== "function") {
+        clone.remove();
+        target.classList.add("commit-arrived");
+        return;
+      }
+
+      const animation = clone.animate([
+        {
+          opacity: .18,
+          transform: `translate3d(0, 0, 0) rotate(${startRotation}deg) scale(.96)`
+        },
+        {
+          offset: .12,
+          opacity: 1,
+          transform: `translate3d(${bend * .15}px, 5px, 0) rotate(${startRotation * .9}deg) scale(1)`
+        },
+        {
+          offset: .64,
+          opacity: 1,
+          transform: `translate3d(${deltaX * .64 + bend}px, ${deltaY * .6 - 18}px, 0) rotate(${startRotation * .28}deg) scale(${middleScale})`
+        },
+        {
+          offset: .9,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY - 2}px, 0) rotate(0deg) scale(${endScale * 1.015})`
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(${endScale})`
+        }
+      ], {
+        duration: OPPONENT_COMMIT_FLIGHT_MS,
+        delay,
+        easing: "cubic-bezier(.22,.8,.24,1)",
+        fill: "forwards"
+      });
+      app.opponentCommit.animations.push(animation);
+
+      queueOpponentCommit(() => {
+        if (
+          app.opponentCommit.active &&
+          app.opponentCommit.key === key &&
+          app.opponentCommit.ready
+        ) {
+          target.classList.add("commit-arrived");
+        }
+      }, delay + OPPONENT_COMMIT_FLIGHT_MS - 42);
+
+      animation.finished
+        .then(() => clone.remove())
+        .catch(() => {
+          // Cancellation is expected when the turn changes or the viewport resizes.
+        });
+    }
+
+    function runOpponentCommitMotion(key) {
+      const motion = app.opponentCommit;
+      if (
+        hasReducedMotionPreference() ||
+        !app.state ||
+        app.state.phase !== "planning" ||
+        motion.key !== key ||
+        !motion.ready
+      ) {
+        clearOpponentCommitMotion();
+        return;
+      }
+
+      clearOpponentCommitMotion();
+      motion.until = Date.now() + OPPONENT_COMMIT_DURATION_MS;
+      motion.active = true;
+      ui.opponentHand.classList.add("commit-sending");
+      ui.opponentReadyTag.classList.remove("opponent-commit-settled");
+      ui.opponentReadyTag.classList.add("opponent-commit-cue");
+      ui.opponentSlots.classList.add("committing");
+      const targets = [...ui.opponentSlots.querySelectorAll(".slot")].slice(0, 3);
+      const sourceCards = [...ui.opponentHand.querySelectorAll(".card-back-mini")];
+      const flightCount = clamp(sourceCards.length || 1, 1, targets.length);
+
+      targets.slice(0, flightCount).forEach((target, index) => {
+        const sourceIndex = sourceCards.length
+          ? Math.max(0, sourceCards.length - 1 - (index % Math.min(sourceCards.length, 3)))
+          : -1;
+        createOpponentCommitFlight(sourceCards[sourceIndex] || ui.opponentHand, target, index, key);
+      });
+      targets.slice(flightCount).forEach((target, index) => {
+        queueOpponentCommit(() => {
+          if (motion.active && motion.key === key && motion.ready) {
+            target.classList.add("commit-arrived");
+          }
+        }, OPPONENT_COMMIT_FLIGHT_MS - 42 + (flightCount + index) * OPPONENT_COMMIT_STAGGER_MS);
+      });
+
+      motion.resizeHandler = () => finishOpponentCommitMotion(key);
+      window.addEventListener("resize", motion.resizeHandler, { once: true });
+      queueOpponentCommit(() => finishOpponentCommitMotion(key), OPPONENT_COMMIT_DURATION_MS);
+      playSound("lock");
+    }
+
+    function syncOpponentCommitReadiness(opponentReady, opponentSeat) {
+      const motion = app.opponentCommit;
+      const key = `${app.state.id}:${app.state.turn}:${opponentSeat}`;
+      if (motion.key !== key) {
+        clearOpponentCommitMotion();
+        ui.opponentReadyTag.classList.remove("opponent-commit-settled");
+        motion.key = key;
+        motion.ready = opponentReady;
+        return { animate: false, key };
+      }
+
+      const animate = Boolean(
+        opponentReady &&
+        !motion.ready &&
+        app.state.phase === "planning" &&
+        !app.openingDeal.active &&
+        !hasReducedMotionPreference()
+      );
+      motion.ready = opponentReady;
+      if (animate) motion.until = Date.now() + OPPONENT_COMMIT_DURATION_MS;
+      if (!opponentReady) clearOpponentCommitMotion();
+      return { animate, key };
+    }
+
     function focusPlanningControl() {
       requestAnimationFrame(() => {
         if (app.openingDeal.active) return;
@@ -6566,10 +7215,10 @@
       fill.style.setProperty("--hp", hp);
       fill.classList.toggle("mid", hp > 0 && hp <= 16);
       fill.classList.toggle("low", hp <= 8);
-      label.textContent = `${formatHp(hp)} / 36`;
+      label.textContent = `${formatHp(hp)} / 32`;
       const track = fill.parentElement;
       track?.setAttribute("aria-valuenow", String(hp));
-      track?.setAttribute("aria-valuetext", `${formatHp(hp)} health out of 36`);
+      track?.setAttribute("aria-valuetext", `${formatHp(hp)} health out of 32`);
     }
 
     function renderOpponentBacks(count) {
@@ -6657,6 +7306,8 @@
         ? app.submitted
         : Boolean(app.state.submitted?.[meSeat]);
       const opponentReady = Boolean(app.state.submitted?.[opponentSeat]);
+      const opponentCommitState = syncOpponentCommitReadiness(opponentReady, opponentSeat);
+      if (opponentCommitState.animate) ui.opponentSlots.classList.add("committing");
       ui.playerReadyTag.classList.toggle("visible", myReady);
       ui.opponentReadyTag.classList.toggle("visible", opponentReady);
 
@@ -6668,6 +7319,10 @@
       ui.lockTurnBtn.textContent = myReady ? "Locked · Waiting" : "Lock turn";
       syncOpeningGuide();
       syncOpeningDealTargets();
+
+      if (opponentCommitState.animate) {
+        requestAnimationFrame(() => runOpponentCommitMotion(opponentCommitState.key));
+      }
 
       if (turnChanged && app.state.turn > 1) {
         announce(`Turn ${app.state.turn}. New cards dealt. ${Math.round((app.deadline - Date.now()) / 1000) || GAME_CONFIG.turnSeconds} seconds.`);
@@ -6799,8 +7454,11 @@
     function beginPlanning({ preserveDeadline = false, resume = false } = {}) {
       if (!app.state || app.state.winner !== null) return;
       clearTurnTimers();
+      if (app.resolutionTimerId) clearTimeout(app.resolutionTimerId);
+      app.resolutionTimerId = null;
       clearShowdownTimers();
       clearOpeningDealMotion();
+      clearOpponentCommitMotion({ resetTracking: true });
       ui.showdownOverlay.classList.remove("visible");
       resetShowdownVisuals();
       ui.appRoot.inert = false;
@@ -6877,7 +7535,7 @@
         ui.timerNumber.textContent = "0";
         renderGame();
         maybeResolveTurn();
-        if (app.state?.phase !== "planning") return;
+        if (app.resolving || app.state?.phase !== "planning") return;
         app.graceTimerId = setTimeout(() => {
           app.graceTimerId = null;
           if (!app.state || app.state.phase !== "planning") return;
@@ -6955,20 +7613,60 @@
       if (!app.state.submitted.every(Boolean)) return;
       app.resolving = true;
       clearTurnTimers();
-      app.state.phase = "showdown";
-      const { state, result } = resolveTurn(app.state, app.state.selections);
-      app.state = state;
+      const matchId = app.state.id;
+      const turn = app.state.turn;
+      const finishResolution = () => {
+        app.resolutionTimerId = null;
+        if (
+          !app.state ||
+          app.state.id !== matchId ||
+          app.state.turn !== turn ||
+          app.state.phase !== "planning" ||
+          !app.state.submitted.every(Boolean)
+        ) {
+          app.resolving = false;
+          return;
+        }
 
-      if (app.mode === "host") {
-        sendGameMessage({
-          type: "resolution",
-          turn: result.turn,
-          result,
-          state: stateForSeat(app.state, 1)
-        });
+        clearOpponentCommitMotion();
+        app.state.phase = "showdown";
+        const { state, result } = resolveTurn(app.state, app.state.selections);
+        app.state = state;
+
+        if (app.mode === "host") {
+          sendGameMessage({
+            type: "resolution",
+            turn: result.turn,
+            result,
+            state: stateForSeat(app.state, 1)
+          });
+        }
+        renderGame();
+        presentShowdown(result);
+      };
+
+      if (hasReducedMotionPreference() && app.mode !== "host") {
+        finishResolution();
+        return;
       }
-      renderGame();
-      presentShowdown(result);
+      const localCommitRemaining = Math.max(0, app.opponentCommit.until - Date.now());
+      const revealDelay = app.mode === "host"
+        ? OPPONENT_REVEAL_BUFFER_MS
+        : Math.min(OPPONENT_REVEAL_BUFFER_MS, localCommitRemaining + (localCommitRemaining ? 30 : 0));
+      if (!revealDelay) {
+        finishResolution();
+        return;
+      }
+      const finishAfterCommit = () => {
+        app.resolutionTimerId = null;
+        const remaining = Math.max(0, app.opponentCommit.until - Date.now());
+        if (remaining) {
+          app.resolutionTimerId = setTimeout(finishAfterCommit, remaining + 30);
+          return;
+        }
+        finishResolution();
+      };
+      app.resolutionTimerId = setTimeout(finishAfterCommit, revealDelay);
     }
 
     function revealCardHtml(card) {
@@ -7031,6 +7729,138 @@
         return `Rainbow rolled ${roll.value} special card${roll.value === 1 ? "" : "s"}`;
       }
       return `Rainbow rolled ${String(roll.value)}`;
+    }
+
+    function rainbowRollPresentation(play) {
+      const roll = play?.rainbowRoll;
+      if (roll?.kind === "element") {
+        const rolledCard = CARD_COPY[roll.value];
+        const fromName = CARD_COPY[roll.from]?.name || "Element";
+        const rolledName = rolledCard?.name || String(roll.value);
+        return {
+          accent: ELEMENTS.includes(roll.value) ? roll.value : "rainbow",
+          symbol: rolledCard?.symbol || CARD_COPY.rainbow.symbol,
+          value: rolledName.toUpperCase(),
+          unit: "Element locked",
+          detail: roll.from === roll.value ? `${rolledName} retained` : `${fromName} → ${rolledName}`,
+          chip: rolledName
+        };
+      }
+      if (roll?.kind === "damage") {
+        return {
+          accent: "damage",
+          symbol: CARD_COPY.rainbow.symbol,
+          value: String(roll.value),
+          unit: "Base damage",
+          detail: "Raw Shoot random value",
+          chip: `BASE ${roll.value}`
+        };
+      }
+      if (roll?.kind === "shield") {
+        return {
+          accent: "shield",
+          symbol: CARD_COPY.rainbow.symbol,
+          value: `${roll.value}%`,
+          unit: "Shield reduction",
+          detail: "Raw Shield random value",
+          chip: `${roll.value}%`
+        };
+      }
+      if (roll?.kind === "reload") {
+        return {
+          accent: "reload",
+          symbol: CARD_COPY.rainbow.symbol,
+          value: String(roll.value),
+          unit: `Special card${roll.value === 1 ? "" : "s"}`,
+          detail: "Reload draw count",
+          chip: `${roll.value} CARD${roll.value === 1 ? "" : "S"}`
+        };
+      }
+
+      if (play?.element && play.resolvedElement) {
+        const rolledCard = CARD_COPY[play.resolvedElement];
+        const fromName = CARD_COPY[play.element.value]?.name || "Element";
+        const rolledName = rolledCard?.name || String(play.resolvedElement);
+        return {
+          accent: ELEMENTS.includes(play.resolvedElement) ? play.resolvedElement : "rainbow",
+          symbol: rolledCard?.symbol || CARD_COPY.rainbow.symbol,
+          value: rolledName.toUpperCase(),
+          unit: "Element locked",
+          detail: play.element.value === play.resolvedElement
+            ? `${rolledName} retained`
+            : `${fromName} → ${rolledName}`,
+          chip: rolledName
+        };
+      }
+      if (play?.actionValue === "reload" && play.reloadDrawCount) {
+        return {
+          accent: "reload",
+          symbol: CARD_COPY.rainbow.symbol,
+          value: String(play.reloadDrawCount),
+          unit: `Special card${play.reloadDrawCount === 1 ? "" : "s"}`,
+          detail: "Reload draw count",
+          chip: `${play.reloadDrawCount} CARD${play.reloadDrawCount === 1 ? "" : "S"}`
+        };
+      }
+      return {
+        accent: "rainbow",
+        symbol: CARD_COPY.rainbow.symbol,
+        value: "LOCKED",
+        unit: "Result resolved",
+        detail: "See showdown effects",
+        chip: "RESULT LOCKED"
+      };
+    }
+
+    function attachRainbowCardRoll(stack, play) {
+      if (play?.modValue !== "rainbow") return;
+      const presentation = rainbowRollPresentation(play);
+      const rainbowCard = stack.querySelector('[data-card-value="rainbow"]');
+      if (rainbowCard) {
+        const currentLabel = (rainbowCard.getAttribute("aria-label") || CARD_COPY.rainbow.name)
+          .replace(/\.+$/, "");
+        rainbowCard.setAttribute("aria-label", `${currentLabel}. ${rainbowRollCopy(play)}.`);
+      }
+      stack.insertAdjacentHTML("beforeend", `
+        <span class="rainbow-card-roll-chip" data-accent="${escapeHtml(presentation.accent)}" aria-hidden="true">
+          <small>Rainbow rolled</small>
+          <strong>${escapeHtml(presentation.chip)}</strong>
+        </span>
+      `);
+    }
+
+    function configureRainbowRollVisuals(result, players, meSeat) {
+      const orderedSeats = [meSeat, 1 - meSeat];
+      const entries = orderedSeats
+        .map(seat => ({
+          seat,
+          play: result.plays[seat],
+          player: players[seat]
+        }))
+        .filter(entry => entry.play?.modValue === "rainbow")
+        .map(entry => ({
+          ...entry,
+          presentation: rainbowRollPresentation(entry.play)
+        }));
+
+      ui.rainbowRollLayer.classList.toggle("has-rolls", Boolean(entries.length));
+      ui.rainbowRollLayer.dataset.count = String(entries.length);
+      ui.rainbowRollLayer.style.setProperty("--rainbow-roll-count", String(Math.max(1, entries.length)));
+      ui.rainbowRollLayer.innerHTML = entries.map(({ player, presentation }) => `
+        <div class="rainbow-roll-readout" data-accent="${escapeHtml(presentation.accent)}">
+          <span class="rainbow-roll-owner">${escapeHtml(player.name)}</span>
+          <span class="rainbow-roll-code">RNG // LOCK</span>
+          <span class="rainbow-roll-value">
+            <i>${escapeHtml(presentation.symbol)}</i>
+            <strong>${escapeHtml(presentation.value)}</strong>
+          </span>
+          <span class="rainbow-roll-unit">${escapeHtml(presentation.unit)}</span>
+          <span class="rainbow-roll-detail">${escapeHtml(presentation.detail)}</span>
+        </div>
+      `).join("");
+
+      attachRainbowCardRoll(ui.revealLeft, result.plays[meSeat]);
+      attachRainbowCardRoll(ui.revealRight, result.plays[1 - meSeat]);
     }
 
     function configureModSigil(node, modValue) {
@@ -7114,7 +7944,7 @@
 
       const sourceX = sourceRect.left + sourceRect.width / 2;
       const sourceY = sourceRect.top + sourceRect.height / 2;
-      const targetInset = Math.min(36, targetRect.width * .2);
+      const targetInset = Math.min(32, targetRect.width * .2);
       const targetX = entry.side === "left"
         ? targetRect.right - targetInset
         : targetRect.left + targetInset;
@@ -7194,6 +8024,7 @@
     function presentShowdown(result) {
       clearShowdownTimers();
       clearOpeningDeal();
+      clearOpponentCommitMotion();
       [ui.rulesDialog, ui.settingsDialog, ui.logDialog].forEach(closeDialog);
       app.overlayReturnFocus = document.activeElement;
       ui.appRoot.inert = true;
@@ -7228,6 +8059,7 @@
       ui.showdownRightHealth.dataset.aftermathDamage = String(Boolean(result.stainDamage?.[opponentSeat]));
       ui.revealLeft.innerHTML = [myPlay.action, myPlay.element, myPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       ui.revealRight.innerHTML = [opponentPlay.action, opponentPlay.element, opponentPlay.mod].filter(Boolean).map(revealCardHtml).join("");
+      configureRainbowRollVisuals(result, players, meSeat);
       setDamageBurst(ui.leftDamageBurst, result.directDamage[meSeat], opponentPlay.actionValue === "shoot");
       setDamageBurst(ui.rightDamageBurst, result.directDamage[opponentSeat], myPlay.actionValue === "shoot");
       ui.leftAftermathBurst.textContent = aftermathCopy(result, meSeat);
@@ -7344,12 +8176,12 @@
         ui.showdownPanel.classList.add("hit");
         updateShowdownHealth(
           "left",
-          clamp(beforeHp[meSeat] - (result.directDamage?.[meSeat] || 0), 0, 36),
+          clamp(beforeHp[meSeat] - (result.directDamage?.[meSeat] || 0), 0, 32),
           players[meSeat].name
         );
         updateShowdownHealth(
           "right",
-          clamp(beforeHp[opponentSeat] - (result.directDamage?.[opponentSeat] || 0), 0, 36),
+          clamp(beforeHp[opponentSeat] - (result.directDamage?.[opponentSeat] || 0), 0, 32),
           players[opponentSeat].name
         );
         const directNotes = [];
@@ -7634,7 +8466,7 @@
       const compact = String(rawCode || "").replace(/\s+/g, "");
       const prefix = pairingCodePrefix(expectedKind);
       if (!compact || compact.length > PAIRING_CODE_LIMIT || !compact.startsWith(prefix)) {
-        throw new Error(`Paste a valid ${expectedKind} code from TRIAD // 36.`);
+        throw new Error(`Paste a valid ${expectedKind} code from TRIAD // 32.`);
       }
       const encoded = compact.slice(prefix.length);
       if (!encoded || !/^[A-Za-z0-9_-]+$/.test(encoded)) {
@@ -7665,7 +8497,7 @@
       const expectedDescription = expectedKind;
       if (
         !packet ||
-        packet.scope !== "triad36-manual" ||
+        packet.scope !== "triad32-manual" ||
         packet.v !== GAME_CONFIG.protocolVersion ||
         packet.kind !== expectedKind ||
         packet.role !== expectedRole ||
@@ -9046,6 +9878,7 @@
     function cleanupNetwork() {
       clearTurnTimers();
       clearOpeningDeal({ resetMatch: true });
+      clearOpponentCommitMotion({ resetTracking: true });
       if (app.resolutionTimerId) clearTimeout(app.resolutionTimerId);
       app.resolutionTimerId = null;
       if (app.matchStartTimerId) clearTimeout(app.matchStartTimerId);
