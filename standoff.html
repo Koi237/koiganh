@@ -2228,12 +2228,42 @@
     }
 
     .hand-dock {
+      --hand-fade-top: 33px;
+      position: relative;
       z-index: 7;
       width: min(1320px, 100%);
       margin: 0 auto;
       padding-top: 8px;
       border-top: 1px solid var(--line);
       background: linear-gradient(transparent, rgba(8, 11, 16, .82) 22%);
+    }
+
+    .hand-dock::before,
+    .hand-dock::after {
+      position: absolute;
+      top: var(--hand-fade-top);
+      bottom: 4px;
+      z-index: 9;
+      width: clamp(22px, 4vw, 42px);
+      content: "";
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    .hand-dock::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(8, 11, 16, .96), transparent);
+    }
+
+    .hand-dock::after {
+      right: 0;
+      background: linear-gradient(270deg, rgba(8, 11, 16, .96), transparent);
+    }
+
+    .hand-dock.hand-can-scroll-left::before,
+    .hand-dock.hand-can-scroll-right::after {
+      opacity: 1;
     }
 
     .hand-head {
@@ -2255,6 +2285,12 @@
     .hand-head small {
       color: var(--faint);
       font-size: 8px;
+    }
+
+    .hand-browse-hint {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .hand-controls {
@@ -2294,6 +2330,15 @@
       scrollbar-width: thin;
       scrollbar-color: var(--line-strong) transparent;
       scroll-snap-type: x proximity;
+      scroll-padding-inline: 16px;
+      overscroll-behavior-x: contain;
+      overscroll-behavior-inline: contain;
+      touch-action: pan-x pinch-zoom;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hand.wheel-scrolling {
+      scroll-snap-type: none;
     }
 
     .hand::-webkit-scrollbar {
@@ -4978,9 +5023,11 @@
       }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 700px), (max-width: 1024px) and (max-aspect-ratio: 8 / 9) {
       #gameScreen {
-        min-height: 580px;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
       }
 
       .opening-guide-prompt {
@@ -5041,9 +5088,12 @@
 
       .opponent-hand {
         grid-column: 2;
+        width: 105px;
         min-width: 105px;
+        max-width: 105px;
         height: 60px;
         justify-content: flex-end;
+        overflow: hidden;
         transform: scale(.78);
         transform-origin: right center;
       }
@@ -5203,6 +5253,7 @@
       }
 
       .hand-dock {
+        --hand-fade-top: 34px;
         padding-top: 3px;
       }
 
@@ -5214,9 +5265,12 @@
       }
 
       .hand-head > span,
-      .hand-head > small,
       .hand-sort-label {
         display: none;
+      }
+
+      .hand-browse-hint {
+        max-width: 122px;
       }
 
       .hand-sort {
@@ -5479,6 +5533,55 @@
 
       .receipts {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 701px) and (max-width: 1024px) and (max-aspect-ratio: 8 / 9) {
+      .battlefield {
+        grid-template-rows: 96px minmax(300px, 1fr) 90px;
+      }
+
+      .opponent-hand {
+        width: 128px;
+        min-width: 128px;
+        max-width: 128px;
+        transform: scale(.86);
+      }
+
+      .slots {
+        grid-template-columns: repeat(3, minmax(80px, 98px));
+        gap: 9px;
+      }
+
+      .slot,
+      .opponent-slots .slot {
+        aspect-ratio: 5 / 6.7;
+      }
+
+      #lockTurnBtn {
+        min-width: 140px;
+      }
+
+      .hand-browse-hint {
+        max-width: 260px;
+      }
+
+      .hand {
+        height: 145px;
+        gap: 10px;
+        padding-inline: 22px;
+      }
+
+      .game-card {
+        width: 88px;
+        height: 126px;
+        flex-basis: 88px;
+        padding: 10px;
+      }
+
+      .game-card .card-symbol {
+        min-height: 40px;
+        font-size: 28px;
       }
     }
 
@@ -5754,6 +5857,466 @@
       .game-tools [data-open-rules] {
         display: none;
       }
+    }
+
+    /* Capability-aware mobile adjustments. Geometry chooses the layout;
+       touch capability only improves hit targets and gesture behavior. */
+    html.mobile-ui #gameScreen {
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+    }
+
+    html.touch-input button,
+    html.touch-input select {
+      touch-action: manipulation;
+    }
+
+    html.touch-input .icon-btn,
+    html.touch-input .game-tools .icon-btn,
+    html.touch-input #lockTurnBtn,
+    html.touch-input .hand-sort {
+      min-height: 44px;
+    }
+
+    html.touch-input .icon-btn,
+    html.touch-input .game-tools .icon-btn {
+      width: 44px;
+      height: 44px;
+    }
+
+    html.touch-input .hand-sort {
+      padding-inline: 11px 29px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    html.touch-input.mobile-ui .hand-dock {
+      --hand-fade-top: 47px;
+    }
+
+    html.touch-input .game-card:hover {
+      transform: none;
+    }
+
+    html.mobile-landscape {
+      --safe-top: max(4px, env(safe-area-inset-top));
+      --safe-bottom: max(4px, env(safe-area-inset-bottom));
+      --safe-right: max(10px, env(safe-area-inset-right));
+      --safe-left: max(10px, env(safe-area-inset-left));
+    }
+
+    html.mobile-landscape #gameScreen {
+      grid-template-rows: 44px minmax(196px, 1fr) auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    html.mobile-landscape .game-topbar {
+      position: sticky;
+      top: 0;
+      grid-template-columns: minmax(34px, 1fr) auto auto;
+      min-height: 44px;
+      gap: 6px;
+      background: rgba(8, 11, 16, .96);
+    }
+
+    html.mobile-landscape .game-topbar .brand span:not(.brand-mark),
+    html.mobile-landscape .timer-copy,
+    html.mobile-landscape #soundBtn,
+    html.mobile-landscape .round-label,
+    html.mobile-landscape .player-strip > .card-count,
+    html.mobile-landscape .commitment-title,
+    html.mobile-landscape .hand-head > span,
+    html.mobile-landscape .hand-browse-hint,
+    html.mobile-landscape .hand-sort-label {
+      display: none;
+    }
+
+    html.mobile-landscape .match-meta,
+    html.mobile-landscape .game-tools {
+      gap: 5px;
+    }
+
+    html.mobile-landscape .game-tools .icon-btn {
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+    }
+
+    html.mobile-landscape .connection-state {
+      display: inline-flex;
+      width: 10px;
+      overflow: hidden;
+      font-size: 0;
+    }
+
+    html.mobile-landscape .timer {
+      grid-template-columns: 30px;
+      min-width: 40px;
+      min-height: 40px;
+      padding: 3px 4px;
+    }
+
+    html.mobile-landscape .timer-ring {
+      width: 30px;
+      height: 30px;
+    }
+
+    html.mobile-landscape .battlefield {
+      grid-template-rows: 48px minmax(100px, 1fr) 48px;
+      min-height: 196px;
+      padding: 2px 0;
+    }
+
+    html.mobile-landscape .player-strip {
+      grid-template-columns: minmax(128px, 1fr) auto;
+      gap: 7px;
+    }
+
+    html.mobile-landscape .identity,
+    html.mobile-landscape .self-strip .identity {
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 7px;
+    }
+
+    html.mobile-landscape .avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 9px;
+    }
+
+    html.mobile-landscape .identity-name strong {
+      font-size: 10px;
+    }
+
+    html.mobile-landscape .health-row {
+      gap: 5px;
+      margin-top: 3px;
+    }
+
+    html.mobile-landscape .health-value {
+      min-width: 31px;
+      font-size: 8px;
+    }
+
+    html.mobile-landscape .status-chips {
+      min-height: 14px;
+      max-height: 18px;
+      flex-wrap: nowrap;
+      gap: 3px;
+      margin-top: 2px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    html.mobile-landscape .stain-chip,
+    html.mobile-landscape .lock-chip,
+    html.mobile-landscape .ward-chip {
+      flex: 0 0 auto;
+      padding: 2px 4px;
+      font-size: 6px;
+    }
+
+    html.mobile-landscape .opponent-hand {
+      grid-column: 2;
+      width: 106px;
+      min-width: 106px;
+      max-width: 106px;
+      height: 44px;
+      justify-content: flex-end;
+      padding-left: 12px;
+      overflow: hidden;
+      transform: none;
+    }
+
+    html.mobile-landscape .card-back-mini {
+      width: 32px;
+      height: 46px;
+      margin-left: -13px;
+      border-radius: 6px;
+    }
+
+    html.mobile-landscape .card-back-mini::after {
+      inset: 12px 8px;
+      border-radius: 4px;
+    }
+
+    html.mobile-landscape .arena {
+      grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+      grid-template-rows: 1fr;
+      gap: 2px;
+    }
+
+    html.mobile-landscape .commitment {
+      gap: 2px;
+    }
+
+    html.mobile-landscape .duel-axis {
+      transform: none;
+    }
+
+    html.mobile-landscape .element-guide {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      filter: none;
+    }
+
+    html.mobile-landscape .element-guide::before {
+      inset: 0;
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }
+
+    html.mobile-landscape .element-guide::after {
+      z-index: 2;
+      content: "VS";
+      color: var(--faint);
+      font-size: 6px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    html.mobile-landscape .element-guide > * {
+      display: none !important;
+    }
+
+    html.mobile-landscape .slots {
+      grid-template-columns: repeat(3, minmax(52px, 64px));
+      gap: 5px;
+    }
+
+    html.mobile-landscape .slot,
+    html.mobile-landscape .opponent-slots .slot {
+      aspect-ratio: 5 / 6.5;
+      border-radius: 9px;
+    }
+
+    html.mobile-landscape .opponent-slots .slot {
+      --opponent-slot-scale: .76;
+      transform: scale(var(--opponent-slot-scale));
+    }
+
+    html.mobile-landscape .opponent-slots.ready .slot {
+      transform: scale(var(--opponent-slot-scale));
+    }
+
+    html.mobile-landscape .slot-label {
+      font-size: 6px;
+    }
+
+    html.mobile-landscape .slot-label b {
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+
+    html.mobile-landscape .slot-card {
+      padding: 6px;
+    }
+
+    html.mobile-landscape .slot-card .card-symbol {
+      min-height: 24px;
+      font-size: 20px;
+    }
+
+    html.mobile-landscape .slot-card .card-name {
+      font-size: 7px;
+    }
+
+    html.mobile-landscape .slot-card .card-effect {
+      display: none;
+    }
+
+    html.mobile-landscape .self-strip {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-self: center;
+    }
+
+    html.mobile-landscape .self-strip .identity {
+      grid-column: 1;
+      text-align: left;
+    }
+
+    html.mobile-landscape .self-strip .identity .avatar {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    html.mobile-landscape .self-strip .identity-copy {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    html.mobile-landscape .self-strip .identity .identity-name,
+    html.mobile-landscape .self-strip .identity .status-chips {
+      justify-content: flex-start;
+    }
+
+    html.mobile-landscape .self-strip .identity .health-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    html.mobile-landscape .self-strip .identity .health-row .health-track {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    html.mobile-landscape .self-strip .identity .health-row .health-value {
+      grid-column: 2;
+    }
+
+    html.mobile-landscape .turn-action-wrap {
+      grid-column: 2;
+    }
+
+    html.mobile-landscape #lockTurnBtn {
+      min-width: 104px;
+      min-height: 44px;
+      padding-inline: 9px;
+      font-size: 10px;
+    }
+
+    html.mobile-landscape .hand-dock {
+      --hand-fade-top: 47px;
+      padding-top: 1px;
+    }
+
+    html.mobile-landscape .hand-head {
+      min-height: 44px;
+      justify-content: flex-end;
+      padding-inline: 10px;
+    }
+
+    html.mobile-landscape .hand {
+      height: 90px;
+      gap: 6px;
+      padding: 4px 10px max(4px, env(safe-area-inset-bottom));
+    }
+
+    html.mobile-landscape .game-card {
+      width: 60px;
+      height: 86px;
+      flex-basis: 60px;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    html.mobile-landscape .game-card .card-symbol {
+      min-height: 25px;
+      font-size: 20px;
+    }
+
+    html.mobile-landscape .game-card .card-name {
+      font-size: 7px;
+    }
+
+    html.mobile-landscape .game-card .card-effect {
+      display: none;
+    }
+
+    html.mobile-landscape .opening-guide-prompt {
+      bottom: 136px;
+    }
+
+    html.mobile-landscape .showdown-panel {
+      max-height: calc(100dvh - 8px);
+      padding: 10px 12px;
+      border-radius: 16px;
+    }
+
+    html.mobile-landscape .showdown-head h2 {
+      font-size: 24px;
+    }
+
+    html.mobile-landscape .showdown-grid {
+      --showdown-impact-width: 112px;
+      --showdown-gap: 6px;
+      margin-top: 9px;
+    }
+
+    html.mobile-landscape .reveal-name {
+      margin-bottom: 5px;
+      font-size: 8px;
+    }
+
+    html.mobile-landscape .showdown-health {
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+
+    html.mobile-landscape .reveal-stack {
+      min-height: 98px;
+    }
+
+    html.mobile-landscape .reveal-card {
+      width: 68px;
+      height: 97px;
+      padding: 7px;
+    }
+
+    html.mobile-landscape .reveal-card + .reveal-card {
+      width: 55px;
+      height: 79px;
+      margin-left: -25px;
+    }
+
+    html.mobile-landscape .reveal-card .card-symbol {
+      min-height: 27px;
+      font-size: 21px;
+    }
+
+    html.mobile-landscape .reveal-card .card-effect {
+      display: none;
+    }
+
+    html.mobile-landscape .impact-stage {
+      width: 112px;
+      height: 96px;
+    }
+
+    html.mobile-landscape .resolution-title {
+      margin-top: 11px;
+    }
+
+    html.mobile-landscape .end-card {
+      max-height: calc(100dvh - 8px);
+      padding: 14px 18px;
+      overflow: auto;
+      border-radius: 16px;
+    }
+
+    html.mobile-landscape .end-sigil {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    html.mobile-landscape .end-sigil::before {
+      inset: -7px;
+    }
+
+    html.mobile-landscape .end-sigil::after {
+      inset: -13px;
+    }
+
+    html.mobile-landscape .end-card h2 {
+      font-size: 34px;
+    }
+
+    html.mobile-landscape .end-card p {
+      margin-top: 7px;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    html.mobile-landscape .end-stats {
+      gap: 18px;
+      margin: 10px 0;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -6037,7 +6600,7 @@
         <div class="hand-head">
           <span>Your hand</span>
           <div class="hand-controls">
-            <small>Tap a card to commit · tap a slot to return it</small>
+            <small id="handBrowseHint" class="hand-browse-hint">Hover here and scroll to browse · click cards or slots to move them</small>
             <label class="hand-sort-label" for="handSortSelect">Sort</label>
             <select id="handSortSelect" class="hand-sort" aria-label="Sort your hand">
               <option value="category">Category</option>
@@ -6046,7 +6609,7 @@
             </select>
           </div>
         </div>
-        <div id="playerHand" class="hand" aria-label="Your hand of cards"></div>
+        <div id="playerHand" class="hand" role="region" aria-label="Your hand of cards" aria-describedby="handBrowseHint"></div>
       </div>
     </section>
   </main>
@@ -7103,6 +7666,7 @@
       modSlot: $("#modSlot"),
       lockTurnBtn: $("#lockTurnBtn"),
       playerHand: $("#playerHand"),
+      handBrowseHint: $("#handBrowseHint"),
       handSortSelect: $("#handSortSelect"),
       showdownOverlay: $("#showdownOverlay"),
       showdownEffectLayer: $("#showdownEffectLayer"),
@@ -7196,6 +7760,17 @@
         animations: [],
         resizeHandler: null
       },
+      handScroll: {
+        frameId: 0,
+        target: 0
+      },
+      responsive: {
+        frameId: 0,
+        touchInput: false,
+        mobileUi: false,
+        mobileLandscape: false,
+        compactHeight: false
+      },
       timerAnnouncements: new Set(),
       seenCards: new Set(),
       handSort: ["category", "draw", "name"].includes(storage.get("handSort", "category"))
@@ -7211,6 +7786,7 @@
     };
 
     function showScreen(target) {
+      cancelHandScrollMotion();
       [ui.landingScreen, ui.lobbyScreen, ui.gameScreen].forEach(screen => {
         screen.classList.toggle("active", screen === target);
       });
@@ -7964,7 +8540,212 @@
         .map(entry => entry.card);
     }
 
+    const HAND_SCROLL_EDGE_EPSILON = .75;
+
+    function responsiveLayoutFor(width, height, touchInput, landscapeOrientation) {
+      const safeWidth = Math.max(300, Number(width) || 300);
+      const safeHeight = Math.max(1, Number(height) || 1);
+      const narrowLayout = safeWidth <= 700;
+      const portraitRatioLayout = !landscapeOrientation && safeWidth <= 1024 && (
+        touchInput || safeHeight / safeWidth >= 1.12
+      );
+      const landscapePhoneRatio = safeWidth / safeHeight >= 1.35;
+      const mobileLandscape = Boolean(
+        landscapeOrientation &&
+        safeHeight <= 600 &&
+        safeWidth <= 1024 &&
+        (touchInput || landscapePhoneRatio)
+      );
+      const mobileUi = narrowLayout || portraitRatioLayout || mobileLandscape;
+      return {
+        touchInput: Boolean(touchInput),
+        mobileUi,
+        mobileLandscape,
+        compactHeight: mobileUi && safeHeight <= 700
+      };
+    }
+
+    function readResponsiveProfile() {
+      const width = Math.max(
+        300,
+        Number(window.innerWidth) || document.documentElement.clientWidth || 300
+      );
+      const height = Math.max(
+        1,
+        Number(window.innerHeight) || document.documentElement.clientHeight || 1
+      );
+      const coarsePointer = typeof window.matchMedia === "function" && (
+        window.matchMedia("(any-pointer: coarse)").matches ||
+        window.matchMedia("(pointer: coarse)").matches
+      );
+      const touchInput = Number(navigator.maxTouchPoints) > 0 || coarsePointer;
+      const orientationType = touchInput ? window.screen?.orientation?.type || "" : "";
+      const legacyOrientation = touchInput && typeof window.orientation === "number"
+        ? Math.abs(Number(window.orientation))
+        : null;
+      const landscapeOrientation = orientationType
+        ? orientationType.startsWith("landscape")
+        : legacyOrientation !== null
+          ? legacyOrientation === 90
+          : width > height;
+      return responsiveLayoutFor(width, height, touchInput, landscapeOrientation);
+    }
+
+    function syncResponsiveMode() {
+      const profile = readResponsiveProfile();
+      Object.assign(app.responsive, profile);
+      const root = document.documentElement;
+      root.classList.toggle("touch-input", profile.touchInput);
+      root.classList.toggle("mobile-ui", profile.mobileUi);
+      root.classList.toggle("mobile-landscape", profile.mobileLandscape);
+      root.classList.toggle("compact-height", profile.compactHeight);
+      ui.playerHand.dataset.browseInput = profile.touchInput ? "swipe" : "wheel";
+      ui.handBrowseHint.textContent = profile.touchInput
+        ? profile.mobileUi
+          ? "Swipe to browse · tap cards or slots"
+          : "Swipe cards to browse · tap cards or slots to move them"
+        : profile.mobileUi
+          ? "Wheel to browse · click cards or slots"
+          : "Hover here and scroll to browse · click cards or slots to move them";
+      cancelHandScrollMotion();
+    }
+
+    function queueResponsiveModeSync() {
+      if (app.responsive.frameId) return;
+      app.responsive.frameId = requestAnimationFrame(() => {
+        app.responsive.frameId = 0;
+        syncResponsiveMode();
+      });
+    }
+
+    function playerHandScrollMax() {
+      return Math.max(0, ui.playerHand.scrollWidth - ui.playerHand.clientWidth);
+    }
+
+    function syncHandScrollState() {
+      const maxScroll = playerHandScrollMax();
+      const scrollLeft = clamp(ui.playerHand.scrollLeft, 0, maxScroll);
+      const scrollable = maxScroll > HAND_SCROLL_EDGE_EPSILON;
+      ui.handDock.classList.toggle("hand-scrollable", scrollable);
+      ui.handDock.classList.toggle(
+        "hand-can-scroll-left",
+        scrollable && scrollLeft > HAND_SCROLL_EDGE_EPSILON
+      );
+      ui.handDock.classList.toggle(
+        "hand-can-scroll-right",
+        scrollable && scrollLeft < maxScroll - HAND_SCROLL_EDGE_EPSILON
+      );
+      ui.playerHand.setAttribute(
+        "aria-label",
+        scrollable
+          ? "Your hand of cards. Scroll horizontally to browse."
+          : "Your hand of cards."
+      );
+    }
+
+    function cancelHandScrollMotion() {
+      const motion = app.handScroll;
+      if (motion.frameId) cancelAnimationFrame(motion.frameId);
+      motion.frameId = 0;
+      motion.target = clamp(ui.playerHand.scrollLeft, 0, playerHandScrollMax());
+      ui.playerHand.classList.remove("wheel-scrolling");
+      syncHandScrollState();
+    }
+
+    function scrollPlayerHandTo(target) {
+      const maxScroll = playerHandScrollMax();
+      if (maxScroll <= HAND_SCROLL_EDGE_EPSILON) {
+        cancelHandScrollMotion();
+        return false;
+      }
+
+      const motion = app.handScroll;
+      const nextTarget = clamp(Number(target) || 0, 0, maxScroll);
+      motion.target = nextTarget;
+      if (hasReducedMotionPreference()) {
+        if (motion.frameId) cancelAnimationFrame(motion.frameId);
+        motion.frameId = 0;
+        ui.playerHand.scrollLeft = nextTarget;
+        ui.playerHand.classList.remove("wheel-scrolling");
+        syncHandScrollState();
+        return true;
+      }
+
+      ui.playerHand.classList.add("wheel-scrolling");
+      if (motion.frameId) return true;
+
+      const step = () => {
+        const current = ui.playerHand.scrollLeft;
+        const distance = motion.target - current;
+        if (Math.abs(distance) <= .45) {
+          ui.playerHand.scrollLeft = motion.target;
+          motion.frameId = 0;
+          ui.playerHand.classList.remove("wheel-scrolling");
+          syncHandScrollState();
+          return;
+        }
+        ui.playerHand.scrollLeft = current + distance * .22;
+        syncHandScrollState();
+        motion.frameId = requestAnimationFrame(step);
+      };
+      motion.frameId = requestAnimationFrame(step);
+      return true;
+    }
+
+    function normalizedHandWheelDelta(event) {
+      const dominantDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY;
+      if (!Number.isFinite(dominantDelta) || Math.abs(dominantDelta) < .01) return 0;
+      if (event.deltaMode === 1) return dominantDelta * 32;
+      if (event.deltaMode === 2) {
+        return dominantDelta * Math.max(160, ui.playerHand.clientWidth * .82);
+      }
+      return dominantDelta;
+    }
+
+    function canPlayerHandConsumeWheel(delta, scrollLeft, maxScroll) {
+      if (!delta || maxScroll <= HAND_SCROLL_EDGE_EPSILON) return false;
+      const current = clamp(scrollLeft, 0, maxScroll);
+      return delta > 0
+        ? current < maxScroll - HAND_SCROLL_EDGE_EPSILON
+        : current > HAND_SCROLL_EDGE_EPSILON;
+    }
+
+    function handlePlayerHandWheel(event) {
+      if (event.ctrlKey || !ui.gameScreen.classList.contains("active") || app.resolving) return;
+      const maxScroll = playerHandScrollMax();
+      if (maxScroll <= HAND_SCROLL_EDGE_EPSILON) return;
+      const delta = normalizedHandWheelDelta(event);
+      if (!delta) return;
+
+      const current = clamp(ui.playerHand.scrollLeft, 0, maxScroll);
+      if (!canPlayerHandConsumeWheel(delta, current, maxScroll)) return;
+
+      event.preventDefault();
+      hideHoverTooltip();
+      const baseTarget = app.handScroll.frameId ? app.handScroll.target : current;
+      scrollPlayerHandTo(baseTarget + delta);
+    }
+
+    function revealFocusedHandCard(card) {
+      if (!card || !ui.playerHand.contains(card)) return;
+      const handRect = ui.playerHand.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const edgePadding = 16;
+      let target = ui.playerHand.scrollLeft;
+      if (cardRect.left < handRect.left + edgePadding) {
+        target += cardRect.left - handRect.left - edgePadding;
+      } else if (cardRect.right > handRect.right - edgePadding) {
+        target += cardRect.right - handRect.right + edgePadding;
+      } else {
+        return;
+      }
+      scrollPlayerHandTo(target);
+    }
+
     let hoverTooltipTarget = null;
+    let keyboardNavigationActive = false;
 
     function tooltipPayload(target) {
       const value = target?.dataset?.cardValue;
@@ -8111,6 +8892,7 @@
       const chosenIds = new Set(Object.values(app.selection).filter(Boolean));
       const handCards = sortHandCards(me.hand.filter(card => !chosenIds.has(card.id)));
       ui.handSortSelect.value = app.handSort;
+      cancelHandScrollMotion();
       ui.playerHand.innerHTML = handCards.length
         ? handCards.map((card, index) => gameCardHtml(card, me, index)).join("")
         : '<div class="empty-hand">All available cards are committed.</div>';
@@ -8131,7 +8913,11 @@
             : focusElementId
               ? document.getElementById(focusElementId)
               : null;
-        if (nextFocus && nextFocus !== document.activeElement) nextFocus.focus({ preventScroll: true });
+        syncHandScrollState();
+        if (nextFocus && nextFocus !== document.activeElement) {
+          nextFocus.focus({ preventScroll: true });
+          revealFocusedHandCard(nextFocus);
+        }
       });
 
       const myReady = app.mode === "guest"
@@ -9608,6 +10394,7 @@
     }
 
     function presentShowdown(result) {
+      cancelHandScrollMotion();
       clearShowdownTimers();
       clearOpeningDeal();
       clearOpponentCommitMotion();
@@ -12892,6 +13679,28 @@
       openDialog(ui.logDialog);
     });
 
+    ui.playerHand.addEventListener("wheel", handlePlayerHandWheel, { passive: false });
+    ui.playerHand.addEventListener("scroll", syncHandScrollState, { passive: true });
+    ui.playerHand.addEventListener("pointerdown", cancelHandScrollMotion, { passive: true });
+    ui.playerHand.addEventListener("focusin", event => {
+      revealFocusedHandCard(event.target.closest("[data-card-id]"));
+    });
+    ui.playerHand.addEventListener("keydown", event => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const maxScroll = playerHandScrollMax();
+      if (maxScroll <= HAND_SCROLL_EDGE_EPSILON) return;
+      const pageStep = Math.max(120, ui.playerHand.clientWidth * .76);
+      const targets = {
+        PageUp: ui.playerHand.scrollLeft - pageStep,
+        PageDown: ui.playerHand.scrollLeft + pageStep,
+        Home: 0,
+        End: maxScroll
+      };
+      if (!Object.prototype.hasOwnProperty.call(targets, event.key)) return;
+      event.preventDefault();
+      scrollPlayerHandTo(targets[event.key]);
+    });
+
     ui.playerHand.addEventListener("click", event => {
       const button = event.target.closest("[data-card-id]");
       if (!button || !app.state) return;
@@ -12916,6 +13725,20 @@
       announce(`Hand sorted by ${app.handSort === "draw" ? "draw order" : app.handSort}.`);
     });
 
+    document.addEventListener("keydown", event => {
+      if (
+        event.key === "Tab" ||
+        event.key === "Home" ||
+        event.key === "End" ||
+        event.key === "PageUp" ||
+        event.key === "PageDown" ||
+        event.key.startsWith("Arrow")
+      ) keyboardNavigationActive = true;
+    }, true);
+    document.addEventListener("pointerdown", event => {
+      keyboardNavigationActive = false;
+      if (event.pointerType === "touch") hideHoverTooltip();
+    }, true);
     document.addEventListener("pointerover", event => {
       if (event.pointerType === "touch") return;
       const target = event.target.closest?.("[data-card-value], [data-stain-element]");
@@ -12929,13 +13752,18 @@
     });
     document.addEventListener("focusin", event => {
       const target = event.target.closest?.("[data-card-value], [data-stain-element]");
-      if (target) showHoverTooltip(target);
+      if (
+        target &&
+        (!document.documentElement.classList.contains("touch-input") || keyboardNavigationActive)
+      ) showHoverTooltip(target);
     });
     document.addEventListener("focusout", event => {
       const target = event.target.closest?.("[data-card-value], [data-stain-element]");
       if (target && !target.contains(event.relatedTarget)) hideHoverTooltip(target);
     });
     window.addEventListener("resize", () => {
+      cancelHandScrollMotion();
+      queueResponsiveModeSync();
       hideHoverTooltip();
       positionRainbowCardRollChip(ui.revealLeft);
       positionRainbowCardRollChip(ui.revealRight);
@@ -12943,9 +13771,15 @@
       positionHueMirrorCardChip(ui.revealRight);
       settleShowdownHueReloadMotion();
     });
+    window.addEventListener("orientationchange", () => {
+      cancelHandScrollMotion();
+      queueResponsiveModeSync();
+    });
     document.addEventListener("scroll", () => {
       hideHoverTooltip();
-      settleShowdownHueReloadMotion();
+      if (ui.showdownOverlay.classList.contains("visible")) {
+        settleShowdownHueReloadMotion();
+      }
     }, true);
 
     $$("[data-open-rules]").forEach(button => button.addEventListener("click", () => openDialog(ui.rulesDialog)));
@@ -12987,12 +13821,21 @@
     });
 
     // Initial view
+    syncResponsiveMode();
     ui.playerNameInput.value = cleanName(storage.get("name", "Player"));
     ui.settingsNameInput.value = ui.playerNameInput.value;
     ui.handSortSelect.value = app.handSort;
     const linkedRoom = roomCodeFromLocation();
     if (validRoomCode(linkedRoom)) ui.joinRoomCodeInput.value = linkedRoom;
     syncSoundControls();
+    if (typeof window.matchMedia === "function") {
+      [
+        window.matchMedia("(any-pointer: coarse)"),
+        window.matchMedia("(pointer: coarse)")
+      ].forEach(media => media.addEventListener?.("change", queueResponsiveModeSync));
+      window.matchMedia("(prefers-reduced-motion: reduce)")
+        .addEventListener?.("change", cancelHandScrollMotion);
+    }
   </script>
 </body>
 </html>
