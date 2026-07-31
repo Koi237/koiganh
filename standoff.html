@@ -5902,7 +5902,10 @@
     /* Capability-aware mobile adjustments. Geometry chooses the layout;
        touch capability only improves hit targets and gesture behavior. */
     html.mobile-ui #gameScreen {
+      width: 100%;
+      max-width: 100%;
       min-height: 0;
+      min-width: 0;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior-y: contain;
@@ -5944,6 +5947,15 @@
       display: flex;
     }
 
+    html.mobile-ui .game-topbar,
+    html.mobile-ui .battlefield,
+    html.mobile-ui .hand-dock,
+    html.mobile-ui .hand {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
     html.mobile-ui .hand-head {
       justify-content: space-between;
     }
@@ -5962,7 +5974,7 @@
     }
 
     html.mobile-ui .hand {
-      overflow-x: hidden;
+      overflow-x: auto;
       scroll-snap-type: none;
       scrollbar-width: none;
       touch-action: pan-y pinch-zoom;
@@ -5974,8 +5986,8 @@
 
     /* Phone planning layout: keep the full board and hand inside the dynamic
        viewport. The showdown overlay has its own responsive geometry. */
-    @media (max-width: 700px) and (orientation: portrait) {
-      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+    @media (max-width: 700px) {
+      html.mobile-portrait #gameScreen {
         --mobile-hand-height: 123px;
         --mobile-hand-area: 170px;
         grid-template-rows: 46px minmax(0, 1fr) auto;
@@ -5984,46 +5996,46 @@
         overflow: hidden;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .game-topbar {
+      html.mobile-portrait .game-topbar {
         grid-template-columns: minmax(24px, 1fr) auto auto;
         min-height: 46px;
         gap: 6px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .game-site-nav,
-      html.mobile-ui:not(.mobile-landscape) #soundBtn,
-      html.mobile-ui:not(.mobile-landscape) .round-label,
-      html.mobile-ui:not(.mobile-landscape) .timer-copy {
+      html.mobile-portrait .game-site-nav,
+      html.mobile-portrait #soundBtn,
+      html.mobile-portrait .round-label,
+      html.mobile-portrait .timer-copy {
         display: none;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .timer {
+      html.mobile-portrait .timer {
         grid-template-columns: 30px;
         min-width: 40px;
         min-height: 40px;
         padding: 3px 4px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .timer-ring {
+      html.mobile-portrait .timer-ring {
         width: 30px;
         height: 30px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .battlefield {
+      html.mobile-portrait .battlefield {
         grid-template-rows: minmax(58px, .7fr) minmax(216px, 2fr) minmax(56px, .68fr);
         min-height: 0;
         padding: 3px 0;
         overflow: hidden;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .player-strip,
-      html.mobile-ui:not(.mobile-landscape) .identity-copy,
-      html.mobile-ui:not(.mobile-landscape) .hand-controls,
-      html.mobile-ui:not(.mobile-landscape) .arena > * {
+      html.mobile-portrait .player-strip,
+      html.mobile-portrait .identity-copy,
+      html.mobile-portrait .hand-controls,
+      html.mobile-portrait .arena > * {
         min-width: 0;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .status-chips {
+      html.mobile-portrait .status-chips {
         width: 100%;
         max-width: 100%;
         min-height: 18px;
@@ -6034,17 +6046,17 @@
         scrollbar-width: none;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .status-chips::-webkit-scrollbar {
+      html.mobile-portrait .status-chips::-webkit-scrollbar {
         display: none;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .stain-chip,
-      html.mobile-ui:not(.mobile-landscape) .lock-chip,
-      html.mobile-ui:not(.mobile-landscape) .ward-chip {
+      html.mobile-portrait .stain-chip,
+      html.mobile-portrait .lock-chip,
+      html.mobile-portrait .ward-chip {
         flex: 0 0 auto;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .opponent-hand {
+      html.mobile-portrait .opponent-hand {
         width: 122px;
         min-width: 122px;
         max-width: 122px;
@@ -6053,71 +6065,71 @@
         transform: none;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .card-back-mini {
+      html.mobile-portrait .card-back-mini {
         width: 34px;
         height: 50px;
         margin-left: -25px;
         border-radius: 6px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .card-back-mini::after {
+      html.mobile-portrait .card-back-mini::after {
         inset: 13px 8px;
         border-radius: 4px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .arena {
+      html.mobile-portrait .arena {
         grid-template-rows: minmax(0, 1fr) 28px minmax(0, 1fr);
       }
 
-      html.mobile-ui:not(.mobile-landscape) .element-guide {
+      html.mobile-portrait .element-guide {
         height: 26px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .slots {
+      html.mobile-portrait .slots {
         grid-template-columns: repeat(3, minmax(56px, 72px));
         gap: 5px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .hand {
+      html.mobile-portrait .hand {
         height: var(--mobile-hand-height);
         padding: 7px 16px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .opening-guide-prompt {
+      html.mobile-portrait .opening-guide-prompt {
         bottom: calc(var(--mobile-hand-area) + var(--safe-bottom) + 8px);
         max-width: calc(100% - 24px);
       }
 
-      html.mobile-ui:not(.mobile-landscape) .opening-guide-prompt strong {
+      html.mobile-portrait .opening-guide-prompt strong {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
       }
     }
 
-    @media (max-width: 390px) and (orientation: portrait),
-           (max-width: 700px) and (max-height: 700px) and (orientation: portrait) {
-      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+    @media (max-width: 390px),
+           (max-width: 700px) and (max-height: 700px) {
+      html.mobile-portrait #gameScreen {
         --mobile-hand-height: 112px;
         --mobile-hand-area: 159px;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .battlefield {
+      html.mobile-portrait .battlefield {
         grid-template-rows: minmax(54px, .62fr) minmax(194px, 2fr) minmax(52px, .6fr);
       }
 
-      html.mobile-ui:not(.mobile-landscape) .slots {
+      html.mobile-portrait .slots {
         grid-template-columns: repeat(3, minmax(52px, 64px));
       }
     }
 
-    @media (max-width: 700px) and (max-height: 540px) and (orientation: portrait) {
-      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+    @media (max-width: 700px) and (max-height: 540px) {
+      html.mobile-portrait #gameScreen {
         grid-template-rows: 46px auto auto;
         overflow-y: auto;
       }
 
-      html.mobile-ui:not(.mobile-landscape) .battlefield {
+      html.mobile-portrait .battlefield {
         min-height: 306px;
       }
     }
@@ -8016,7 +8028,11 @@
         touchInput: false,
         mobileUi: false,
         mobileLandscape: false,
-        compactHeight: false
+        mobilePortrait: false,
+        compactHeight: false,
+        mobileSession: false,
+        viewportWidth: 0,
+        viewportHeight: 0
       },
       timerAnnouncements: new Set(),
       seenCards: new Set(),
@@ -8033,6 +8049,7 @@
     };
 
     function showScreen(target) {
+      if (target === ui.gameScreen) syncResponsiveMode();
       cancelHandScrollMotion();
       [ui.landingScreen, ui.lobbyScreen, ui.gameScreen].forEach(screen => {
         screen.classList.toggle("active", screen === target);
@@ -8799,8 +8816,8 @@
       const landscapePhoneRatio = safeWidth / safeHeight >= 1.35;
       const mobileLandscape = Boolean(
         landscapeOrientation &&
-        safeHeight <= 600 &&
-        safeWidth <= 1024 &&
+        safeHeight <= 700 &&
+        safeWidth <= 1200 &&
         (touchInput || landscapePhoneRatio)
       );
       const mobileUi = narrowLayout || portraitRatioLayout || mobileLandscape;
@@ -8808,19 +8825,29 @@
         touchInput: Boolean(touchInput),
         mobileUi,
         mobileLandscape,
+        mobilePortrait: mobileUi && !landscapeOrientation,
         compactHeight: mobileUi && safeHeight <= 700
       };
     }
 
     function readResponsiveProfile() {
-      const width = Math.max(
+      const layoutWidth = Math.max(
         300,
         Number(window.innerWidth) || document.documentElement.clientWidth || 300
       );
-      const height = Math.max(
+      const layoutHeight = Math.max(
         1,
         Number(window.innerHeight) || document.documentElement.clientHeight || 1
       );
+      const visualWidth = Math.max(0, Number(window.visualViewport?.width) || 0);
+      const visualHeight = Math.max(0, Number(window.visualViewport?.height) || 0);
+      const visualCorrectsStaleLayout = (
+        visualWidth >= 300 &&
+        visualHeight > 0 &&
+        Math.abs(visualWidth - layoutWidth) > Math.max(24, layoutWidth * .12)
+      );
+      const width = visualCorrectsStaleLayout ? visualWidth : layoutWidth;
+      const height = visualCorrectsStaleLayout ? visualHeight : layoutHeight;
       const coarsePointer = typeof window.matchMedia === "function" && (
         window.matchMedia("(any-pointer: coarse)").matches ||
         window.matchMedia("(pointer: coarse)").matches
@@ -8829,16 +8856,47 @@
       // Viewport geometry is authoritative here. Physical screen orientation can
       // be stale in split-screen, foldable, and floating-window layouts.
       const landscapeOrientation = width > height;
-      return responsiveLayoutFor(width, height, touchInput, landscapeOrientation);
+      return {
+        ...responsiveLayoutFor(width, height, touchInput, landscapeOrientation),
+        viewportWidth: width,
+        viewportHeight: height
+      };
     }
 
     function syncResponsiveMode() {
       const profile = readResponsiveProfile();
+      const screenWidth = Math.max(0, Number(window.screen?.width) || 0);
+      const screenHeight = Math.max(0, Number(window.screen?.height) || 0);
+      const screenShortEdge = screenWidth && screenHeight
+        ? Math.min(screenWidth, screenHeight)
+        : Math.min(profile.viewportWidth, profile.viewportHeight);
+      const screenLongEdge = screenWidth && screenHeight
+        ? Math.max(screenWidth, screenHeight)
+        : Math.max(profile.viewportWidth, profile.viewportHeight);
+      const confirmedPhone = profile.touchInput && screenShortEdge <= 700 && screenLongEdge <= 1400;
+      const mobileSession = Boolean(
+        app.responsive.mobileSession ||
+        confirmedPhone ||
+        (profile.touchInput && profile.mobileUi && Math.min(profile.viewportWidth, profile.viewportHeight) <= 700)
+      );
+      if (mobileSession) {
+        const landscape = profile.viewportWidth > profile.viewportHeight;
+        profile.mobileUi = true;
+        profile.mobileLandscape = Boolean(
+          landscape &&
+          profile.viewportWidth <= 1200
+        );
+        profile.mobilePortrait = !landscape;
+        profile.compactHeight = profile.viewportHeight <= 700;
+      }
+      profile.mobileSession = mobileSession;
       Object.assign(app.responsive, profile);
       const root = document.documentElement;
       root.classList.toggle("touch-input", profile.touchInput);
       root.classList.toggle("mobile-ui", profile.mobileUi);
       root.classList.toggle("mobile-landscape", profile.mobileLandscape);
+      root.classList.toggle("mobile-portrait", profile.mobilePortrait);
+      root.classList.toggle("mobile-session", profile.mobileSession);
       root.classList.toggle("compact-height", profile.compactHeight);
       ui.playerHand.dataset.browseInput = profile.mobileUi ? "buttons" : "wheel";
       ui.handBrowseHint.textContent = profile.mobileUi
@@ -8870,7 +8928,6 @@
         : scrollLeft;
       const controlsLocked = (
         !scrollable ||
-        !app.responsive.mobileUi ||
         !ui.gameScreen.classList.contains("active") ||
         !app.state ||
         app.state.phase !== "planning" ||
@@ -8925,7 +8982,6 @@
       const step = Math.sign(Number(direction) || 0);
       if (
         !step ||
-        !app.responsive.mobileUi ||
         !ui.gameScreen.classList.contains("active") ||
         !app.state ||
         app.state.phase !== "planning" ||
@@ -8955,12 +9011,12 @@
 
       if (Math.abs(target - current) <= HAND_SCROLL_EDGE_EPSILON) return false;
       hideHoverTooltip();
-      const moved = scrollPlayerHandTo(target);
+      const moved = scrollPlayerHandTo(target, { immediate: true });
       syncHandScrollState();
       return moved;
     }
 
-    function scrollPlayerHandTo(target) {
+    function scrollPlayerHandTo(target, { immediate = false } = {}) {
       const maxScroll = playerHandScrollMax();
       if (maxScroll <= HAND_SCROLL_EDGE_EPSILON) {
         cancelHandScrollMotion();
@@ -8970,7 +9026,7 @@
       const motion = app.handScroll;
       const nextTarget = clamp(Number(target) || 0, 0, maxScroll);
       motion.target = nextTarget;
-      if (hasReducedMotionPreference()) {
+      if (immediate || hasReducedMotionPreference()) {
         if (motion.frameId) cancelAnimationFrame(motion.frameId);
         motion.frameId = 0;
         ui.playerHand.scrollLeft = nextTarget;
@@ -9173,6 +9229,7 @@
 
     function renderGame() {
       if (!app.state) return;
+      syncResponsiveMode();
       const previouslyFocused = document.activeElement;
       const focusCardId = previouslyFocused?.dataset?.cardId || "";
       const focusSlottedId = previouslyFocused?.dataset?.slottedCardId || "";
@@ -9379,6 +9436,7 @@
 
     function beginPlanning({ preserveDeadline = false, resume = false } = {}) {
       if (!app.state || app.state.winner !== null) return;
+      syncResponsiveMode();
       clearTurnTimers();
       if (app.resolutionTimerId) clearTimeout(app.resolutionTimerId);
       app.resolutionTimerId = null;
@@ -14085,6 +14143,7 @@
       cancelHandScrollMotion();
       queueResponsiveModeSync();
     });
+    window.visualViewport?.addEventListener("resize", queueResponsiveModeSync, { passive: true });
     document.addEventListener("scroll", () => {
       hideHoverTooltip();
       if (ui.showdownOverlay.classList.contains("visible")) {
