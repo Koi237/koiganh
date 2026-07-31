@@ -5082,7 +5082,7 @@
         gap: 8px;
       }
 
-      .opponent-strip .card-count {
+      .player-strip > .card-count {
         display: none;
       }
 
@@ -5281,7 +5281,7 @@
       .hand {
         height: 127px;
         gap: 8px;
-        padding: 7px 16px max(7px, env(safe-area-inset-bottom));
+        padding: 7px 16px;
       }
 
       .game-card {
@@ -5900,6 +5900,181 @@
       transform: none;
     }
 
+    html.touch-input .hand.touch-swipe-enabled,
+    html.touch-input .hand.touch-swipe-enabled .game-card {
+      touch-action: pan-y pinch-zoom;
+    }
+
+    html.touch-input .hand.touch-swipe-enabled {
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+
+    html.touch-input .hand.touch-swipe-enabled::-webkit-scrollbar {
+      display: none;
+    }
+
+    html.touch-input .hand.touch-swipe-enabled .game-card {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+
+    html.touch-input .hand.touch-swiping,
+    html.touch-input .hand.touch-swipe-enabled.wheel-scrolling {
+      scroll-snap-type: none;
+      cursor: grabbing;
+    }
+
+    /* Phone planning layout: keep the full board and hand inside the dynamic
+       viewport. The showdown overlay has its own responsive geometry. */
+    @media (max-width: 700px) and (orientation: portrait) {
+      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+        --mobile-hand-height: 123px;
+        --mobile-hand-area: 170px;
+        grid-template-rows: 46px minmax(0, 1fr) auto;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .game-topbar {
+        grid-template-columns: minmax(24px, 1fr) auto auto;
+        min-height: 46px;
+        gap: 6px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .game-site-nav,
+      html.mobile-ui:not(.mobile-landscape) #soundBtn,
+      html.mobile-ui:not(.mobile-landscape) .round-label,
+      html.mobile-ui:not(.mobile-landscape) .timer-copy {
+        display: none;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .timer {
+        grid-template-columns: 30px;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 3px 4px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .timer-ring {
+        width: 30px;
+        height: 30px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .battlefield {
+        grid-template-rows: minmax(58px, .7fr) minmax(216px, 2fr) minmax(56px, .68fr);
+        min-height: 0;
+        padding: 3px 0;
+        overflow: hidden;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .player-strip,
+      html.mobile-ui:not(.mobile-landscape) .identity-copy,
+      html.mobile-ui:not(.mobile-landscape) .hand-controls,
+      html.mobile-ui:not(.mobile-landscape) .arena > * {
+        min-width: 0;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .status-chips {
+        width: 100%;
+        max-width: 100%;
+        min-height: 18px;
+        max-height: 22px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .status-chips::-webkit-scrollbar {
+        display: none;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .stain-chip,
+      html.mobile-ui:not(.mobile-landscape) .lock-chip,
+      html.mobile-ui:not(.mobile-landscape) .ward-chip {
+        flex: 0 0 auto;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .opponent-hand {
+        width: 122px;
+        min-width: 122px;
+        max-width: 122px;
+        height: 54px;
+        padding-left: 0;
+        transform: none;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .card-back-mini {
+        width: 34px;
+        height: 50px;
+        margin-left: -25px;
+        border-radius: 6px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .card-back-mini::after {
+        inset: 13px 8px;
+        border-radius: 4px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .arena {
+        grid-template-rows: minmax(0, 1fr) 28px minmax(0, 1fr);
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .element-guide {
+        height: 26px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .slots {
+        grid-template-columns: repeat(3, minmax(56px, 72px));
+        gap: 5px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .hand {
+        height: var(--mobile-hand-height);
+        padding: 7px 16px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .opening-guide-prompt {
+        bottom: calc(var(--mobile-hand-area) + var(--safe-bottom) + 8px);
+        max-width: calc(100% - 24px);
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .opening-guide-prompt strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    @media (max-width: 390px) and (orientation: portrait),
+           (max-width: 700px) and (max-height: 700px) and (orientation: portrait) {
+      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+        --mobile-hand-height: 112px;
+        --mobile-hand-area: 159px;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .battlefield {
+        grid-template-rows: minmax(54px, .62fr) minmax(194px, 2fr) minmax(52px, .6fr);
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .slots {
+        grid-template-columns: repeat(3, minmax(52px, 64px));
+      }
+    }
+
+    @media (max-width: 700px) and (max-height: 540px) and (orientation: portrait) {
+      html.mobile-ui:not(.mobile-landscape) #gameScreen {
+        grid-template-rows: 46px auto auto;
+        overflow-y: auto;
+      }
+
+      html.mobile-ui:not(.mobile-landscape) .battlefield {
+        min-height: 306px;
+      }
+    }
+
     html.mobile-landscape {
       --safe-top: max(4px, env(safe-area-inset-top));
       --safe-bottom: max(4px, env(safe-area-inset-bottom));
@@ -5908,7 +6083,7 @@
     }
 
     html.mobile-landscape #gameScreen {
-      grid-template-rows: 44px minmax(196px, 1fr) auto;
+      grid-template-rows: 44px minmax(168px, 1fr) auto;
       min-height: 0;
       overflow-x: hidden;
       overflow-y: auto;
@@ -5966,8 +6141,8 @@
     }
 
     html.mobile-landscape .battlefield {
-      grid-template-rows: 48px minmax(100px, 1fr) 48px;
-      min-height: 196px;
+      grid-template-rows: 44px minmax(80px, 1fr) 44px;
+      min-height: 168px;
       padding: 2px 0;
     }
 
@@ -6025,17 +6200,17 @@
       width: 106px;
       min-width: 106px;
       max-width: 106px;
-      height: 44px;
+      height: 42px;
       justify-content: flex-end;
-      padding-left: 12px;
+      padding-left: 0;
       overflow: hidden;
       transform: none;
     }
 
     html.mobile-landscape .card-back-mini {
       width: 32px;
-      height: 46px;
-      margin-left: -13px;
+      height: 44px;
+      margin-left: -24px;
       border-radius: 6px;
     }
 
@@ -6086,7 +6261,7 @@
     }
 
     html.mobile-landscape .slots {
-      grid-template-columns: repeat(3, minmax(52px, 64px));
+      grid-template-columns: repeat(3, minmax(48px, 56px));
       gap: 5px;
     }
 
@@ -6181,33 +6356,45 @@
     }
 
     html.mobile-landscape .hand-dock {
-      --hand-fade-top: 47px;
-      padding-top: 1px;
+      --hand-fade-top: 0px;
+      padding-top: 0;
     }
 
     html.mobile-landscape .hand-head {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      z-index: 11;
       min-height: 44px;
       justify-content: flex-end;
-      padding-inline: 10px;
+      padding: 0;
+    }
+
+    html.mobile-landscape .hand-controls {
+      gap: 0;
+    }
+
+    html.mobile-landscape .hand-sort {
+      max-width: 104px;
     }
 
     html.mobile-landscape .hand {
-      height: 90px;
+      height: 84px;
       gap: 6px;
-      padding: 4px 10px max(4px, env(safe-area-inset-bottom));
+      padding: 4px 118px 4px 10px;
     }
 
     html.mobile-landscape .game-card {
-      width: 60px;
-      height: 86px;
-      flex-basis: 60px;
+      width: 54px;
+      height: 76px;
+      flex-basis: 54px;
       padding: 6px;
       border-radius: 8px;
     }
 
     html.mobile-landscape .game-card .card-symbol {
-      min-height: 25px;
-      font-size: 20px;
+      min-height: 22px;
+      font-size: 18px;
     }
 
     html.mobile-landscape .game-card .card-name {
@@ -6219,7 +6406,7 @@
     }
 
     html.mobile-landscape .opening-guide-prompt {
-      bottom: 136px;
+      bottom: calc(92px + var(--safe-bottom));
     }
 
     html.mobile-landscape .showdown-panel {
@@ -7764,6 +7951,17 @@
         frameId: 0,
         target: 0
       },
+      handSwipe: {
+        pointerId: null,
+        startX: 0,
+        startY: 0,
+        startTime: 0,
+        startScrollLeft: 0,
+        startSnapIndex: 0,
+        axis: null,
+        moved: false,
+        suppressClickUntil: 0
+      },
       responsive: {
         frameId: 0,
         touchInput: false,
@@ -7786,6 +7984,7 @@
     };
 
     function showScreen(target) {
+      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       [ui.landingScreen, ui.lobbyScreen, ui.gameScreen].forEach(screen => {
         screen.classList.toggle("active", screen === target);
@@ -8541,6 +8740,10 @@
     }
 
     const HAND_SCROLL_EDGE_EPSILON = .75;
+    const HAND_SWIPE_DIRECTION_LOCK = 10;
+    const HAND_SWIPE_ADVANCE_DISTANCE = 42;
+    const HAND_SWIPE_FLICK_DISTANCE = 18;
+    const HAND_SWIPE_FLICK_VELOCITY = .45;
 
     function responsiveLayoutFor(width, height, touchInput, landscapeOrientation) {
       const safeWidth = Math.max(300, Number(width) || 300);
@@ -8579,19 +8782,14 @@
         window.matchMedia("(pointer: coarse)").matches
       );
       const touchInput = Number(navigator.maxTouchPoints) > 0 || coarsePointer;
-      const orientationType = touchInput ? window.screen?.orientation?.type || "" : "";
-      const legacyOrientation = touchInput && typeof window.orientation === "number"
-        ? Math.abs(Number(window.orientation))
-        : null;
-      const landscapeOrientation = orientationType
-        ? orientationType.startsWith("landscape")
-        : legacyOrientation !== null
-          ? legacyOrientation === 90
-          : width > height;
+      // Viewport geometry is authoritative here. Physical screen orientation can
+      // be stale in split-screen, foldable, and floating-window layouts.
+      const landscapeOrientation = width > height;
       return responsiveLayoutFor(width, height, touchInput, landscapeOrientation);
     }
 
     function syncResponsiveMode() {
+      cancelPlayerHandSwipe();
       const profile = readResponsiveProfile();
       Object.assign(app.responsive, profile);
       const root = document.documentElement;
@@ -8599,6 +8797,10 @@
       root.classList.toggle("mobile-ui", profile.mobileUi);
       root.classList.toggle("mobile-landscape", profile.mobileLandscape);
       root.classList.toggle("compact-height", profile.compactHeight);
+      ui.playerHand.classList.toggle(
+        "touch-swipe-enabled",
+        profile.touchInput && typeof window.PointerEvent === "function"
+      );
       ui.playerHand.dataset.browseInput = profile.touchInput ? "swipe" : "wheel";
       ui.handBrowseHint.textContent = profile.touchInput
         ? profile.mobileUi
@@ -8638,7 +8840,9 @@
       ui.playerHand.setAttribute(
         "aria-label",
         scrollable
-          ? "Your hand of cards. Scroll horizontally to browse."
+          ? app.responsive.touchInput
+            ? "Your hand of cards. Swipe left or right to browse one card at a time."
+            : "Your hand of cards. Scroll horizontally to browse."
           : "Your hand of cards."
       );
     }
@@ -8650,6 +8854,151 @@
       motion.target = clamp(ui.playerHand.scrollLeft, 0, playerHandScrollMax());
       ui.playerHand.classList.remove("wheel-scrolling");
       syncHandScrollState();
+    }
+
+    function playerHandSnapTargets() {
+      const maxScroll = playerHandScrollMax();
+      if (maxScroll <= HAND_SCROLL_EDGE_EPSILON) return [0];
+      const cards = [...ui.playerHand.querySelectorAll("[data-card-id]")];
+      if (!cards.length) return [0, maxScroll];
+
+      const origin = cards[0].offsetLeft;
+      const rawTargets = cards.map(card => clamp(card.offsetLeft - origin, 0, maxScroll));
+      rawTargets.push(maxScroll);
+      return rawTargets.filter((target, index, targets) => (
+        index === 0 || Math.abs(target - targets[index - 1]) > HAND_SCROLL_EDGE_EPSILON
+      ));
+    }
+
+    function nearestHandSnapIndex(targets, scrollLeft) {
+      let nearestIndex = 0;
+      let nearestDistance = Infinity;
+      targets.forEach((target, index) => {
+        const distance = Math.abs(target - scrollLeft);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      });
+      return nearestIndex;
+    }
+
+    function resetPlayerHandSwipe(pointerId = app.handSwipe.pointerId) {
+      const swipe = app.handSwipe;
+      swipe.pointerId = null;
+      swipe.axis = null;
+      swipe.moved = false;
+      ui.playerHand.classList.remove("touch-swiping");
+      if (
+        pointerId !== null &&
+        ui.playerHand.hasPointerCapture?.(pointerId)
+      ) {
+        try { ui.playerHand.releasePointerCapture(pointerId); } catch (_) {}
+      }
+    }
+
+    function cancelPlayerHandSwipe({ snap = false, suppressClick = false } = {}) {
+      const swipe = app.handSwipe;
+      if (swipe.pointerId === null) {
+        ui.playerHand.classList.remove("touch-swiping");
+        return;
+      }
+      const targets = snap ? playerHandSnapTargets() : null;
+      const target = targets?.[clamp(swipe.startSnapIndex, 0, targets.length - 1)];
+      if (suppressClick && swipe.moved) swipe.suppressClickUntil = performance.now() + 500;
+      resetPlayerHandSwipe();
+      if (Number.isFinite(target)) scrollPlayerHandTo(target);
+    }
+
+    function handlePlayerHandPointerDown(event) {
+      cancelHandScrollMotion();
+      if (
+        event.pointerType !== "touch" ||
+        event.isPrimary === false ||
+        event.button !== 0 ||
+        app.handSwipe.pointerId !== null ||
+        !ui.playerHand.classList.contains("touch-swipe-enabled") ||
+        !ui.gameScreen.classList.contains("active") ||
+        !app.state ||
+        app.state.phase !== "planning" ||
+        app.resolving ||
+        app.openingDeal.active ||
+        playerHandScrollMax() <= HAND_SCROLL_EDGE_EPSILON
+      ) return;
+
+      const swipe = app.handSwipe;
+      const targets = playerHandSnapTargets();
+      swipe.pointerId = event.pointerId;
+      swipe.startX = event.clientX;
+      swipe.startY = event.clientY;
+      swipe.startTime = performance.now();
+      swipe.startScrollLeft = clamp(ui.playerHand.scrollLeft, 0, playerHandScrollMax());
+      swipe.startSnapIndex = nearestHandSnapIndex(targets, swipe.startScrollLeft);
+      swipe.axis = null;
+      swipe.moved = false;
+      try { ui.playerHand.setPointerCapture(event.pointerId); } catch (_) {}
+    }
+
+    function handlePlayerHandPointerMove(event) {
+      const swipe = app.handSwipe;
+      if (swipe.pointerId !== event.pointerId) return;
+
+      const deltaX = event.clientX - swipe.startX;
+      const deltaY = event.clientY - swipe.startY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (Math.hypot(deltaX, deltaY) >= HAND_SWIPE_DIRECTION_LOCK) swipe.moved = true;
+
+      if (!swipe.axis) {
+        if (Math.max(absX, absY) < HAND_SWIPE_DIRECTION_LOCK) return;
+        if (absX >= absY * 1.2) {
+          swipe.axis = "x";
+          ui.playerHand.classList.add("touch-swiping");
+        } else if (absY >= absX * 1.2) {
+          swipe.axis = "y";
+          return;
+        } else {
+          return;
+        }
+      }
+
+      if (swipe.axis !== "x") return;
+      if (event.cancelable) event.preventDefault();
+      hideHoverTooltip();
+      ui.playerHand.scrollLeft = clamp(
+        swipe.startScrollLeft - deltaX,
+        0,
+        playerHandScrollMax()
+      );
+      syncHandScrollState();
+    }
+
+    function finishPlayerHandSwipe(event, cancelled = false) {
+      const swipe = app.handSwipe;
+      if (swipe.pointerId !== event.pointerId) return;
+
+      const deltaX = event.clientX - swipe.startX;
+      const deltaY = event.clientY - swipe.startY;
+      const absX = Math.abs(deltaX);
+      const elapsed = Math.max(1, performance.now() - swipe.startTime);
+      const velocity = absX / elapsed;
+      const moved = swipe.moved || Math.hypot(deltaX, deltaY) >= HAND_SWIPE_DIRECTION_LOCK;
+      const horizontalSwipe = swipe.axis === "x";
+      const targets = playerHandSnapTargets();
+      let targetIndex = clamp(swipe.startSnapIndex, 0, targets.length - 1);
+
+      if (!cancelled && horizontalSwipe) {
+        const advances = absX >= HAND_SWIPE_ADVANCE_DISTANCE || (
+          absX >= HAND_SWIPE_FLICK_DISTANCE && velocity >= HAND_SWIPE_FLICK_VELOCITY
+        );
+        if (advances) targetIndex += deltaX < 0 ? 1 : -1;
+        targetIndex = clamp(targetIndex, 0, targets.length - 1);
+      }
+
+      if (moved) swipe.suppressClickUntil = performance.now() + 500;
+      const target = targets[targetIndex];
+      resetPlayerHandSwipe(event.pointerId);
+      if (horizontalSwipe && Number.isFinite(target)) scrollPlayerHandTo(target);
     }
 
     function scrollPlayerHandTo(target) {
@@ -8892,6 +9241,7 @@
       const chosenIds = new Set(Object.values(app.selection).filter(Boolean));
       const handCards = sortHandCards(me.hand.filter(card => !chosenIds.has(card.id)));
       ui.handSortSelect.value = app.handSort;
+      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       ui.playerHand.innerHTML = handCards.length
         ? handCards.map((card, index) => gameCardHtml(card, me, index)).join("")
@@ -13681,7 +14031,13 @@
 
     ui.playerHand.addEventListener("wheel", handlePlayerHandWheel, { passive: false });
     ui.playerHand.addEventListener("scroll", syncHandScrollState, { passive: true });
-    ui.playerHand.addEventListener("pointerdown", cancelHandScrollMotion, { passive: true });
+    ui.playerHand.addEventListener("pointerdown", handlePlayerHandPointerDown, { passive: true });
+    ui.playerHand.addEventListener("pointermove", handlePlayerHandPointerMove, { passive: false });
+    ui.playerHand.addEventListener("pointerup", event => finishPlayerHandSwipe(event));
+    ui.playerHand.addEventListener("pointercancel", event => finishPlayerHandSwipe(event, true));
+    ui.playerHand.addEventListener("lostpointercapture", event => {
+      if (app.handSwipe.pointerId === event.pointerId) finishPlayerHandSwipe(event, true);
+    });
     ui.playerHand.addEventListener("focusin", event => {
       revealFocusedHandCard(event.target.closest("[data-card-id]"));
     });
@@ -13702,6 +14058,11 @@
     });
 
     ui.playerHand.addEventListener("click", event => {
+      if (performance.now() < app.handSwipe.suppressClickUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       const button = event.target.closest("[data-card-id]");
       if (!button || !app.state) return;
       const { me } = getPlayersForView();
@@ -13762,6 +14123,7 @@
       if (target && !target.contains(event.relatedTarget)) hideHoverTooltip(target);
     });
     window.addEventListener("resize", () => {
+      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       queueResponsiveModeSync();
       hideHoverTooltip();
@@ -13772,6 +14134,7 @@
       settleShowdownHueReloadMotion();
     });
     window.addEventListener("orientationchange", () => {
+      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       queueResponsiveModeSync();
     });
