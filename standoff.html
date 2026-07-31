@@ -305,6 +305,7 @@
     .slot-card:focus-visible,
     .reveal-card:focus-visible,
     .stain-chip:focus-visible,
+    .hand-step-btn:focus-visible,
     .koi-nav a:focus-visible,
     .lobby-site-link:focus-visible,
     input:focus-visible,
@@ -2285,6 +2286,45 @@
     .hand-head small {
       color: var(--faint);
       font-size: 8px;
+    }
+
+    .hand-step-controls {
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hand-step-btn {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--ink);
+      font: inherit;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      transition: border-color .18s ease, background-color .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    .hand-step-btn:hover:not(:disabled) {
+      border-color: var(--line-strong);
+      background: var(--surface-3);
+      color: var(--mint);
+    }
+
+    .hand-step-btn:active:not(:disabled) {
+      transform: scale(.96);
+    }
+
+    .hand-step-btn:disabled {
+      opacity: .3;
+      cursor: default;
     }
 
     .hand-browse-hint {
@@ -5900,29 +5940,36 @@
       transform: none;
     }
 
-    html.touch-input .hand.touch-swipe-enabled,
-    html.touch-input .hand.touch-swipe-enabled .game-card {
-      touch-action: pan-y pinch-zoom;
+    html.mobile-ui .hand-step-controls {
+      display: flex;
     }
 
-    html.touch-input .hand.touch-swipe-enabled {
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
+    html.mobile-ui .hand-head {
+      justify-content: space-between;
     }
 
-    html.touch-input .hand.touch-swipe-enabled::-webkit-scrollbar {
+    html.mobile-ui .hand-browse-hint {
       display: none;
     }
 
-    html.touch-input .hand.touch-swipe-enabled .game-card {
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
+    html.mobile-ui .hand-sort {
+      width: 100px;
+      max-width: 100px;
+      height: 40px;
+      min-height: 40px;
+      padding: 0 19px 0 7px;
+      font-size: 16px;
     }
 
-    html.touch-input .hand.touch-swiping,
-    html.touch-input .hand.touch-swipe-enabled.wheel-scrolling {
+    html.mobile-ui .hand {
+      overflow-x: hidden;
       scroll-snap-type: none;
-      cursor: grabbing;
+      scrollbar-width: none;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    html.mobile-ui .hand::-webkit-scrollbar {
+      display: none;
     }
 
     /* Phone planning layout: keep the full board and hand inside the dynamic
@@ -6364,24 +6411,31 @@
       position: absolute;
       top: 5px;
       right: 8px;
+      left: 8px;
       z-index: 11;
       min-height: 44px;
-      justify-content: flex-end;
+      justify-content: space-between;
       padding: 0;
+      pointer-events: none;
+    }
+
+    html.mobile-landscape .hand-step-controls {
+      pointer-events: auto;
     }
 
     html.mobile-landscape .hand-controls {
       gap: 0;
+      pointer-events: auto;
     }
 
     html.mobile-landscape .hand-sort {
-      max-width: 104px;
+      max-width: 100px;
     }
 
     html.mobile-landscape .hand {
       height: 84px;
       gap: 6px;
-      padding: 4px 118px 4px 10px;
+      padding: 4px 110px 4px 104px;
     }
 
     html.mobile-landscape .game-card {
@@ -6785,6 +6839,10 @@
 
       <div id="handDock" class="hand-dock">
         <div class="hand-head">
+          <div class="hand-step-controls" role="group" aria-label="Browse your hand">
+            <button id="handPrevBtn" class="hand-step-btn" type="button" aria-label="Previous card" aria-controls="playerHand" disabled>&#8249;</button>
+            <button id="handNextBtn" class="hand-step-btn" type="button" aria-label="Next card" aria-controls="playerHand" disabled>&#8250;</button>
+          </div>
           <span>Your hand</span>
           <div class="hand-controls">
             <small id="handBrowseHint" class="hand-browse-hint">Hover here and scroll to browse · click cards or slots to move them</small>
@@ -7853,6 +7911,8 @@
       modSlot: $("#modSlot"),
       lockTurnBtn: $("#lockTurnBtn"),
       playerHand: $("#playerHand"),
+      handPrevBtn: $("#handPrevBtn"),
+      handNextBtn: $("#handNextBtn"),
       handBrowseHint: $("#handBrowseHint"),
       handSortSelect: $("#handSortSelect"),
       showdownOverlay: $("#showdownOverlay"),
@@ -7951,17 +8011,6 @@
         frameId: 0,
         target: 0
       },
-      handSwipe: {
-        pointerId: null,
-        startX: 0,
-        startY: 0,
-        startTime: 0,
-        startScrollLeft: 0,
-        startSnapIndex: 0,
-        axis: null,
-        moved: false,
-        suppressClickUntil: 0
-      },
       responsive: {
         frameId: 0,
         touchInput: false,
@@ -7984,7 +8033,6 @@
     };
 
     function showScreen(target) {
-      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       [ui.landingScreen, ui.lobbyScreen, ui.gameScreen].forEach(screen => {
         screen.classList.toggle("active", screen === target);
@@ -8740,10 +8788,6 @@
     }
 
     const HAND_SCROLL_EDGE_EPSILON = .75;
-    const HAND_SWIPE_DIRECTION_LOCK = 10;
-    const HAND_SWIPE_ADVANCE_DISTANCE = 42;
-    const HAND_SWIPE_FLICK_DISTANCE = 18;
-    const HAND_SWIPE_FLICK_VELOCITY = .45;
 
     function responsiveLayoutFor(width, height, touchInput, landscapeOrientation) {
       const safeWidth = Math.max(300, Number(width) || 300);
@@ -8789,7 +8833,6 @@
     }
 
     function syncResponsiveMode() {
-      cancelPlayerHandSwipe();
       const profile = readResponsiveProfile();
       Object.assign(app.responsive, profile);
       const root = document.documentElement;
@@ -8797,17 +8840,11 @@
       root.classList.toggle("mobile-ui", profile.mobileUi);
       root.classList.toggle("mobile-landscape", profile.mobileLandscape);
       root.classList.toggle("compact-height", profile.compactHeight);
-      ui.playerHand.classList.toggle(
-        "touch-swipe-enabled",
-        profile.touchInput && typeof window.PointerEvent === "function"
-      );
-      ui.playerHand.dataset.browseInput = profile.touchInput ? "swipe" : "wheel";
-      ui.handBrowseHint.textContent = profile.touchInput
-        ? profile.mobileUi
-          ? "Swipe to browse · tap cards or slots"
-          : "Swipe cards to browse · tap cards or slots to move them"
-        : profile.mobileUi
-          ? "Wheel to browse · click cards or slots"
+      ui.playerHand.dataset.browseInput = profile.mobileUi ? "buttons" : "wheel";
+      ui.handBrowseHint.textContent = profile.mobileUi
+        ? "Use arrows to browse · tap cards or slots"
+        : profile.touchInput
+          ? "Use the scrollbar to browse · tap cards or slots"
           : "Hover here and scroll to browse · click cards or slots to move them";
       cancelHandScrollMotion();
     }
@@ -8828,6 +8865,18 @@
       const maxScroll = playerHandScrollMax();
       const scrollLeft = clamp(ui.playerHand.scrollLeft, 0, maxScroll);
       const scrollable = maxScroll > HAND_SCROLL_EDGE_EPSILON;
+      const controlPosition = app.handScroll.frameId
+        ? clamp(app.handScroll.target, 0, maxScroll)
+        : scrollLeft;
+      const controlsLocked = (
+        !scrollable ||
+        !app.responsive.mobileUi ||
+        !ui.gameScreen.classList.contains("active") ||
+        !app.state ||
+        app.state.phase !== "planning" ||
+        app.resolving ||
+        app.openingDeal.active
+      );
       ui.handDock.classList.toggle("hand-scrollable", scrollable);
       ui.handDock.classList.toggle(
         "hand-can-scroll-left",
@@ -8837,11 +8886,13 @@
         "hand-can-scroll-right",
         scrollable && scrollLeft < maxScroll - HAND_SCROLL_EDGE_EPSILON
       );
+      ui.handPrevBtn.disabled = controlsLocked || controlPosition <= HAND_SCROLL_EDGE_EPSILON;
+      ui.handNextBtn.disabled = controlsLocked || controlPosition >= maxScroll - HAND_SCROLL_EDGE_EPSILON;
       ui.playerHand.setAttribute(
         "aria-label",
         scrollable
-          ? app.responsive.touchInput
-            ? "Your hand of cards. Swipe left or right to browse one card at a time."
+          ? app.responsive.mobileUi
+            ? "Your hand of cards. Use the previous and next card buttons to browse."
             : "Your hand of cards. Scroll horizontally to browse."
           : "Your hand of cards."
       );
@@ -8870,135 +8921,43 @@
       ));
     }
 
-    function nearestHandSnapIndex(targets, scrollLeft) {
-      let nearestIndex = 0;
-      let nearestDistance = Infinity;
-      targets.forEach((target, index) => {
-        const distance = Math.abs(target - scrollLeft);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = index;
-        }
-      });
-      return nearestIndex;
-    }
-
-    function resetPlayerHandSwipe(pointerId = app.handSwipe.pointerId) {
-      const swipe = app.handSwipe;
-      swipe.pointerId = null;
-      swipe.axis = null;
-      swipe.moved = false;
-      ui.playerHand.classList.remove("touch-swiping");
+    function stepPlayerHand(direction) {
+      const step = Math.sign(Number(direction) || 0);
       if (
-        pointerId !== null &&
-        ui.playerHand.hasPointerCapture?.(pointerId)
-      ) {
-        try { ui.playerHand.releasePointerCapture(pointerId); } catch (_) {}
-      }
-    }
-
-    function cancelPlayerHandSwipe({ snap = false, suppressClick = false } = {}) {
-      const swipe = app.handSwipe;
-      if (swipe.pointerId === null) {
-        ui.playerHand.classList.remove("touch-swiping");
-        return;
-      }
-      const targets = snap ? playerHandSnapTargets() : null;
-      const target = targets?.[clamp(swipe.startSnapIndex, 0, targets.length - 1)];
-      if (suppressClick && swipe.moved) swipe.suppressClickUntil = performance.now() + 500;
-      resetPlayerHandSwipe();
-      if (Number.isFinite(target)) scrollPlayerHandTo(target);
-    }
-
-    function handlePlayerHandPointerDown(event) {
-      cancelHandScrollMotion();
-      if (
-        event.pointerType !== "touch" ||
-        event.isPrimary === false ||
-        event.button !== 0 ||
-        app.handSwipe.pointerId !== null ||
-        !ui.playerHand.classList.contains("touch-swipe-enabled") ||
+        !step ||
+        !app.responsive.mobileUi ||
         !ui.gameScreen.classList.contains("active") ||
         !app.state ||
         app.state.phase !== "planning" ||
         app.resolving ||
-        app.openingDeal.active ||
-        playerHandScrollMax() <= HAND_SCROLL_EDGE_EPSILON
-      ) return;
+        app.openingDeal.active
+      ) return false;
 
-      const swipe = app.handSwipe;
       const targets = playerHandSnapTargets();
-      swipe.pointerId = event.pointerId;
-      swipe.startX = event.clientX;
-      swipe.startY = event.clientY;
-      swipe.startTime = performance.now();
-      swipe.startScrollLeft = clamp(ui.playerHand.scrollLeft, 0, playerHandScrollMax());
-      swipe.startSnapIndex = nearestHandSnapIndex(targets, swipe.startScrollLeft);
-      swipe.axis = null;
-      swipe.moved = false;
-      try { ui.playerHand.setPointerCapture(event.pointerId); } catch (_) {}
-    }
+      if (targets.length < 2) return false;
+      const maxScroll = playerHandScrollMax();
+      const current = app.handScroll.frameId
+        ? clamp(app.handScroll.target, 0, maxScroll)
+        : clamp(ui.playerHand.scrollLeft, 0, maxScroll);
+      let target = current;
 
-    function handlePlayerHandPointerMove(event) {
-      const swipe = app.handSwipe;
-      if (swipe.pointerId !== event.pointerId) return;
-
-      const deltaX = event.clientX - swipe.startX;
-      const deltaY = event.clientY - swipe.startY;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      if (Math.hypot(deltaX, deltaY) >= HAND_SWIPE_DIRECTION_LOCK) swipe.moved = true;
-
-      if (!swipe.axis) {
-        if (Math.max(absX, absY) < HAND_SWIPE_DIRECTION_LOCK) return;
-        if (absX >= absY * 1.2) {
-          swipe.axis = "x";
-          ui.playerHand.classList.add("touch-swiping");
-        } else if (absY >= absX * 1.2) {
-          swipe.axis = "y";
-          return;
-        } else {
-          return;
+      if (step > 0) {
+        target = targets.find(candidate => candidate > current + HAND_SCROLL_EDGE_EPSILON);
+        if (!Number.isFinite(target)) target = targets[targets.length - 1];
+      } else {
+        for (let index = targets.length - 1; index >= 0; index -= 1) {
+          if (targets[index] < current - HAND_SCROLL_EDGE_EPSILON) {
+            target = targets[index];
+            break;
+          }
         }
       }
 
-      if (swipe.axis !== "x") return;
-      if (event.cancelable) event.preventDefault();
+      if (Math.abs(target - current) <= HAND_SCROLL_EDGE_EPSILON) return false;
       hideHoverTooltip();
-      ui.playerHand.scrollLeft = clamp(
-        swipe.startScrollLeft - deltaX,
-        0,
-        playerHandScrollMax()
-      );
+      const moved = scrollPlayerHandTo(target);
       syncHandScrollState();
-    }
-
-    function finishPlayerHandSwipe(event, cancelled = false) {
-      const swipe = app.handSwipe;
-      if (swipe.pointerId !== event.pointerId) return;
-
-      const deltaX = event.clientX - swipe.startX;
-      const deltaY = event.clientY - swipe.startY;
-      const absX = Math.abs(deltaX);
-      const elapsed = Math.max(1, performance.now() - swipe.startTime);
-      const velocity = absX / elapsed;
-      const moved = swipe.moved || Math.hypot(deltaX, deltaY) >= HAND_SWIPE_DIRECTION_LOCK;
-      const horizontalSwipe = swipe.axis === "x";
-      const targets = playerHandSnapTargets();
-      let targetIndex = clamp(swipe.startSnapIndex, 0, targets.length - 1);
-
-      if (!cancelled && horizontalSwipe) {
-        const advances = absX >= HAND_SWIPE_ADVANCE_DISTANCE || (
-          absX >= HAND_SWIPE_FLICK_DISTANCE && velocity >= HAND_SWIPE_FLICK_VELOCITY
-        );
-        if (advances) targetIndex += deltaX < 0 ? 1 : -1;
-        targetIndex = clamp(targetIndex, 0, targets.length - 1);
-      }
-
-      if (moved) swipe.suppressClickUntil = performance.now() + 500;
-      const target = targets[targetIndex];
-      resetPlayerHandSwipe(event.pointerId);
-      if (horizontalSwipe && Number.isFinite(target)) scrollPlayerHandTo(target);
+      return moved;
     }
 
     function scrollPlayerHandTo(target) {
@@ -9241,7 +9200,6 @@
       const chosenIds = new Set(Object.values(app.selection).filter(Boolean));
       const handCards = sortHandCards(me.hand.filter(card => !chosenIds.has(card.id)));
       ui.handSortSelect.value = app.handSort;
-      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       ui.playerHand.innerHTML = handCards.length
         ? handCards.map((card, index) => gameCardHtml(card, me, index)).join("")
@@ -14029,15 +13987,11 @@
       openDialog(ui.logDialog);
     });
 
+    ui.handPrevBtn.addEventListener("click", () => stepPlayerHand(-1));
+    ui.handNextBtn.addEventListener("click", () => stepPlayerHand(1));
     ui.playerHand.addEventListener("wheel", handlePlayerHandWheel, { passive: false });
     ui.playerHand.addEventListener("scroll", syncHandScrollState, { passive: true });
-    ui.playerHand.addEventListener("pointerdown", handlePlayerHandPointerDown, { passive: true });
-    ui.playerHand.addEventListener("pointermove", handlePlayerHandPointerMove, { passive: false });
-    ui.playerHand.addEventListener("pointerup", event => finishPlayerHandSwipe(event));
-    ui.playerHand.addEventListener("pointercancel", event => finishPlayerHandSwipe(event, true));
-    ui.playerHand.addEventListener("lostpointercapture", event => {
-      if (app.handSwipe.pointerId === event.pointerId) finishPlayerHandSwipe(event, true);
-    });
+    ui.playerHand.addEventListener("pointerdown", cancelHandScrollMotion, { passive: true });
     ui.playerHand.addEventListener("focusin", event => {
       revealFocusedHandCard(event.target.closest("[data-card-id]"));
     });
@@ -14058,11 +14012,6 @@
     });
 
     ui.playerHand.addEventListener("click", event => {
-      if (performance.now() < app.handSwipe.suppressClickUntil) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
       const button = event.target.closest("[data-card-id]");
       if (!button || !app.state) return;
       const { me } = getPlayersForView();
@@ -14123,7 +14072,6 @@
       if (target && !target.contains(event.relatedTarget)) hideHoverTooltip(target);
     });
     window.addEventListener("resize", () => {
-      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       queueResponsiveModeSync();
       hideHoverTooltip();
@@ -14134,7 +14082,6 @@
       settleShowdownHueReloadMotion();
     });
     window.addEventListener("orientationchange", () => {
-      cancelPlayerHandSwipe();
       cancelHandScrollMotion();
       queueResponsiveModeSync();
     });
