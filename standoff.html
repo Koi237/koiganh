@@ -3009,7 +3009,7 @@
 
     .showdown-panel.reloading .showdown-reload-deck {
       visibility: visible;
-      animation: showdown-deck-deal 1.3s var(--ease-out) both;
+      animation: showdown-deck-deal var(--showdown-reload-duration, 1.3s) var(--ease-out) both;
     }
 
     .showdown-reload-deck-card,
@@ -3079,6 +3079,174 @@
       pointer-events: none;
       transform-origin: center;
       will-change: transform, opacity;
+    }
+
+    .hue-reload-transfer {
+      position: fixed;
+      z-index: 3;
+      display: grid;
+      width: 112px;
+      min-height: 52px;
+      grid-template-columns: 31px minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      padding: 7px 9px 7px 8px;
+      overflow: hidden;
+      opacity: 0;
+      border: 1px solid rgba(140, 233, 222, .58);
+      border-radius: 11px;
+      background:
+        linear-gradient(115deg, rgba(140, 233, 222, .14), transparent 42%),
+        linear-gradient(295deg, rgba(193, 164, 255, .13), transparent 48%),
+        rgba(11, 15, 21, .97);
+      box-shadow:
+        0 14px 34px rgba(0, 0, 0, .46),
+        0 0 0 1px rgba(193, 164, 255, .12),
+        0 0 22px rgba(126, 231, 218, .22);
+      color: #b8fff6;
+      pointer-events: none;
+      transform-origin: center;
+      will-change: transform, opacity;
+    }
+
+    .hue-reload-transfer::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background: linear-gradient(
+        108deg,
+        transparent 22%,
+        rgba(255, 255, 255, .22) 45%,
+        transparent 66%
+      );
+      opacity: .62;
+      transform: translateX(-72%);
+    }
+
+    .hue-reload-transfer-mark {
+      grid-row: 1 / 4;
+      align-self: center;
+      color: #a9f5ec;
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 850;
+      letter-spacing: -.06em;
+      line-height: 1;
+      text-shadow: 0 0 13px rgba(140, 233, 222, .42);
+    }
+
+    .hue-reload-transfer small,
+    .hue-reload-transfer strong,
+    .hue-reload-transfer-detail {
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hue-reload-transfer small {
+      color: #8ce9de;
+      font-size: 5px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .hue-reload-transfer strong {
+      margin-block: 1px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .hue-reload-transfer-detail {
+      color: #aa9bc8;
+      font-size: 6px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .hue-reload-target-chip {
+      position: absolute;
+      z-index: 9;
+      display: inline-flex;
+      min-width: 47px;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px 6px;
+      opacity: 0;
+      border: 1px solid rgba(140, 233, 222, .56);
+      border-radius: 99px;
+      background:
+        linear-gradient(110deg, rgba(140, 233, 222, .12), rgba(193, 164, 255, .1)),
+        rgba(11, 15, 21, .97);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, .4),
+        0 0 17px rgba(126, 231, 218, .24);
+      color: #b8fff6;
+      line-height: 1;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(.78);
+      transform-origin: center;
+      white-space: nowrap;
+    }
+
+    .hue-reload-target-chip.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .hue-reload-target-chip b {
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .hue-reload-target-chip span {
+      color: var(--muted);
+      font-size: 5px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .showdown-panel .reveal-card.hue-reload-receiving {
+      z-index: 8;
+      border-color: rgba(140, 233, 222, .5);
+      filter: saturate(1.12) brightness(1.07);
+      box-shadow:
+        0 20px 42px rgba(0, 0, 0, .46),
+        0 0 0 2px rgba(140, 233, 222, .2),
+        0 0 26px rgba(126, 231, 218, .28);
+      animation: hue-reload-card-receive .64s var(--ease-snap);
+    }
+
+    .showdown-reload-flight.hue-bonus {
+      border-color: rgba(140, 233, 222, .54);
+      background:
+        linear-gradient(135deg, transparent 46%, rgba(193, 164, 255, .2) 47% 49%, rgba(140, 233, 222, .22) 50% 52%, transparent 53%),
+        #152025;
+      box-shadow:
+        0 10px 24px rgba(0, 0, 0, .42),
+        0 0 16px rgba(126, 231, 218, .24);
+    }
+
+    .showdown-reload-flight.hue-bonus::before {
+      border-color: rgba(193, 164, 255, .42);
+    }
+
+    .showdown-reload-flight.hue-bonus::after {
+      content: "×2";
+      color: #a9f5ec;
+      font-size: 13px;
+      text-shadow: 0 0 10px rgba(140, 233, 222, .44);
     }
 
     .impact-core {
@@ -3930,6 +4098,20 @@
       100% { visibility: hidden; opacity: 0; transform: translate(-50%, calc(-50% - 4px)) scale(.94); }
     }
 
+    @keyframes hue-reload-card-receive {
+      0% {
+        filter: saturate(.82) brightness(.86);
+        box-shadow: 0 20px 42px rgba(0, 0, 0, .46);
+      }
+      46% {
+        filter: saturate(1.24) brightness(1.15);
+        box-shadow:
+          0 20px 42px rgba(0, 0, 0, .46),
+          0 0 0 4px rgba(140, 233, 222, .2),
+          0 0 38px rgba(126, 231, 218, .42);
+      }
+    }
+
     @keyframes aftermath-settle {
       from { opacity: 0; transform: translateY(7px); }
       to { opacity: 1; transform: translateY(0); }
@@ -4776,6 +4958,44 @@
         height: 55px;
       }
 
+      .hue-reload-transfer {
+        width: 88px;
+        min-height: 44px;
+        grid-template-columns: 24px minmax(0, 1fr);
+        padding: 6px 7px;
+        border-radius: 9px;
+      }
+
+      .hue-reload-transfer-mark {
+        font-size: 17px;
+      }
+
+      .hue-reload-transfer small {
+        font-size: 4.5px;
+      }
+
+      .hue-reload-transfer strong {
+        font-size: 8px;
+      }
+
+      .hue-reload-transfer-detail {
+        font-size: 5px;
+      }
+
+      .hue-reload-target-chip {
+        min-width: 40px;
+        gap: 3px;
+        padding: 3px 5px;
+      }
+
+      .hue-reload-target-chip b {
+        font-size: 10px;
+      }
+
+      .hue-reload-target-chip span {
+        font-size: 4.5px;
+      }
+
       .showdown-reload-deck-card::before {
         inset: 12px 9px;
       }
@@ -5502,8 +5722,8 @@
         <h3>Core actions</h3>
         <ul>
           <li><b>Shoot</b> deals 4 base damage and consumes one Shoot card.</li>
-          <li><b>Shield</b> reduces incoming damage by 75%.</li>
-          <li><b>Reload</b> makes you take 100% extra damage, refills your hand to two Shoot cards, and draws two special cards.</li>
+          <li><b>Shield</b> reduces incoming Shoot damage by 75%.</li>
+          <li><b>Reload</b> makes you take 100% extra incoming Shoot damage, refills your hand to two Shoot cards, and draws two special cards.</li>
           <li>The first turn contains only Reload. From turn two onward, you always carry one Reload and one Shield at most.</li>
         </ul>
       </section>
@@ -5514,7 +5734,7 @@
           <b>Fire</b><span>beats</span><b>Ice</b><span>beats</span><b>Water</b><span>beats</span><b>Fire</b>
         </div>
         <p>When an elemental shot meets an elemental shield, advantage adds +50% damage and disadvantage adds −50%. Matching elements make no change.</p>
-        <p>An elemental shot that hits a player while they Shoot or Reload leaves a stain. It detonates for 4 damage after two more turns unless that player uses the element that beats the stain in a Shoot or Shield. If Rainbow changes that element, only the rolled element is checked for cleansing.</p>
+        <p>An elemental shot that hits a player while they Shoot or Reload leaves a stain. It detonates for 5 base damage after two more turns unless that player uses the element that beats the stain in a Shoot or Shield. Once it detonates, Shields and damage-reduction effects cannot block or reduce it; Silver Hand can still amplify it. If Rainbow changes that element, only the rolled element is checked for cleansing.</p>
       </section>
 
       <section class="rule-section">
@@ -5532,7 +5752,7 @@
 
       <section class="rule-section">
         <h3>Resolution order</h3>
-        <p>Rainbow resolves first and declares its roll, then stains can be cleansed. Hue Mirror reacts to the rival’s final action before Arcane Eater removes an incoming element. Action, element, Dark Steel, and Hue Mirror adjustments combine additively before Silver Hand multiplies final damage. Shots and heals land simultaneously; due stains detonate and Vampiric stain owners heal for half their final damage, new or reflected stains are applied, copied elements and Reload rewards are dealt, and Love Lock prepares its effect for the next turn.</p>
+        <p>Rainbow resolves first and declares its roll, then stains can be cleansed. Hue Mirror reacts to the rival’s final action before Arcane Eater removes an incoming element. Action, element, Dark Steel, and Hue Mirror adjustments combine additively for direct shots before Silver Hand multiplies final damage. Shots and heals land simultaneously; due stains then deal 5 base damage that ignores Shields and damage reduction, although Silver Hand can still amplify it. Vampiric stain owners heal for half that final damage, new or reflected stains are applied, copied elements and Reload rewards are dealt, and Love Lock prepares its effect for the next turn.</p>
       </section>
     </div>
   </dialog>
@@ -5619,10 +5839,11 @@
         recap: 7350,
         reloadRecap: 8500
       }),
-      protocolVersion: 2
+      protocolVersion: 3
     });
 
     const MAX_HEALTH = 36;
+    const STAIN_DETONATION_DAMAGE = 5;
     const OPENING_DEAL_DURATION_MS = 1480;
     const OPPONENT_COMMIT_FLIGHT_MS = 540;
     const OPPONENT_COMMIT_STAGGER_MS = 65;
@@ -6184,7 +6405,8 @@
         const kept = [];
         player.stains.forEach(stain => {
           if (stain.dueTurn <= state.turn) {
-            const damage = 4 * silverFactor;
+            // Detonations are separate from shot math: Shields and damage reduction never mitigate them.
+            const damage = STAIN_DETONATION_DAMAGE * silverFactor;
             const sourceSeat = Number.isInteger(stain.sourceSeat) ? stain.sourceSeat : 1 - playerIndex;
             const vampiricHealing = stain.vampiric && sourceSeat >= 0 && sourceSeat < state.players.length
               ? damage / 2
@@ -6198,7 +6420,7 @@
             receipts.push({
               seat: sourceSeat,
               title: `${stain.reflected ? "Reflected " : ""}${CARD_COPY[stain.element].name} stain → ${player.name}`,
-              text: `4 fixed damage${silverFactor > 1 ? ` · Silver ×${silverFactor}` : ""} · ${damage} damage${vampiricHealing ? ` · Vampiric heal ${vampiricHealing}` : ""}`
+              text: `${STAIN_DETONATION_DAMAGE} base damage · ignores Shields and damage reduction${silverFactor > 1 ? ` · Silver ×${silverFactor}` : ""} · ${damage} damage${vampiricHealing ? ` · Vampiric heal ${vampiricHealing}` : ""}`
             });
           } else {
             kept.push(stain);
@@ -7266,7 +7488,7 @@
         const reflectedNote = stain.reflected
           ? " This stain was reflected by Hue Mirror."
           : "";
-        const description = `Affected by ${stain.vampiric ? "Vampiric " : ""}${CARD_COPY[stain.element].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${reflectedNote}${vampiricNote}`;
+        const description = `Affected by ${stain.vampiric ? "Vampiric " : ""}${CARD_COPY[stain.element].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer ${STAIN_DETONATION_DAMAGE} base damage. Once it detonates, Shields and damage reduction cannot lower it.${reflectedNote}${vampiricNote}`;
         return `<span class="stain-chip ${stain.element}${stain.vampiric ? " vampiric" : ""}${stain.reflected ? " reflected" : ""}" tabindex="0" data-stain-element="${escapeHtml(stain.element)}" data-stain-turns="${turnsLeft}" data-stain-vampiric="${String(Boolean(stain.vampiric))}" data-stain-reflected="${String(Boolean(stain.reflected))}" aria-label="${escapeHtml(description)}">${stain.reflected ? "◐ " : stain.vampiric ? "♥ " : ""}${escapeHtml(CARD_COPY[stain.element].symbol)} ${escapeHtml(CARD_COPY[stain.element].name)} · ${escapeHtml(label)}</span>`;
       });
       if (player.lockedId || player.hiddenLocked) pieces.push('<span class="lock-chip">⌁ Card locked</span>');
@@ -7338,7 +7560,7 @@
         return {
           category: `${reflected ? "Reflected " : ""}${vampiric ? "Vampiric " : ""}${CARD_COPY[stainElement].name} stain`,
           name: "Status",
-          body: `Affected by ${CARD_COPY[stainElement].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${reflectedNote}${vampiricNote}`,
+          body: `Affected by ${CARD_COPY[stainElement].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer ${STAIN_DETONATION_DAMAGE} base damage. Once it detonates, Shields and damage reduction cannot lower it.${reflectedNote}${vampiricNote}`,
           classes: `element ${stainElement}`
         };
       }
@@ -8175,6 +8397,7 @@
 
     function showdownReloadEntries(result, meSeat) {
       const opponentSeat = 1 - meSeat;
+      const hueEffects = Array.isArray(result.hueMirrorEffects) ? result.hueMirrorEffects : [];
       return [
         { seat: meSeat, side: "left", target: ui.revealLeft },
         { seat: opponentSeat, side: "right", target: ui.revealRight }
@@ -8186,7 +8409,244 @@
           : Number.isFinite(specialFallback) && specialFallback > 0
             ? specialFallback
             : 2;
-        return { ...entry, count: clamp(Math.round(total), 1, 10) };
+        const count = clamp(Math.round(total), 1, 10);
+        const hueOwnerSeat = hueEffects.findIndex(effect => (
+          effect?.reloadTargetSeat != null &&
+          Number(effect.reloadTargetSeat) === entry.seat
+        ));
+        const hueEffect = hueOwnerSeat >= 0 ? hueEffects[hueOwnerSeat] : null;
+        const reloadFrom = Number(hueEffect?.reloadFrom);
+        const reloadTo = Number(hueEffect?.reloadTo);
+        const hueBonusCount = Number.isFinite(reloadFrom) &&
+          Number.isFinite(reloadTo) &&
+          reloadTo > reloadFrom
+          ? clamp(Math.round(reloadTo - reloadFrom), 0, count)
+          : 0;
+        return {
+          ...entry,
+          count,
+          hueBonusCount,
+          hueEffect,
+          hueOwnerSeat
+        };
+      });
+    }
+
+    function showdownReloadMotionDuration(entries) {
+      return entries.reduce((latest, entry) => Math.max(
+        latest,
+        690 +
+          Math.max(0, entry.count - 1) * 95 +
+          (entry.side === "right" ? 50 : 0) +
+          (entry.hueBonusCount > 0 ? 180 : 0)
+      ), 0);
+    }
+
+    function showdownHueReloadTransfers(result, meSeat, reloadEntries) {
+      const hueEffects = Array.isArray(result.hueMirrorEffects) ? result.hueMirrorEffects : [];
+      return hueEffects.map((effect, ownerSeat) => {
+        const targetSeat = Number(effect?.reloadTargetSeat);
+        const fromCount = Number(effect?.reloadFrom);
+        const toCount = Number(effect?.reloadTo);
+        const ownerPlay = result.plays?.[ownerSeat];
+        const targetPlay = result.plays?.[targetSeat];
+        const targetEntry = reloadEntries.find(entry => entry.seat === targetSeat);
+        if (
+          (ownerSeat !== 0 && ownerSeat !== 1) ||
+          (targetSeat !== 0 && targetSeat !== 1) ||
+          targetSeat === ownerSeat ||
+          ownerPlay?.modValue !== "hue_mirror" ||
+          targetPlay?.actionValue !== "reload" ||
+          !targetEntry ||
+          !Number.isFinite(fromCount) ||
+          !Number.isFinite(toCount) ||
+          toCount <= fromCount
+        ) return null;
+
+        const fromStack = ownerSeat === meSeat ? ui.revealLeft : ui.revealRight;
+        return {
+          ownerSeat,
+          targetSeat,
+          fromCount: Math.round(fromCount),
+          toCount: Math.round(toCount),
+          fromSide: ownerSeat === meSeat ? "left" : "right",
+          toSide: targetEntry.side,
+          fromStack,
+          toStack: targetEntry.target
+        };
+      }).filter(Boolean);
+    }
+
+    function positionHueReloadTargetChip(stack) {
+      const reloadCard = stack.querySelector('[data-card-value="reload"]');
+      if (!reloadCard) return;
+      $$(".hue-reload-target-chip", stack).forEach(chip => {
+        chip.style.left = `${reloadCard.offsetLeft + reloadCard.offsetWidth - 5}px`;
+        chip.style.top = `${reloadCard.offsetTop + 7}px`;
+      });
+    }
+
+    function attachHueReloadTargetChip(entry) {
+      const selector = `.hue-reload-target-chip[data-hue-owner="${entry.ownerSeat}"]`;
+      const existing = entry.toStack.querySelector(selector);
+      if (existing) return existing;
+      const chip = document.createElement("span");
+      chip.className = "hue-reload-target-chip";
+      chip.dataset.hueOwner = String(entry.ownerSeat);
+      chip.setAttribute("aria-hidden", "true");
+      chip.innerHTML = `<b>&times;2</b><span>specials ${entry.fromCount}&rarr;${entry.toCount}</span>`;
+      entry.toStack.appendChild(chip);
+      positionHueReloadTargetChip(entry.toStack);
+      return chip;
+    }
+
+    function createShowdownHueReloadTransfer(entry, transferIndex, transferCount, reducedMotion) {
+      const source = entry.fromStack.querySelector('[data-card-value="hue_mirror"]') || entry.fromStack;
+      const target = entry.toStack.querySelector('[data-card-value="reload"]') || entry.toStack;
+      const targetCard = target.matches?.(".reveal-card") ? target : null;
+      const sourceRect = source.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const targetChip = attachHueReloadTargetChip(entry);
+      if (
+        reducedMotion ||
+        typeof targetChip.animate !== "function" ||
+        !sourceRect.width ||
+        !targetRect.width
+      ) {
+        targetChip.classList.add("visible");
+        targetCard?.classList.add("hue-reload-receiving");
+        return;
+      }
+
+      const sourceX = sourceRect.left + sourceRect.width / 2;
+      const sourceY = sourceRect.top + sourceRect.height / 2;
+      const targetX = targetRect.left + targetRect.width / 2;
+      const targetY = targetRect.top + targetRect.height / 2;
+      const deltaX = targetX - sourceX;
+      const deltaY = targetY - sourceY;
+      const direction = deltaX >= 0 ? 1 : -1;
+      const arc = transferCount > 1
+        ? entry.fromSide === "left" ? -58 : 58
+        : -54;
+      const delay = transferIndex * 60;
+      const token = document.createElement("span");
+      token.className = `hue-reload-transfer ${entry.fromSide}-to-${entry.toSide}`;
+      token.setAttribute("aria-hidden", "true");
+      token.innerHTML = `
+        <b class="hue-reload-transfer-mark">&times;2</b>
+        <small>Hue Mirror</small>
+        <strong>Reload transfer</strong>
+        <span class="hue-reload-transfer-detail">Specials ${entry.fromCount}&rarr;${entry.toCount}</span>
+      `;
+      ui.showdownReloadFlightLayer.appendChild(token);
+      const tokenRect = token.getBoundingClientRect();
+      token.style.left = `${sourceX - tokenRect.width / 2}px`;
+      token.style.top = `${sourceY - tokenRect.height / 2}px`;
+
+      const tokenAnimation = token.animate([
+        {
+          opacity: 0,
+          transform: `translate3d(${-direction * 8}px, 4px, 0) rotate(${-direction * 2}deg) scale(.7)`
+        },
+        {
+          offset: .12,
+          opacity: 1,
+          transform: "translate3d(0, 0, 0) rotate(0deg) scale(.94)"
+        },
+        {
+          offset: .48,
+          opacity: 1,
+          transform: `translate3d(${deltaX * .48}px, ${deltaY * .48 + arc}px, 0) rotate(${direction * 3}deg) scale(1.06)`
+        },
+        {
+          offset: .64,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(1.08)`
+        },
+        {
+          offset: .88,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(.98)`
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(.9)`
+        }
+      ], {
+        duration: 720,
+        delay,
+        easing: "cubic-bezier(.2,.75,.22,1)",
+        fill: "forwards"
+      });
+
+      const chipAnimation = targetChip.animate([
+        {
+          opacity: 0,
+          transform: "translate(-50%, -50%) scale(.72)"
+        },
+        {
+          offset: .34,
+          opacity: 1,
+          transform: "translate(-50%, -50%) scale(1.18)"
+        },
+        {
+          opacity: 1,
+          transform: "translate(-50%, -50%) scale(1)"
+        }
+      ], {
+        duration: 390,
+        delay: delay + 430,
+        easing: "cubic-bezier(.2,.9,.2,1.15)",
+        fill: "forwards"
+      });
+
+      app.showdownAnimations.push(tokenAnimation, chipAnimation);
+      if (targetCard) {
+        app.showdownTimers.push(setTimeout(() => {
+          targetCard.classList.add("hue-reload-receiving");
+        }, delay + 430));
+      }
+      tokenAnimation.finished.catch(() => {}).finally(() => token.remove());
+      chipAnimation.finished.then(() => {
+        if (!targetChip.isConnected) return;
+        targetChip.classList.add("visible");
+        chipAnimation.cancel();
+      }).catch(() => {});
+    }
+
+    function runShowdownHueReloadTransfers(entries) {
+      if (!entries.length) return;
+      const reducedMotion = hasReducedMotionPreference();
+      entries.forEach((entry, index) => {
+        createShowdownHueReloadTransfer(entry, index, entries.length, reducedMotion);
+      });
+      playSound("select");
+    }
+
+    function settleShowdownHueReloadMotion() {
+      $$(".hue-reload-transfer", ui.showdownReloadFlightLayer).forEach(token => {
+        const animations = typeof token.getAnimations === "function" ? token.getAnimations() : [];
+        animations.forEach(animation => animation.cancel());
+        token.remove();
+      });
+      const reloadFlights = $$(".showdown-reload-flight", ui.showdownReloadFlightLayer);
+      reloadFlights.forEach(card => {
+        const animations = typeof card.getAnimations === "function" ? card.getAnimations() : [];
+        animations.forEach(animation => animation.cancel());
+        card.remove();
+      });
+      if (reloadFlights.length) ui.showdownPanel.classList.remove("reloading");
+      [ui.revealLeft, ui.revealRight].forEach(stack => {
+        positionHueReloadTargetChip(stack);
+        const chips = $$(".hue-reload-target-chip", stack);
+        chips.forEach(chip => {
+          const animations = typeof chip.getAnimations === "function" ? chip.getAnimations() : [];
+          animations.forEach(animation => animation.cancel());
+          chip.classList.add("visible");
+        });
+        if (chips.length) {
+          stack.querySelector('[data-card-value="reload"]')?.classList.add("hue-reload-receiving");
+        }
       });
     }
 
@@ -8200,6 +8660,11 @@
       });
       app.showdownAnimations = [];
       ui.showdownReloadFlightLayer.replaceChildren();
+      $$(".hue-reload-target-chip", ui.showdownPanel).forEach(chip => chip.remove());
+      $$(".hue-reload-receiving", ui.showdownPanel).forEach(card => {
+        card.classList.remove("hue-reload-receiving");
+      });
+      ui.showdownReloadDeck.style.removeProperty("--showdown-reload-duration");
       ui.showdownPanel.classList.remove("reloading");
     }
 
@@ -8220,7 +8685,9 @@
       const deltaY = targetY - sourceY;
       const rotation = (entry.side === "left" ? -8 : 8) + fanOffset * 2;
       const clone = document.createElement("span");
-      clone.className = `showdown-reload-flight ${entry.side}`;
+      const isHueBonus = entry.hueBonusCount > 0 &&
+        cardIndex >= entry.count - entry.hueBonusCount;
+      clone.className = `showdown-reload-flight ${entry.side}${isHueBonus ? " hue-bonus" : ""}`;
       clone.setAttribute("aria-hidden", "true");
       clone.style.left = `${sourceX - 27}px`;
       clone.style.top = `${sourceY - 39}px`;
@@ -8257,7 +8724,7 @@
         }
       ], {
         duration: 690,
-        delay: cardIndex * 95 + (entry.side === "right" ? 50 : 0),
+        delay: cardIndex * 95 + (entry.side === "right" ? 50 : 0) + (isHueBonus ? 180 : 0),
         easing: "cubic-bezier(.2,.75,.22,1)",
         fill: "forwards"
       });
@@ -8267,6 +8734,8 @@
 
     function runShowdownReloadDeal(entries) {
       if (!entries.length) return;
+      const deckDuration = Math.max(1300, showdownReloadMotionDuration(entries) + 75);
+      ui.showdownReloadDeck.style.setProperty("--showdown-reload-duration", `${deckDuration}ms`);
       ui.showdownPanel.classList.add("reloading");
       void ui.showdownReloadDeck.offsetWidth;
       const reducedMotion = typeof window.matchMedia === "function" &&
@@ -8305,6 +8774,16 @@
       const timeline = GAME_CONFIG.showdownTimeline;
       const shotCount = result.plays.filter(play => play.actionValue === "shoot").length;
       const reloadEntries = showdownReloadEntries(result, meSeat);
+      const hueReloadTransfers = showdownHueReloadTransfers(result, meSeat, reloadEntries);
+      const reloadMotionMs = showdownReloadMotionDuration(reloadEntries);
+      const reloadRecapTime = reloadEntries.length
+        ? hasReducedMotionPreference()
+          ? timeline.reloadRecap
+          : Math.min(
+            GAME_CONFIG.showdownMs - 1000,
+            Math.max(timeline.reloadRecap, timeline.reload + reloadMotionMs + 100)
+          )
+        : timeline.recap;
       const beforeHp = result.beforeHp || result.afterHp || players.map(player => player.hp);
       const afterHp = result.afterHp || players.map(player => player.hp);
       resetShowdownVisuals();
@@ -8500,12 +8979,34 @@
         if (result.healing.some(Boolean)) playSound("heal");
       }, timeline.aftermath));
 
+      if (hueReloadTransfers.length) {
+        const hueReloadCueTime = Math.max(
+          timeline.aftermath + 400,
+          timeline.reload - 400
+        );
+        app.showdownTimers.push(setTimeout(() => {
+          ui.showdownPanel.classList.add("hue-mirror");
+          runShowdownHueReloadTransfers(hueReloadTransfers);
+          const transferNotes = hueReloadTransfers.map(entry => (
+            `${players[entry.ownerSeat].name}'s Hue Mirror sends \u00d72 Reload to ${players[entry.targetSeat].name} (${entry.fromCount}\u2192${entry.toCount} specials)`
+          ));
+          ui.showdownPhase.textContent = hueReloadTransfers.length > 1
+            ? "Hue Mirrors cross the table"
+            : "Hue Mirror redirects Reload";
+          ui.resolutionTitle.textContent = hueReloadTransfers.length > 1
+            ? "\u00d72 Reload jumps both ways"
+            : "\u00d72 Reload jumps across";
+          ui.resolutionSubtitle.textContent = transferNotes.join(" \u00b7 ");
+          announce(`${transferNotes.join(". ")}.`);
+        }, hueReloadCueTime));
+      }
+
       if (reloadEntries.length) {
         app.showdownTimers.push(setTimeout(() => {
           runShowdownReloadDeal(reloadEntries);
           const reloadNotes = reloadEntries.map(entry => {
             const countLabel = `${entry.count} card${entry.count === 1 ? "" : "s"}`;
-            const hueEffect = result.hueMirrorEffects?.find(effect => effect?.reloadTargetSeat === entry.seat);
+            const hueEffect = entry.hueEffect;
             const hueNote = hueEffect
               ? `; Hue Mirror doubled specials ${hueEffect.reloadFrom}→${hueEffect.reloadTo}`
               : "";
@@ -8526,7 +9027,7 @@
         ui.resolutionTitle.textContent = result.headline;
         ui.resolutionSubtitle.textContent = result.summary;
         announce(`${result.headline}. ${result.summary}`);
-      }, reloadEntries.length ? timeline.reloadRecap : timeline.recap));
+      }, reloadRecapTime));
 
       app.showdownTimers.push(setTimeout(() => finishShowdown(result), GAME_CONFIG.showdownMs));
     }
@@ -11550,8 +12051,12 @@
       positionRainbowCardRollChip(ui.revealRight);
       positionHueMirrorCardChip(ui.revealLeft);
       positionHueMirrorCardChip(ui.revealRight);
+      settleShowdownHueReloadMotion();
     });
-    document.addEventListener("scroll", () => hideHoverTooltip(), true);
+    document.addEventListener("scroll", () => {
+      hideHoverTooltip();
+      settleShowdownHueReloadMotion();
+    }, true);
 
     $$("[data-open-rules]").forEach(button => button.addEventListener("click", () => openDialog(ui.rulesDialog)));
     $$("[data-open-settings]").forEach(button => button.addEventListener("click", () => {
