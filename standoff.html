@@ -1792,6 +1792,9 @@
     .stain-chip.vampiric {
       box-shadow: inset 0 0 0 1px rgba(255, 111, 155, .1), 0 0 12px rgba(255, 111, 155, .07);
     }
+    .stain-chip.reflected {
+      box-shadow: inset 0 0 0 1px rgba(140, 233, 222, .13), 0 0 13px rgba(126, 231, 218, .09);
+    }
     .lock-chip { color: var(--mod); border-color: rgba(193, 164, 255, .25); }
     .ward-chip { color: var(--ice); border-color: rgba(158, 233, 255, .25); }
 
@@ -3358,6 +3361,12 @@
     .mod-sigil[data-mod="silver_hand"] { color: var(--gold); border-color: rgba(233, 203, 125, .4); }
     .mod-sigil[data-mod="vampiric"] { color: #ff6f9b; border-color: rgba(255, 111, 155, .4); }
     .mod-sigil[data-mod="dark_steel"] { color: #d7e0e8; border-color: rgba(215, 224, 232, .4); }
+    .mod-sigil[data-mod="hue_mirror"] {
+      border-color: rgba(126, 231, 218, .48);
+      background: linear-gradient(135deg, rgba(24, 47, 51, .96), rgba(39, 28, 56, .96));
+      color: #8ce9de;
+      box-shadow: 0 9px 20px rgba(0, 0, 0, .28), 0 0 17px rgba(126, 231, 218, .13);
+    }
 
     .rainbow-roll-layer {
       position: absolute;
@@ -3562,7 +3571,18 @@
       transform: translateY(-8px) rotateY(0) scale(1.045);
     }
 
-    .rainbow-card-roll-chip {
+    .showdown-panel.modifier:not(.aim) .reveal-card[data-card-value="hue_mirror"] {
+      z-index: 6;
+      filter: saturate(1.12) brightness(1.06);
+      box-shadow:
+        0 20px 44px rgba(0, 0, 0, .46),
+        0 0 0 2px rgba(140, 233, 222, .2),
+        0 0 24px rgba(126, 231, 218, .25);
+      transform: translateY(-6px) rotateY(0) scale(1.035);
+    }
+
+    .rainbow-card-roll-chip,
+    .hue-mirror-card-chip {
       --rainbow-roll-color: var(--mod);
       position: absolute;
       top: calc(100% - 9px);
@@ -3583,7 +3603,12 @@
       white-space: nowrap;
     }
 
-    .rainbow-card-roll-chip small {
+    .hue-mirror-card-chip {
+      --rainbow-roll-color: #8ce9de;
+    }
+
+    .rainbow-card-roll-chip small,
+    .hue-mirror-card-chip small {
       color: var(--muted);
       font-size: 5px;
       font-weight: 850;
@@ -3591,14 +3616,16 @@
       text-transform: uppercase;
     }
 
-    .rainbow-card-roll-chip strong {
+    .rainbow-card-roll-chip strong,
+    .hue-mirror-card-chip strong {
       margin-top: 2px;
       font-size: 8px;
       letter-spacing: .04em;
       text-transform: uppercase;
     }
 
-    .showdown-panel.modifier .rainbow-card-roll-chip {
+    .showdown-panel.modifier .rainbow-card-roll-chip,
+    .showdown-panel.modifier .hue-mirror-card-chip {
       animation: rainbow-card-roll-in .38s .12s var(--ease-snap) both;
     }
 
@@ -3651,6 +3678,14 @@
       filter: saturate(0) brightness(1.7);
     }
 
+    .shot-lane[data-intercept-kind="hue_mirror"] .ward-burst {
+      border-color: rgba(140, 233, 222, .78);
+      background:
+        conic-gradient(from 35deg, rgba(255, 113, 95, .2), rgba(158, 233, 255, .24), rgba(110, 157, 255, .22), rgba(255, 113, 95, .2));
+      color: #a9f5ec;
+      box-shadow: 0 0 24px rgba(126, 231, 218, .38), inset 0 0 14px rgba(193, 164, 255, .16);
+    }
+
     .showdown-panel.hit .shot-lane[data-active="true"] .impact-flare {
       animation: impact-flare .72s var(--ease-snap) both;
     }
@@ -3667,6 +3702,12 @@
       border-color: var(--mod);
       color: var(--mod);
       box-shadow: 0 0 26px rgba(193, 164, 255, .18);
+    }
+
+    .showdown-panel.hue-mirror .impact-core {
+      border-color: rgba(140, 233, 222, .64);
+      color: #a9f5ec;
+      box-shadow: 0 0 28px rgba(126, 231, 218, .22);
     }
 
     .showdown-panel.rainbow.reveal .reveal-card[data-card-value="rainbow"] {
@@ -4723,7 +4764,8 @@
         font-size: 6px;
       }
 
-      .rainbow-card-roll-chip {
+      .rainbow-card-roll-chip,
+      .hue-mirror-card-chip {
         top: calc(100% - 7px);
         min-width: 66px;
         padding: 4px 6px;
@@ -5481,6 +5523,7 @@
           <li><b>Vampiric Bullet:</b> Shoot only. Heal 50% of final direct damage. If the elemental shot creates a stain, also heal 50% of that stain’s final damage when it detonates.</li>
           <li><b>Dark Steel:</b> Shoot gains +25% damage or Shield receives −25%; both become 100% when the action is raw.</li>
           <li><b>Arcane Eater:</b> During the showdown where it is played, strip the element from an incoming enemy shot, make that shot raw, and heal 3.</li>
+          <li><b>Hue Mirror:</b> Against an elemental Shoot, add −25 percentage points to the damage multiplier, cancel its elemental interaction, and reflect its stain onto the shooter. Copy the final element of a rival Shield into your hand. If the rival Reloads, their final special-card draw doubles.</li>
           <li><b>Silver Hand:</b> Every player takes ×2 final damage this showdown. Two copies stack to ×4.</li>
           <li><b>Rainbow:</b> Randomize a played element; or randomize raw Shoot damage, raw Shield reduction, or Reload draw count.</li>
           <li><b>Love Lock:</b> Lock one random rival special card next turn; if none exist, lock a Shoot.</li>
@@ -5489,7 +5532,7 @@
 
       <section class="rule-section">
         <h3>Resolution order</h3>
-        <p>Rainbow resolves first and declares its roll, stains can be cleansed, then an Arcane Eater played in this showdown removes an incoming element and makes that shot raw. Additive action, element, and Dark Steel bonuses are calculated before Silver Hand multiplies final damage. Shots and heals land simultaneously; due stains detonate and Vampiric stain owners heal for half their final damage, new stains are applied, Reload rewards are dealt, and Love Lock prepares its effect for the next turn.</p>
+        <p>Rainbow resolves first and declares its roll, then stains can be cleansed. Hue Mirror reacts to the rival’s final action before Arcane Eater removes an incoming element. Action, element, Dark Steel, and Hue Mirror adjustments combine additively before Silver Hand multiplies final damage. Shots and heals land simultaneously; due stains detonate and Vampiric stain owners heal for half their final damage, new or reflected stains are applied, copied elements and Reload rewards are dealt, and Love Lock prepares its effect for the next turn.</p>
       </section>
     </div>
   </dialog>
@@ -5576,7 +5619,7 @@
         recap: 7350,
         reloadRecap: 8500
       }),
-      protocolVersion: 1
+      protocolVersion: 2
     });
 
     const MAX_HEALTH = 36;
@@ -5590,6 +5633,7 @@
       "vampiric",
       "dark_steel",
       "arcane_eater",
+      "hue_mirror",
       "silver_hand",
       "rainbow",
       "love_lock"
@@ -5599,6 +5643,7 @@
       vampiric: ["shoot"],
       dark_steel: ["shoot", "shield"],
       arcane_eater: ["shoot", "shield", "reload"],
+      hue_mirror: ["shoot", "shield", "reload"],
       silver_hand: ["shoot", "shield", "reload"],
       rainbow: ["shoot", "shield", "reload"],
       love_lock: ["shoot", "shield", "reload"]
@@ -5666,6 +5711,13 @@
         symbol: "◌",
         effect: "Consume an incoming element.",
         detail: "During this showdown, strip the element from an incoming elemental shot, make it raw, and heal 3."
+      },
+      hue_mirror: {
+        name: "Hue Mirror",
+        type: "MOD",
+        symbol: "◐",
+        effect: "Refract the rival's action.",
+        detail: "Any action. Against an incoming elemental Shoot, add −25 percentage points to the damage multiplier, cancel its elemental interaction, and reflect its stain to the shooter. Copy a rival elemental Shield; if the rival Reloads, their final special-card draw doubles."
       },
       silver_hand: {
         name: "Silver Hand",
@@ -5923,6 +5975,7 @@
       const cleansed = [[], []];
       const detonated = [[], []];
       const arcaneEaten = [null, null];
+      const hueMirrorEffects = [null, null];
       const rainbowRolls = [null, null];
       const resolved = plays.map((play, index) => ({
         seat: index,
@@ -5990,6 +6043,50 @@
         state.players[index].stains = kept;
       });
 
+      // Hue Mirror reacts to the rival's final post-Rainbow action.
+      resolved.forEach((mirror, mirrorIndex) => {
+        if (mirror.mod !== "hue_mirror") return;
+        const rivalIndex = 1 - mirrorIndex;
+        const rival = resolved[rivalIndex];
+        const hueEffect = {
+          reflectedElement: null,
+          reflectedStainTargetSeat: null,
+          copiedElement: null,
+          reloadTargetSeat: null,
+          reloadFrom: null,
+          reloadTo: null
+        };
+
+        if (rival.action === "shoot" && rival.finalElement) {
+          hueEffect.reflectedElement = rival.finalElement;
+          hueEffect.reflectedStainTargetSeat = rivalIndex;
+          newStains[rivalIndex].push({
+            id: createId("stain"),
+            element: rival.finalElement,
+            sourceSeat: mirrorIndex,
+            originSeat: rivalIndex,
+            vampiric: false,
+            reflected: true,
+            reflectedBySeat: mirrorIndex,
+            appliedTurn: state.turn,
+            dueTurn: state.turn + 2
+          });
+          effects.push(`${state.players[mirrorIndex].name}'s Hue Mirror nullified ${CARD_COPY[rival.finalElement].name}'s elemental interaction, added a −25 percentage-point damage adjustment, and reflected a ${CARD_COPY[rival.finalElement].name} stain onto ${state.players[rivalIndex].name}.`);
+        } else if (rival.action === "shield" && rival.finalElement) {
+          hueEffect.copiedElement = rival.finalElement;
+          state.players[mirrorIndex].hand.push(makeCard(rival.finalElement));
+          effects.push(`${state.players[mirrorIndex].name}'s Hue Mirror copied ${state.players[rivalIndex].name}'s ${CARD_COPY[rival.finalElement].name} Shield into a new ${CARD_COPY[rival.finalElement].name} card.`);
+        } else if (rival.action === "reload") {
+          hueEffect.reloadTargetSeat = rivalIndex;
+          hueEffect.reloadFrom = rival.reloadDrawCount;
+          rival.reloadDrawCount *= 2;
+          hueEffect.reloadTo = rival.reloadDrawCount;
+          effects.push(`${state.players[mirrorIndex].name}'s Hue Mirror doubled ${state.players[rivalIndex].name}'s Reload from ${hueEffect.reloadFrom} to ${hueEffect.reloadTo} special cards.`);
+        }
+
+        hueMirrorEffects[mirrorIndex] = hueEffect;
+      });
+
       // Arcane Eater nullifies an incoming element during the showdown where it is played.
       resolved.forEach((defender, defenderIndex) => {
         const attackerIndex = 1 - defenderIndex;
@@ -6021,7 +6118,13 @@
           parts.push("Shoot +0%");
         }
 
-        if (defender.action === "shield" && attacker.finalElement && defender.finalElement) {
+        const hueReflection = hueMirrorEffects[defenderIndex]?.reflectedElement || null;
+        if (hueReflection) {
+          additive -= .25;
+          parts.push("Hue Mirror −25% additive");
+        }
+
+        if (defender.action === "shield" && attacker.finalElement && defender.finalElement && !hueReflection) {
           if (beats(attacker.finalElement, defender.finalElement)) {
             additive += .5;
             parts.push(`${CARD_COPY[attacker.finalElement].name} advantage +50%`);
@@ -6062,7 +6165,7 @@
           effects.push(`${state.players[attackerIndex].name} siphoned ${leeched} health.`);
         }
 
-        if (attacker.finalElement && ["shoot", "reload"].includes(defender.action)) {
+        if (attacker.finalElement && !hueReflection && ["shoot", "reload"].includes(defender.action)) {
           const stain = {
             id: createId("stain"),
             element: attacker.finalElement,
@@ -6094,7 +6197,7 @@
             detonated[playerIndex].push(stain);
             receipts.push({
               seat: sourceSeat,
-              title: `${CARD_COPY[stain.element].name} stain → ${player.name}`,
+              title: `${stain.reflected ? "Reflected " : ""}${CARD_COPY[stain.element].name} stain → ${player.name}`,
               text: `4 fixed damage${silverFactor > 1 ? ` · Silver ×${silverFactor}` : ""} · ${damage} damage${vampiricHealing ? ` · Vampiric heal ${vampiricHealing}` : ""}`
             });
           } else {
@@ -6205,6 +6308,7 @@
         detonated,
         newStains,
         arcaneEaten,
+        hueMirrorEffects,
         headline,
         summary,
         winner
@@ -7159,8 +7263,11 @@
         const vampiricNote = stain.vampiric
           ? " Its original shooter will heal for 50% of the stain's final damage if it detonates."
           : "";
-        const description = `Affected by ${stain.vampiric ? "Vampiric " : ""}${CARD_COPY[stain.element].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${vampiricNote}`;
-        return `<span class="stain-chip ${stain.element}${stain.vampiric ? " vampiric" : ""}" tabindex="0" data-stain-element="${escapeHtml(stain.element)}" data-stain-turns="${turnsLeft}" data-stain-vampiric="${String(Boolean(stain.vampiric))}" aria-label="${escapeHtml(description)}">${stain.vampiric ? "♥ " : ""}${escapeHtml(CARD_COPY[stain.element].symbol)} ${escapeHtml(CARD_COPY[stain.element].name)} · ${escapeHtml(label)}</span>`;
+        const reflectedNote = stain.reflected
+          ? " This stain was reflected by Hue Mirror."
+          : "";
+        const description = `Affected by ${stain.vampiric ? "Vampiric " : ""}${CARD_COPY[stain.element].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${reflectedNote}${vampiricNote}`;
+        return `<span class="stain-chip ${stain.element}${stain.vampiric ? " vampiric" : ""}${stain.reflected ? " reflected" : ""}" tabindex="0" data-stain-element="${escapeHtml(stain.element)}" data-stain-turns="${turnsLeft}" data-stain-vampiric="${String(Boolean(stain.vampiric))}" data-stain-reflected="${String(Boolean(stain.reflected))}" aria-label="${escapeHtml(description)}">${stain.reflected ? "◐ " : stain.vampiric ? "♥ " : ""}${escapeHtml(CARD_COPY[stain.element].symbol)} ${escapeHtml(CARD_COPY[stain.element].name)} · ${escapeHtml(label)}</span>`;
       });
       if (player.lockedId || player.hiddenLocked) pieces.push('<span class="lock-chip">⌁ Card locked</span>');
       return pieces.join("");
@@ -7177,9 +7284,10 @@
       vampiric: 0,
       dark_steel: 1,
       arcane_eater: 2,
-      silver_hand: 3,
-      rainbow: 4,
-      love_lock: 5
+      hue_mirror: 3,
+      silver_hand: 4,
+      rainbow: 5,
+      love_lock: 6
     });
 
     function sortHandCards(cards, mode = app.handSort) {
@@ -7222,13 +7330,15 @@
         const counter = counterFor(stainElement);
         const timing = turnsLeft === 0 ? "this turn" : `within ${turnsLeft} turn${turnsLeft === 1 ? "" : "s"}`;
         const vampiric = target.dataset.stainVampiric === "true";
+        const reflected = target.dataset.stainReflected === "true";
+        const reflectedNote = reflected ? " Hue Mirror reflected this stain onto its shooter." : "";
         const vampiricNote = vampiric
           ? " Its original shooter heals for 50% of the stain's final damage if it detonates."
           : "";
         return {
-          category: `${vampiric ? "Vampiric " : ""}${CARD_COPY[stainElement].name} stain`,
+          category: `${reflected ? "Reflected " : ""}${vampiric ? "Vampiric " : ""}${CARD_COPY[stainElement].name} stain`,
           name: "Status",
-          body: `Affected by ${CARD_COPY[stainElement].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${vampiricNote}`,
+          body: `Affected by ${CARD_COPY[stainElement].name} stain. Play ${CARD_COPY[counter].name} on Shoot or Shield ${timing} to remove the stain, or suffer 4 base damage.${reflectedNote}${vampiricNote}`,
           classes: `element ${stainElement}`
         };
       }
@@ -7750,6 +7860,7 @@
       "reloading",
       "recap",
       "arcane",
+      "hue-mirror",
       "rainbow"
     ]);
 
@@ -7759,15 +7870,21 @@
 
     function configureShotLane(lane, play, targetSeat, result) {
       const isShot = play.actionValue === "shoot";
-      const interceptedElement = result.arcaneEaten?.[targetSeat] || null;
+      const arcaneElement = result.arcaneEaten?.[targetSeat] || null;
+      const hueElement = result.hueMirrorEffects?.[targetSeat]?.reflectedElement || null;
+      const interceptedElement = arcaneElement || hueElement;
+      const interceptKind = arcaneElement ? "arcane_eater" : hueElement ? "hue_mirror" : "none";
       const element = interceptedElement || play.resolvedElement || "raw";
       const mod = play.modValue || "none";
       lane.dataset.active = String(isShot);
       lane.dataset.element = element;
       lane.dataset.mod = mod;
       lane.dataset.intercept = String(Boolean(interceptedElement));
+      lane.dataset.interceptKind = interceptKind;
       const projectile = lane.querySelector(".shot-projectile");
       if (projectile) projectile.dataset.modSymbol = mod === "none" ? "" : CARD_COPY[mod]?.symbol || "";
+      const ward = lane.querySelector(".ward-burst");
+      if (ward) ward.textContent = interceptKind === "none" ? "" : CARD_COPY[interceptKind]?.symbol || "";
     }
 
     function rainbowRollCopy(play) {
@@ -7943,6 +8060,73 @@
       attachRainbowCardRoll(ui.revealRight, result.plays[1 - meSeat]);
     }
 
+    function hueMirrorPresentation(effect) {
+      if (effect?.reflectedElement) {
+        const elementName = CARD_COPY[effect.reflectedElement]?.name || "Element";
+        return {
+          chip: `Reflect ${elementName}`,
+          detail: `Hue Mirror reflected a ${elementName} stain to the elemental shooter and added −25 percentage points to the damage multiplier.`
+        };
+      }
+      if (effect?.copiedElement) {
+        const elementName = CARD_COPY[effect.copiedElement]?.name || "Element";
+        return {
+          chip: `Copy ${elementName}`,
+          detail: `Hue Mirror copied the rival's ${elementName} Shield into your hand.`
+        };
+      }
+      if (Number.isFinite(effect?.reloadFrom) && Number.isFinite(effect?.reloadTo)) {
+        return {
+          chip: `Reload ${effect.reloadFrom}→${effect.reloadTo}`,
+          detail: `Hue Mirror doubled the rival's special-card draw from ${effect.reloadFrom} to ${effect.reloadTo}.`
+        };
+      }
+      return {
+        chip: "No refraction",
+        detail: "Hue Mirror found no eligible elemental Shoot, elemental Shield, or Reload."
+      };
+    }
+
+    function positionHueMirrorCardChip(stack) {
+      const hueCard = stack.querySelector('[data-card-value="hue_mirror"]');
+      const chip = stack.querySelector(".hue-mirror-card-chip");
+      if (!hueCard || !chip) return;
+      chip.style.left = `${hueCard.offsetLeft + hueCard.offsetWidth / 2}px`;
+      chip.style.top = `${hueCard.offsetTop + hueCard.offsetHeight - 8}px`;
+    }
+
+    function attachHueMirrorCardResult(stack, play, effect) {
+      if (play?.modValue !== "hue_mirror") return;
+      const presentation = hueMirrorPresentation(effect);
+      const hueCard = stack.querySelector('[data-card-value="hue_mirror"]');
+      if (hueCard) {
+        const currentLabel = (hueCard.getAttribute("aria-label") || CARD_COPY.hue_mirror.name)
+          .replace(/\.+$/, "");
+        hueCard.setAttribute("aria-label", `${currentLabel}. ${presentation.detail}.`);
+      }
+      stack.insertAdjacentHTML("beforeend", `
+        <span class="hue-mirror-card-chip" aria-hidden="true">
+          <small>Hue Mirror</small>
+          <strong>${escapeHtml(presentation.chip)}</strong>
+        </span>
+      `);
+      positionHueMirrorCardChip(stack);
+    }
+
+    function configureHueMirrorVisuals(result, meSeat) {
+      const opponentSeat = 1 - meSeat;
+      attachHueMirrorCardResult(
+        ui.revealLeft,
+        result.plays[meSeat],
+        result.hueMirrorEffects?.[meSeat]
+      );
+      attachHueMirrorCardResult(
+        ui.revealRight,
+        result.plays[opponentSeat],
+        result.hueMirrorEffects?.[opponentSeat]
+      );
+    }
+
     function configureModSigil(node, modValue) {
       const mod = modValue || "none";
       node.dataset.active = String(mod !== "none");
@@ -7972,7 +8156,9 @@
       if (result.newStains?.[seat]?.length) {
         const names = [...new Set(result.newStains[seat].map(stain => {
           const elementName = CARD_COPY[stain.element]?.name;
-          return elementName ? `${stain.vampiric ? "Vampiric " : ""}${elementName}` : null;
+          return elementName
+            ? `${stain.reflected ? "Reflected " : ""}${stain.vampiric ? "Vampiric " : ""}${elementName}`
+            : null;
         }).filter(Boolean))];
         parts.push(`${names.join("/")} stain`);
       }
@@ -8000,7 +8186,7 @@
           : Number.isFinite(specialFallback) && specialFallback > 0
             ? specialFallback
             : 2;
-        return { ...entry, count: clamp(Math.round(total), 1, 6) };
+        return { ...entry, count: clamp(Math.round(total), 1, 10) };
       });
     }
 
@@ -8115,6 +8301,7 @@
       const players = app.state.players;
       const hasRainbow = result.plays.some(play => play.modValue === "rainbow");
       const hasArcane = result.arcaneEaten?.some(Boolean);
+      const hasHueReflection = result.hueMirrorEffects?.some(effect => Boolean(effect?.reflectedElement));
       const timeline = GAME_CONFIG.showdownTimeline;
       const shotCount = result.plays.filter(play => play.actionValue === "shoot").length;
       const reloadEntries = showdownReloadEntries(result, meSeat);
@@ -8140,6 +8327,7 @@
       ui.revealLeft.innerHTML = [myPlay.action, myPlay.element, myPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       ui.revealRight.innerHTML = [opponentPlay.action, opponentPlay.element, opponentPlay.mod].filter(Boolean).map(revealCardHtml).join("");
       configureRainbowRollVisuals(result, players, meSeat);
+      configureHueMirrorVisuals(result, meSeat);
       setDamageBurst(ui.leftDamageBurst, result.directDamage[meSeat], opponentPlay.actionValue === "shoot");
       setDamageBurst(ui.rightDamageBurst, result.directDamage[opponentSeat], myPlay.actionValue === "shoot");
       ui.leftAftermathBurst.textContent = aftermathCopy(result, meSeat);
@@ -8183,6 +8371,10 @@
             rainbowNotes.push(`${players[index].name}: ${rainbowRollCopy(play)}`);
             return;
           }
+          if (play.modValue === "hue_mirror") {
+            modifierNotes.push(`${players[index].name}: ${hueMirrorPresentation(result.hueMirrorEffects?.[index]).chip}`);
+            return;
+          }
           modifierNotes.push(`${players[index].name}: ${CARD_COPY[play.modValue].name}`);
         });
         modifierNotes.unshift(...rainbowNotes);
@@ -8217,7 +8409,9 @@
         const shotNotes = result.plays.map((play, index) => {
           if (play.actionValue !== "shoot") return null;
           const targetSeat = 1 - index;
-          const shellElement = result.arcaneEaten?.[targetSeat] || play.resolvedElement;
+          const shellElement = result.arcaneEaten?.[targetSeat]
+            || result.hueMirrorEffects?.[targetSeat]?.reflectedElement
+            || play.resolvedElement;
           const payload = shellElement ? CARD_COPY[shellElement].name : "raw";
           return `${players[index].name} fires ${payload}${play.modValue ? ` with ${CARD_COPY[play.modValue].name}` : ""}`;
         }).filter(Boolean);
@@ -8232,18 +8426,33 @@
 
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("intercept");
-        if (hasArcane) {
-          ui.showdownPanel.classList.add("arcane");
-          const interceptNotes = result.arcaneEaten.map((element, defenderSeat) => (
+        if (hasArcane || hasHueReflection) {
+          if (hasArcane) ui.showdownPanel.classList.add("arcane");
+          if (hasHueReflection) ui.showdownPanel.classList.add("hue-mirror");
+          const arcaneNotes = result.arcaneEaten.map((element, defenderSeat) => (
             element
               ? `${players[defenderSeat].name}'s Arcane Eater nullifies ${CARD_COPY[element].name}, makes the shot raw, and heals 3`
               : null
           )).filter(Boolean);
-          ui.showdownPhase.textContent = "Arcane nullifies element";
-          ui.resolutionTitle.textContent = "Element consumed";
+          const hueNotes = result.hueMirrorEffects.map((effect, defenderSeat) => (
+            effect?.reflectedElement
+              ? `${players[defenderSeat].name}'s Hue Mirror nullifies the ${CARD_COPY[effect.reflectedElement].name} interaction, adds a −25 percentage-point damage adjustment, and reflects its stain onto ${players[1 - defenderSeat].name}`
+              : null
+          )).filter(Boolean);
+          const interceptNotes = [...arcaneNotes, ...hueNotes];
+          ui.showdownPhase.textContent = hasArcane && hasHueReflection
+            ? "Elements consumed and reflected"
+            : hasHueReflection
+              ? "Hue Mirror refracts shot"
+              : "Arcane nullifies element";
+          ui.resolutionTitle.textContent = hasArcane && hasHueReflection
+            ? "Elemental effects intercepted"
+            : hasHueReflection
+              ? "Stain reflected"
+              : "Element consumed";
           ui.resolutionSubtitle.textContent = interceptNotes.join(" · ");
           announce(interceptNotes.join(". "));
-          playSound("heal");
+          playSound(hasArcane ? "heal" : "select");
         } else {
           ui.showdownPhase.textContent = shotCount ? "Rounds in flight" : "Actions resolving";
           ui.resolutionSubtitle.textContent = shotCount
@@ -8296,7 +8505,11 @@
           runShowdownReloadDeal(reloadEntries);
           const reloadNotes = reloadEntries.map(entry => {
             const countLabel = `${entry.count} card${entry.count === 1 ? "" : "s"}`;
-            return `${players[entry.seat].name} receives ${countLabel}`;
+            const hueEffect = result.hueMirrorEffects?.find(effect => effect?.reloadTargetSeat === entry.seat);
+            const hueNote = hueEffect
+              ? `; Hue Mirror doubled specials ${hueEffect.reloadFrom}→${hueEffect.reloadTo}`
+              : "";
+            return `${players[entry.seat].name} receives ${countLabel}${hueNote}`;
           });
           ui.showdownPhase.textContent = reloadEntries.length > 1 ? "Both players reload" : "Reload replenishes";
           ui.resolutionTitle.textContent = reloadEntries.length > 1 ? "Decks refill" : "Cards to hand";
@@ -11335,6 +11548,8 @@
       hideHoverTooltip();
       positionRainbowCardRollChip(ui.revealLeft);
       positionRainbowCardRollChip(ui.revealRight);
+      positionHueMirrorCardChip(ui.revealLeft);
+      positionHueMirrorCardChip(ui.revealRight);
     });
     document.addEventListener("scroll", () => hideHoverTooltip(), true);
 
