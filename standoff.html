@@ -8021,7 +8021,8 @@
       },
       handScroll: {
         frameId: 0,
-        target: 0
+        target: 0,
+        stepAnimations: []
       },
       responsive: {
         frameId: 0,
@@ -8978,6 +8979,65 @@
       ));
     }
 
+    function animatePlayerHandStep(distance, direction) {
+      if (hasReducedMotionPreference()) return;
+      const cards = [...ui.playerHand.querySelectorAll("[data-card-id]")];
+      const button = direction > 0 ? ui.handNextBtn : ui.handPrevBtn;
+      if (!cards.length || typeof button?.animate !== "function") return;
+
+      app.handScroll.stepAnimations.forEach(animation => animation.cancel());
+      const animations = [];
+      const travel = clamp(Number(distance) || 0, -104, 104);
+      const settle = travel * -.035;
+      const duration = clamp(270 + Math.abs(travel) * .72, 280, 360);
+      const supportsTranslate = typeof CSS !== "undefined" &&
+        typeof CSS.supports === "function" && CSS.supports("translate", "1px 0");
+      const movementProperty = supportsTranslate ? "translate" : "transform";
+      const movementValue = value => supportsTranslate
+        ? `${value}px 0`
+        : `translateX(${value}px)`;
+
+      cards.forEach(card => {
+        if (typeof card.animate !== "function") return;
+        animations.push(card.animate([
+          { [movementProperty]: movementValue(travel) },
+          { [movementProperty]: movementValue(settle), offset: .82 },
+          { [movementProperty]: movementValue(0) }
+        ], {
+          duration,
+          easing: "cubic-bezier(.22, 1, .36, 1)",
+          fill: "both"
+        }));
+      });
+
+      animations.push(button.animate([
+        {
+          transform: "scale(.94)",
+          boxShadow: "0 0 0 0 rgba(121, 224, 194, .28)"
+        },
+        {
+          transform: "scale(1.035)",
+          boxShadow: "0 0 0 8px rgba(121, 224, 194, 0)",
+          offset: .62
+        },
+        {
+          transform: "scale(1)",
+          boxShadow: "0 0 0 0 rgba(121, 224, 194, 0)"
+        }
+      ], {
+        duration: Math.min(duration, 320),
+        easing: "cubic-bezier(.22, 1, .36, 1)",
+        fill: "both"
+      }));
+
+      app.handScroll.stepAnimations = animations;
+      Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+        if (app.handScroll.stepAnimations !== animations) return;
+        animations.forEach(animation => animation.cancel());
+        app.handScroll.stepAnimations = [];
+      });
+    }
+
     function stepPlayerHand(direction) {
       const step = Math.sign(Number(direction) || 0);
       if (
@@ -9012,6 +9072,7 @@
       if (Math.abs(target - current) <= HAND_SCROLL_EDGE_EPSILON) return false;
       hideHoverTooltip();
       const moved = scrollPlayerHandTo(target, { immediate: true });
+      if (moved) animatePlayerHandStep(target - current, step);
       syncHandScrollState();
       return moved;
     }
