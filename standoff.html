@@ -2828,8 +2828,17 @@
       opacity: 1;
     }
 
+    .showdown-effect-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
     .showdown-panel {
       position: relative;
+      z-index: 1;
       width: min(940px, 100%);
       max-height: calc(100dvh - 28px);
       overflow: auto;
@@ -3226,6 +3235,326 @@
         0 0 0 2px rgba(140, 233, 222, .2),
         0 0 26px rgba(126, 231, 218, .28);
       animation: hue-reload-card-receive .64s var(--ease-snap);
+    }
+
+    .hue-copy-flight,
+    .hue-copy-hand-receiver,
+    .hue-stain-flight,
+    .hue-stain-target-chip {
+      --hue-effect-color: #8ce9de;
+    }
+
+    .hue-copy-flight[data-element="fire"],
+    .hue-copy-hand-receiver[data-element="fire"],
+    .hue-stain-flight[data-element="fire"],
+    .hue-stain-target-chip[data-element="fire"] {
+      --hue-effect-color: var(--fire);
+    }
+
+    .hue-copy-flight[data-element="ice"],
+    .hue-copy-hand-receiver[data-element="ice"],
+    .hue-stain-flight[data-element="ice"],
+    .hue-stain-target-chip[data-element="ice"] {
+      --hue-effect-color: var(--ice);
+    }
+
+    .hue-copy-flight[data-element="water"],
+    .hue-copy-hand-receiver[data-element="water"],
+    .hue-stain-flight[data-element="water"],
+    .hue-stain-target-chip[data-element="water"] {
+      --hue-effect-color: var(--water);
+    }
+
+    .hue-copy-flight {
+      position: fixed;
+      z-index: 5;
+      display: grid;
+      width: 58px;
+      height: 84px;
+      grid-template-rows: auto 1fr auto auto;
+      place-items: center;
+      padding: 7px 6px 6px;
+      overflow: hidden;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--hue-effect-color) 62%, white 8%);
+      border-radius: 9px;
+      background:
+        linear-gradient(145deg, color-mix(in srgb, var(--hue-effect-color) 13%, transparent), transparent 43%),
+        linear-gradient(315deg, rgba(193, 164, 255, .13), transparent 48%),
+        #101720;
+      box-shadow:
+        0 13px 28px rgba(0, 0, 0, .44),
+        0 0 19px color-mix(in srgb, var(--hue-effect-color) 23%, transparent);
+      color: var(--hue-effect-color);
+      transform-origin: center;
+      will-change: transform, opacity;
+    }
+
+    .hue-copy-flight::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 3px;
+      content: "";
+      background: var(--hue-effect-color);
+      box-shadow: 0 0 11px var(--hue-effect-color);
+    }
+
+    .hue-copy-flight::after {
+      position: absolute;
+      inset: 9px;
+      border: 1px solid rgba(140, 233, 222, .14);
+      border-radius: 6px;
+      content: "";
+      transform: rotate(45deg) scale(.72);
+    }
+
+    .hue-copy-flight small,
+    .hue-copy-flight strong,
+    .hue-copy-flight em,
+    .hue-copy-flight b {
+      position: relative;
+      z-index: 1;
+      font-style: normal;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .hue-copy-flight small {
+      color: #9feee5;
+      font-size: 5px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .hue-copy-flight b {
+      align-self: center;
+      font-size: 24px;
+      text-shadow: 0 0 14px color-mix(in srgb, var(--hue-effect-color) 48%, transparent);
+    }
+
+    .hue-copy-flight strong {
+      color: var(--ink);
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .hue-copy-flight em {
+      color: var(--muted);
+      font-size: 5px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .hue-copy-hand-receiver {
+      position: fixed;
+      z-index: 4;
+      display: inline-grid;
+      min-width: 98px;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "mark title"
+        "mark detail";
+      align-items: center;
+      gap: 1px 7px;
+      padding: 7px 9px;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--hue-effect-color) 52%, transparent);
+      border-radius: 10px;
+      background:
+        linear-gradient(110deg, color-mix(in srgb, var(--hue-effect-color) 11%, transparent), rgba(193, 164, 255, .08)),
+        rgba(10, 14, 20, .97);
+      box-shadow:
+        0 11px 26px rgba(0, 0, 0, .42),
+        0 0 18px color-mix(in srgb, var(--hue-effect-color) 17%, transparent);
+      color: var(--hue-effect-color);
+      transform-origin: center;
+      white-space: nowrap;
+    }
+
+    .hue-copy-hand-receiver.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .hue-copy-hand-receiver b {
+      grid-area: mark;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .hue-copy-hand-receiver strong {
+      grid-area: title;
+      color: var(--ink);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .hue-copy-hand-receiver small {
+      grid-area: detail;
+      color: var(--muted);
+      font-size: 5px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hue-stain-flight {
+      position: fixed;
+      z-index: 6;
+      display: grid;
+      width: 92px;
+      min-height: 36px;
+      grid-template-columns: 25px minmax(0, 1fr);
+      grid-template-areas:
+        "mark label"
+        "mark name";
+      align-items: center;
+      padding: 5px 8px 5px 5px;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--hue-effect-color) 58%, transparent);
+      border-radius: 99px;
+      background:
+        radial-gradient(circle at 12px 50%, color-mix(in srgb, var(--hue-effect-color) 20%, transparent), transparent 22px),
+        linear-gradient(110deg, rgba(140, 233, 222, .1), rgba(193, 164, 255, .08)),
+        rgba(10, 14, 20, .97);
+      box-shadow:
+        0 11px 25px rgba(0, 0, 0, .42),
+        0 0 18px color-mix(in srgb, var(--hue-effect-color) 22%, transparent);
+      color: var(--hue-effect-color);
+      transform-origin: center;
+      will-change: transform, opacity;
+    }
+
+    .hue-stain-flight-mark {
+      grid-area: mark;
+      display: grid;
+      width: 23px;
+      height: 23px;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 50% 50% 50% 18%;
+      background: color-mix(in srgb, var(--hue-effect-color) 13%, #111821);
+      font-size: 12px;
+      transform: rotate(45deg);
+      box-shadow: inset 0 0 10px color-mix(in srgb, var(--hue-effect-color) 12%, transparent);
+    }
+
+    .hue-stain-flight-mark i {
+      font-style: normal;
+      transform: rotate(-45deg);
+    }
+
+    .hue-stain-flight small,
+    .hue-stain-flight strong {
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hue-stain-flight small {
+      grid-area: label;
+      color: #9feee5;
+      font-size: 5px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .hue-stain-flight strong {
+      grid-area: name;
+      color: var(--ink);
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .showdown-health {
+      position: relative;
+    }
+
+    .hue-stain-target-chip {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 50%;
+      z-index: 10;
+      display: inline-grid;
+      min-width: 94px;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "mark label"
+        "mark name";
+      align-items: center;
+      gap: 1px 6px;
+      padding: 5px 7px;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--hue-effect-color) 51%, transparent);
+      border-radius: 9px;
+      background: rgba(10, 14, 20, .97);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, .4),
+        0 0 15px color-mix(in srgb, var(--hue-effect-color) 18%, transparent);
+      color: var(--hue-effect-color);
+      line-height: 1;
+      pointer-events: none;
+      transform: translate(-50%, -6px) scale(.8);
+      transform-origin: center;
+      white-space: nowrap;
+    }
+
+    .hue-stain-target-chip.visible {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+
+    .hue-stain-target-chip b {
+      grid-area: mark;
+      font-size: 14px;
+    }
+
+    .hue-stain-target-chip small {
+      grid-area: label;
+      color: #9feee5;
+      font-size: 4.5px;
+      font-weight: 900;
+      letter-spacing: .11em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .hue-stain-target-chip strong {
+      grid-area: name;
+      color: var(--ink);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .showdown-panel .reveal-card.hue-copy-source {
+      z-index: 8;
+      opacity: 1 !important;
+      animation: hue-copy-source-pulse .66s var(--ease-snap);
+    }
+
+    .showdown-panel .reveal-card.hue-copy-mirror-active {
+      z-index: 9;
+      opacity: 1 !important;
+      animation: hue-copy-mirror-pulse .72s .18s var(--ease-snap);
+    }
+
+    .showdown-health.hue-stain-receiving {
+      animation: hue-stain-health-receive .62s var(--ease-snap);
     }
 
     .showdown-reload-flight.hue-bonus {
@@ -4109,6 +4438,42 @@
           0 20px 42px rgba(0, 0, 0, .46),
           0 0 0 4px rgba(140, 233, 222, .2),
           0 0 38px rgba(126, 231, 218, .42);
+      }
+    }
+
+    @keyframes hue-copy-source-pulse {
+      0%, 100% {
+        filter: saturate(1) brightness(1);
+      }
+      44% {
+        filter: saturate(1.3) brightness(1.17);
+        box-shadow:
+          0 20px 42px rgba(0, 0, 0, .46),
+          0 0 0 3px rgba(140, 233, 222, .2),
+          0 0 28px rgba(126, 231, 218, .34);
+      }
+    }
+
+    @keyframes hue-copy-mirror-pulse {
+      0%, 100% {
+        filter: saturate(1.08) brightness(1.04);
+      }
+      48% {
+        filter: saturate(1.3) brightness(1.18);
+        box-shadow:
+          0 20px 44px rgba(0, 0, 0, .46),
+          0 0 0 4px rgba(140, 233, 222, .22),
+          0 0 34px rgba(193, 164, 255, .36);
+      }
+    }
+
+    @keyframes hue-stain-health-receive {
+      0%, 100% {
+        filter: brightness(1);
+      }
+      46% {
+        filter: brightness(1.2);
+        text-shadow: 0 0 14px rgba(140, 233, 222, .35);
       }
     }
 
@@ -4996,6 +5361,75 @@
         font-size: 4.5px;
       }
 
+      .hue-copy-flight {
+        width: 46px;
+        height: 66px;
+        padding: 6px 5px 5px;
+        border-radius: 8px;
+      }
+
+      .hue-copy-flight small,
+      .hue-copy-flight em {
+        display: none;
+      }
+
+      .hue-copy-flight b {
+        font-size: 19px;
+      }
+
+      .hue-copy-flight strong {
+        font-size: 7px;
+      }
+
+      .hue-copy-hand-receiver {
+        min-width: 84px;
+        gap: 1px 5px;
+        padding: 5px 7px;
+      }
+
+      .hue-copy-hand-receiver b {
+        font-size: 15px;
+      }
+
+      .hue-stain-flight {
+        width: 76px;
+        min-height: 31px;
+        grid-template-columns: 21px minmax(0, 1fr);
+        padding: 4px 6px 4px 4px;
+      }
+
+      .hue-stain-flight-mark {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+      }
+
+      .hue-stain-flight small {
+        font-size: 4px;
+      }
+
+      .hue-stain-flight strong {
+        font-size: 7px;
+      }
+
+      .hue-stain-target-chip {
+        min-width: 79px;
+        gap: 1px 4px;
+        padding: 4px 5px;
+      }
+
+      .hue-stain-target-chip b {
+        font-size: 12px;
+      }
+
+      .hue-stain-target-chip small {
+        display: none;
+      }
+
+      .hue-stain-target-chip strong {
+        font-size: 6px;
+      }
+
       .showdown-reload-deck-card::before {
         inset: 12px 9px;
       }
@@ -5618,6 +6052,7 @@
   </main>
 
   <div id="showdownOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="showdownTitle">
+    <div id="showdownEffectLayer" class="showdown-effect-layer" aria-hidden="true"></div>
     <div id="showdownPanel" class="showdown-panel">
       <div class="showdown-head">
         <div>
@@ -6670,6 +7105,7 @@
       playerHand: $("#playerHand"),
       handSortSelect: $("#handSortSelect"),
       showdownOverlay: $("#showdownOverlay"),
+      showdownEffectLayer: $("#showdownEffectLayer"),
       showdownPanel: $("#showdownPanel"),
       showdownPhase: $("#showdownPhase"),
       showdownTurn: $("#showdownTurn"),
@@ -8349,6 +8785,399 @@
       );
     }
 
+    function showdownStackForSeat(seat, meSeat) {
+      return seat === meSeat ? ui.revealLeft : ui.revealRight;
+    }
+
+    function showdownSideForSeat(seat, meSeat) {
+      return seat === meSeat ? "left" : "right";
+    }
+
+    function showdownHealthForSeat(seat, meSeat) {
+      return seat === meSeat ? ui.showdownLeftHealth : ui.showdownRightHealth;
+    }
+
+    function showdownHueCopyEntries(result, meSeat) {
+      const effects = Array.isArray(result.hueMirrorEffects) ? result.hueMirrorEffects : [];
+      return effects.map((effect, ownerSeat) => {
+        const element = effect?.copiedElement;
+        const sourceSeat = 1 - ownerSeat;
+        if (
+          (ownerSeat !== 0 && ownerSeat !== 1) ||
+          !ELEMENTS.includes(element) ||
+          result.plays?.[ownerSeat]?.modValue !== "hue_mirror" ||
+          result.plays?.[sourceSeat]?.actionValue !== "shield" ||
+          result.plays?.[sourceSeat]?.resolvedElement !== element
+        ) return null;
+        return {
+          ownerSeat,
+          sourceSeat,
+          element,
+          ownerSide: showdownSideForSeat(ownerSeat, meSeat),
+          sourceSide: showdownSideForSeat(sourceSeat, meSeat),
+          ownerStack: showdownStackForSeat(ownerSeat, meSeat),
+          sourceStack: showdownStackForSeat(sourceSeat, meSeat)
+        };
+      }).filter(Boolean);
+    }
+
+    function showdownHueStainReflectionEntries(result, meSeat) {
+      const effects = Array.isArray(result.hueMirrorEffects) ? result.hueMirrorEffects : [];
+      return effects.map((effect, ownerSeat) => {
+        const element = effect?.reflectedElement;
+        const shooterSeat = Number(effect?.reflectedStainTargetSeat);
+        const reflectedStain = result.newStains?.[shooterSeat]?.find(stain => (
+          stain?.reflected &&
+          stain.element === element &&
+          Number(stain.reflectedBySeat) === ownerSeat
+        ));
+        if (
+          (ownerSeat !== 0 && ownerSeat !== 1) ||
+          (shooterSeat !== 0 && shooterSeat !== 1) ||
+          shooterSeat !== 1 - ownerSeat ||
+          !ELEMENTS.includes(element) ||
+          result.plays?.[ownerSeat]?.modValue !== "hue_mirror" ||
+          result.plays?.[shooterSeat]?.actionValue !== "shoot" ||
+          !reflectedStain
+        ) return null;
+        return {
+          ownerSeat,
+          shooterSeat,
+          element,
+          ownerSide: showdownSideForSeat(ownerSeat, meSeat),
+          shooterSide: showdownSideForSeat(shooterSeat, meSeat),
+          ownerStack: showdownStackForSeat(ownerSeat, meSeat),
+          shooterStack: showdownStackForSeat(shooterSeat, meSeat),
+          targetHealth: showdownHealthForSeat(shooterSeat, meSeat),
+          sourceLane: shooterSeat === meSeat ? ui.leftShotLane : ui.rightShotLane
+        };
+      }).filter(Boolean);
+    }
+
+    function showdownHandTarget(entry, meSeat) {
+      const hand = entry.ownerSeat === meSeat ? ui.playerHand : ui.opponentHand;
+      const handRect = hand.getBoundingClientRect();
+      const fallbackRect = entry.ownerStack.getBoundingClientRect();
+      const rect = handRect.width && handRect.height ? handRect : fallbackRect;
+      const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
+      const viewportHeight = Math.max(480, window.innerHeight || document.documentElement.clientHeight || 480);
+      return {
+        hand,
+        x: clamp(rect.left + rect.width / 2, 58, viewportWidth - 58),
+        y: clamp(rect.top + rect.height / 2, 34, viewportHeight - 34)
+      };
+    }
+
+    function createHueCopyHandReceiver(entry, meSeat) {
+      const target = showdownHandTarget(entry, meSeat);
+      const elementCopy = CARD_COPY[entry.element];
+      const receiver = document.createElement("span");
+      receiver.className = "hue-copy-hand-receiver";
+      receiver.dataset.element = entry.element;
+      receiver.setAttribute("aria-hidden", "true");
+      receiver.innerHTML = `
+        <b>+1</b>
+        <strong>${escapeHtml(elementCopy.name)} card</strong>
+        <small>${entry.ownerSeat === meSeat ? "Your hand" : "Rival hand"}</small>
+      `;
+      ui.showdownEffectLayer.appendChild(receiver);
+      const receiverRect = receiver.getBoundingClientRect();
+      receiver.style.left = `${target.x - receiverRect.width / 2}px`;
+      receiver.style.top = `${target.y - receiverRect.height / 2}px`;
+      return { receiver, target };
+    }
+
+    function pulseHueCopyCards(entry) {
+      const elementCard = entry.sourceStack.querySelector('[data-card-family="element"]');
+      const shieldCard = entry.sourceStack.querySelector('[data-card-value="shield"]');
+      const mirrorCard = entry.ownerStack.querySelector('[data-card-value="hue_mirror"]');
+      [elementCard, shieldCard].filter(Boolean).forEach(card => {
+        card.classList.add("hue-copy-source");
+      });
+      mirrorCard?.classList.add("hue-copy-mirror-active");
+      app.showdownTimers.push(setTimeout(() => {
+        [elementCard, shieldCard].filter(Boolean).forEach(card => {
+          card.classList.remove("hue-copy-source");
+        });
+        mirrorCard?.classList.remove("hue-copy-mirror-active");
+      }, 1050));
+      return { elementCard, shieldCard, mirrorCard };
+    }
+
+    function createShowdownHueCopyFlight(entry, copyIndex, copyCount, meSeat, reducedMotion) {
+      const { elementCard, shieldCard, mirrorCard } = pulseHueCopyCards(entry);
+      const source = elementCard || shieldCard || entry.sourceStack;
+      const mirror = mirrorCard || entry.ownerStack;
+      const sourceRect = source.getBoundingClientRect();
+      const mirrorRect = mirror.getBoundingClientRect();
+      const { receiver, target } = createHueCopyHandReceiver(entry, meSeat);
+      const elementCopy = CARD_COPY[entry.element];
+      const receiverDelay = copyIndex * 60 + 570;
+
+      if (
+        reducedMotion ||
+        typeof receiver.animate !== "function" ||
+        !sourceRect.width ||
+        !mirrorRect.width
+      ) {
+        receiver.classList.add("visible");
+        app.showdownTimers.push(setTimeout(() => receiver.remove(), 1400));
+        return;
+      }
+
+      const sourceX = sourceRect.left + sourceRect.width / 2;
+      const sourceY = sourceRect.top + sourceRect.height / 2;
+      const mirrorX = mirrorRect.left + mirrorRect.width / 2;
+      const mirrorY = mirrorRect.top + mirrorRect.height / 2;
+      const mirrorDeltaX = mirrorX - sourceX;
+      const mirrorDeltaY = mirrorY - sourceY;
+      const targetDeltaX = target.x - sourceX;
+      const targetDeltaY = target.y - sourceY;
+      const arc = copyCount > 1
+        ? entry.ownerSide === "left" ? -42 : 42
+        : -34;
+      const handBend = entry.ownerSeat === meSeat ? 22 : -22;
+      const delay = copyIndex * 60;
+      const flight = document.createElement("span");
+      flight.className = "hue-copy-flight";
+      flight.dataset.element = entry.element;
+      flight.setAttribute("aria-hidden", "true");
+      flight.innerHTML = `
+        <small>Copied element</small>
+        <b>${escapeHtml(elementCopy.symbol)}</b>
+        <strong>${escapeHtml(elementCopy.name)}</strong>
+        <em>Final shield value</em>
+      `;
+      ui.showdownEffectLayer.appendChild(flight);
+      const flightRect = flight.getBoundingClientRect();
+      flight.style.left = `${sourceX - flightRect.width / 2}px`;
+      flight.style.top = `${sourceY - flightRect.height / 2}px`;
+
+      const flightAnimation = flight.animate([
+        {
+          opacity: 0,
+          transform: "translate3d(0, 0, 0) rotate(0deg) scale(.68)"
+        },
+        {
+          offset: .1,
+          opacity: 1,
+          transform: "translate3d(0, -4px, 0) rotate(0deg) scale(.9)"
+        },
+        {
+          offset: .27,
+          opacity: 1,
+          transform: `translate3d(${mirrorDeltaX * .52}px, ${mirrorDeltaY * .5 + arc}px, 0) rotate(${entry.ownerSide === "left" ? -3 : 3}deg) scale(.98)`
+        },
+        {
+          offset: .43,
+          opacity: 1,
+          transform: `translate3d(${mirrorDeltaX}px, ${mirrorDeltaY}px, 0) rotate(0deg) scale(1.08)`
+        },
+        {
+          offset: .53,
+          opacity: 1,
+          transform: `translate3d(${mirrorDeltaX}px, ${mirrorDeltaY}px, 0) rotate(0deg) scale(1.2)`
+        },
+        {
+          offset: .72,
+          opacity: 1,
+          transform: `translate3d(${mirrorDeltaX + (targetDeltaX - mirrorDeltaX) * .52 + handBend}px, ${mirrorDeltaY + (targetDeltaY - mirrorDeltaY) * .5}px, 0) rotate(${entry.ownerSeat === meSeat ? 3 : -3}deg) scale(.86)`
+        },
+        {
+          offset: .9,
+          opacity: 1,
+          transform: `translate3d(${targetDeltaX}px, ${targetDeltaY}px, 0) rotate(0deg) scale(.58)`
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(${targetDeltaX}px, ${targetDeltaY}px, 0) rotate(0deg) scale(.42)`
+        }
+      ], {
+        duration: 800,
+        delay,
+        easing: "cubic-bezier(.2,.78,.22,1)",
+        fill: "forwards"
+      });
+
+      const receiverAnimation = receiver.animate([
+        {
+          opacity: 0,
+          transform: "translate3d(0, 5px, 0) scale(.76)"
+        },
+        {
+          offset: .22,
+          opacity: 1,
+          transform: "translate3d(0, 0, 0) scale(1.1)"
+        },
+        {
+          offset: .72,
+          opacity: 1,
+          transform: "translate3d(0, 0, 0) scale(1)"
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(0, ${entry.ownerSeat === meSeat ? 5 : -5}px, 0) scale(.94)`
+        }
+      ], {
+        duration: 720,
+        delay: receiverDelay,
+        easing: "cubic-bezier(.2,.8,.22,1)",
+        fill: "forwards"
+      });
+
+      app.showdownAnimations.push(flightAnimation, receiverAnimation);
+      flightAnimation.finished.catch(() => {}).finally(() => flight.remove());
+      receiverAnimation.finished.catch(() => {}).finally(() => receiver.remove());
+    }
+
+    function runShowdownHueCopyTransfers(entries, meSeat) {
+      if (!entries.length) return;
+      const reducedMotion = hasReducedMotionPreference();
+      entries.forEach((entry, index) => {
+        createShowdownHueCopyFlight(entry, index, entries.length, meSeat, reducedMotion);
+      });
+      playSound("select");
+    }
+
+    function attachHueStainTargetChip(entry) {
+      const selector = `.hue-stain-target-chip[data-reflected-by="${entry.ownerSeat}"]`;
+      const existing = entry.targetHealth.querySelector(selector);
+      if (existing) return existing;
+      const elementCopy = CARD_COPY[entry.element];
+      const chip = document.createElement("span");
+      chip.className = "hue-stain-target-chip";
+      chip.dataset.element = entry.element;
+      chip.dataset.reflectedBy = String(entry.ownerSeat);
+      chip.setAttribute("aria-hidden", "true");
+      chip.innerHTML = `
+        <b>&#9680;</b>
+        <small>Reflected stain</small>
+        <strong>${escapeHtml(elementCopy.name)} stain</strong>
+      `;
+      entry.targetHealth.appendChild(chip);
+      return chip;
+    }
+
+    function createShowdownHueStainReflection(entry, reflectionIndex, reflectionCount, reducedMotion) {
+      const source = entry.sourceLane.querySelector(".ward-burst") || entry.sourceLane;
+      const target = entry.targetHealth.querySelector(".health-track") || entry.targetHealth;
+      const sourceRect = source.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const targetChip = attachHueStainTargetChip(entry);
+      const elementCopy = CARD_COPY[entry.element];
+      if (
+        reducedMotion ||
+        typeof targetChip.animate !== "function" ||
+        !sourceRect.width ||
+        !targetRect.width
+      ) {
+        targetChip.classList.add("visible");
+        entry.targetHealth.classList.add("hue-stain-receiving");
+        return;
+      }
+
+      const sourceX = sourceRect.left + sourceRect.width / 2;
+      const sourceY = sourceRect.top + sourceRect.height / 2;
+      const targetX = targetRect.left + targetRect.width / 2;
+      const targetY = targetRect.top + targetRect.height / 2;
+      const deltaX = targetX - sourceX;
+      const deltaY = targetY - sourceY;
+      const arc = reflectionCount > 1
+        ? entry.shooterSide === "left" ? -42 : 42
+        : -36;
+      const delay = reflectionIndex * 40;
+      const flight = document.createElement("span");
+      flight.className = "hue-stain-flight";
+      flight.dataset.element = entry.element;
+      flight.setAttribute("aria-hidden", "true");
+      flight.innerHTML = `
+        <b class="hue-stain-flight-mark"><i>${escapeHtml(elementCopy.symbol)}</i></b>
+        <small>Stain only</small>
+        <strong>${escapeHtml(elementCopy.name)} stain</strong>
+      `;
+      ui.showdownEffectLayer.appendChild(flight);
+      const flightRect = flight.getBoundingClientRect();
+      flight.style.left = `${sourceX - flightRect.width / 2}px`;
+      flight.style.top = `${sourceY - flightRect.height / 2}px`;
+
+      const flightAnimation = flight.animate([
+        {
+          opacity: 0,
+          transform: "translate3d(0, 0, 0) rotate(0deg) scale(.62)"
+        },
+        {
+          offset: .12,
+          opacity: 1,
+          transform: "translate3d(0, -3px, 0) rotate(0deg) scale(.92)"
+        },
+        {
+          offset: .34,
+          opacity: 1,
+          transform: `translate3d(${deltaX * .48}px, ${deltaY * .44 + arc}px, 0) rotate(${entry.shooterSide === "left" ? -4 : 4}deg) scale(1.03)`
+        },
+        {
+          offset: .58,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(1.08)`
+        },
+        {
+          offset: .82,
+          opacity: 1,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(.96)`
+        },
+        {
+          opacity: 0,
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(0deg) scale(.84)`
+        }
+      ], {
+        duration: 500,
+        delay,
+        easing: "cubic-bezier(.2,.78,.22,1)",
+        fill: "forwards"
+      });
+
+      const chipAnimation = targetChip.animate([
+        {
+          opacity: 0,
+          transform: "translate(-50%, -6px) scale(.72)"
+        },
+        {
+          offset: .36,
+          opacity: 1,
+          transform: "translate(-50%, 2px) scale(1.14)"
+        },
+        {
+          opacity: 1,
+          transform: "translate(-50%, 0) scale(1)"
+        }
+      ], {
+        duration: 360,
+        delay: delay + 270,
+        easing: "cubic-bezier(.2,.9,.2,1.15)",
+        fill: "forwards"
+      });
+
+      app.showdownAnimations.push(flightAnimation, chipAnimation);
+      app.showdownTimers.push(setTimeout(() => {
+        entry.targetHealth.classList.add("hue-stain-receiving");
+      }, delay + 280));
+      flightAnimation.finished.catch(() => {}).finally(() => flight.remove());
+      chipAnimation.finished.then(() => {
+        if (!targetChip.isConnected) return;
+        targetChip.classList.add("visible");
+        chipAnimation.cancel();
+      }).catch(() => {});
+    }
+
+    function runShowdownHueStainReflections(entries) {
+      if (!entries.length) return;
+      const reducedMotion = hasReducedMotionPreference();
+      entries.forEach((entry, index) => {
+        createShowdownHueStainReflection(entry, index, entries.length, reducedMotion);
+      });
+      playSound("select");
+    }
+
     function configureModSigil(node, modValue) {
       const mod = modValue || "none";
       node.dataset.active = String(mod !== "none");
@@ -8624,6 +9453,20 @@
     }
 
     function settleShowdownHueReloadMotion() {
+      $$(".hue-copy-flight, .hue-copy-hand-receiver, .hue-stain-flight", ui.showdownEffectLayer).forEach(token => {
+        const animations = typeof token.getAnimations === "function" ? token.getAnimations() : [];
+        animations.forEach(animation => animation.cancel());
+        token.remove();
+      });
+      $$(".hue-copy-source, .hue-copy-mirror-active", ui.showdownPanel).forEach(card => {
+        card.classList.remove("hue-copy-source", "hue-copy-mirror-active");
+      });
+      $$(".hue-stain-target-chip", ui.showdownPanel).forEach(chip => {
+        const animations = typeof chip.getAnimations === "function" ? chip.getAnimations() : [];
+        animations.forEach(animation => animation.cancel());
+        chip.classList.add("visible");
+        chip.closest(".showdown-health")?.classList.add("hue-stain-receiving");
+      });
       $$(".hue-reload-transfer", ui.showdownReloadFlightLayer).forEach(token => {
         const animations = typeof token.getAnimations === "function" ? token.getAnimations() : [];
         animations.forEach(animation => animation.cancel());
@@ -8659,7 +9502,15 @@
         }
       });
       app.showdownAnimations = [];
+      ui.showdownEffectLayer.replaceChildren();
       ui.showdownReloadFlightLayer.replaceChildren();
+      $$(".hue-stain-target-chip", ui.showdownPanel).forEach(chip => chip.remove());
+      $$(".hue-stain-receiving", ui.showdownPanel).forEach(health => {
+        health.classList.remove("hue-stain-receiving");
+      });
+      $$(".hue-copy-source, .hue-copy-mirror-active", ui.showdownPanel).forEach(card => {
+        card.classList.remove("hue-copy-source", "hue-copy-mirror-active");
+      });
       $$(".hue-reload-target-chip", ui.showdownPanel).forEach(chip => chip.remove());
       $$(".hue-reload-receiving", ui.showdownPanel).forEach(card => {
         card.classList.remove("hue-reload-receiving");
@@ -8775,6 +9626,8 @@
       const shotCount = result.plays.filter(play => play.actionValue === "shoot").length;
       const reloadEntries = showdownReloadEntries(result, meSeat);
       const hueReloadTransfers = showdownHueReloadTransfers(result, meSeat, reloadEntries);
+      const hueCopyEntries = showdownHueCopyEntries(result, meSeat);
+      const hueStainReflectionEntries = showdownHueStainReflectionEntries(result, meSeat);
       const reloadMotionMs = showdownReloadMotionDuration(reloadEntries);
       const reloadRecapTime = reloadEntries.length
         ? hasReducedMotionPreference()
@@ -8870,6 +9723,25 @@
         if (rainbowNotes.length) announce(rainbowNotes.join(". "));
       }, timeline.modifier));
 
+      if (hueCopyEntries.length) {
+        app.showdownTimers.push(setTimeout(() => {
+          ui.showdownPanel.classList.add("hue-mirror");
+          runShowdownHueCopyTransfers(hueCopyEntries, meSeat);
+          const copyNotes = hueCopyEntries.map(entry => {
+            const elementName = CARD_COPY[entry.element].name;
+            return `${players[entry.ownerSeat].name} copies ${players[entry.sourceSeat].name}'s final ${elementName} Shield into their hand`;
+          });
+          ui.showdownPhase.textContent = hueCopyEntries.length > 1
+            ? "Hue Mirrors copy shields"
+            : "Hue Mirror copies shield";
+          ui.resolutionTitle.textContent = hueCopyEntries.length > 1
+            ? "Elements added to both hands"
+            : `${CARD_COPY[hueCopyEntries[0].element].name} added to ${players[hueCopyEntries[0].ownerSeat].name}'s hand`;
+          ui.resolutionSubtitle.textContent = copyNotes.join(" · ");
+          announce(`${copyNotes.join(". ")}.`);
+        }, timeline.modifier + 250));
+      }
+
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("aim");
         const shooterNames = result.plays
@@ -8915,7 +9787,7 @@
           )).filter(Boolean);
           const hueNotes = result.hueMirrorEffects.map((effect, defenderSeat) => (
             effect?.reflectedElement
-              ? `${players[defenderSeat].name}'s Hue Mirror nullifies the ${CARD_COPY[effect.reflectedElement].name} interaction, adds a −25 percentage-point damage adjustment, and reflects its stain onto ${players[1 - defenderSeat].name}`
+              ? `${players[defenderSeat].name}'s Hue Mirror nullifies the ${CARD_COPY[effect.reflectedElement].name} interaction, adds a −25 percentage-point damage adjustment, and separates only its stain for reflection onto ${players[1 - defenderSeat].name}`
               : null
           )).filter(Boolean);
           const interceptNotes = [...arcaneNotes, ...hueNotes];
@@ -8965,6 +9837,24 @@
         if (shotCount) playSound("hit");
         announce(directNotes.length ? directNotes.join(". ") : "No direct shot damage.");
       }, timeline.hit));
+
+      if (hueStainReflectionEntries.length) {
+        app.showdownTimers.push(setTimeout(() => {
+          ui.showdownPanel.classList.add("hue-mirror");
+          runShowdownHueStainReflections(hueStainReflectionEntries);
+          const reflectionNotes = hueStainReflectionEntries.map(entry => (
+            `${CARD_COPY[entry.element].name} stain returns to ${players[entry.shooterSeat].name}; the bullet stays on ${players[entry.ownerSeat].name}`
+          ));
+          ui.showdownPhase.textContent = hueStainReflectionEntries.length > 1
+            ? "Reflected stains return"
+            : "Reflected stain returns";
+          ui.resolutionTitle.textContent = hueStainReflectionEntries.length > 1
+            ? "Only the stains are reflected"
+            : "Only the stain is reflected";
+          ui.resolutionSubtitle.textContent = reflectionNotes.join(" · ");
+          announce(`${reflectionNotes.join(". ")}.`);
+        }, timeline.hit + 300));
+      }
 
       app.showdownTimers.push(setTimeout(() => {
         ui.showdownPanel.classList.add("aftermath");
